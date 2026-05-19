@@ -707,30 +707,7 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
 
         {/* Score display box + counters combined */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          {/* Score name row */}
-          <div className={`border-b-2 ${scoreStyle.border} ${scoreStyle.bg} px-4 py-4`}>
-            <div className="flex items-center justify-between">
-              <button
-                onClick={() => adjustManualScore(-1)}
-                className="w-12 h-12 rounded-full bg-white border border-gray-300 text-gray-600 flex items-center justify-center text-2xl font-bold active:scale-90 transition-transform shadow-sm"
-              >−</button>
-              <div className="text-center">
-                <p className={`text-4xl font-extrabold tracking-tight ${scoreStyle.text}`}>{scoreName}</p>
-                <p className={`text-sm mt-0.5 font-medium ${scoreStyle.text} opacity-70`}>
-                  {overPar === 0
-                    ? `총 ${hole.total_strokes}타`
-                    : `${overPar > 0 ? `+${overPar}` : overPar} · 총 ${hole.total_strokes}타`}
-                </p>
-              </div>
-              <button
-                onClick={() => adjustManualScore(1)}
-                disabled={isMaxScore}
-                className="w-12 h-12 rounded-full bg-white border border-gray-300 text-gray-600 flex items-center justify-center text-2xl font-bold active:scale-90 transition-transform shadow-sm disabled:opacity-30 disabled:cursor-not-allowed"
-              >+</button>
-            </div>
-          </div>
-
-          {/* Counters side by side */}
+          {/* Counters side by side — first */}
           <div className="grid grid-cols-2 divide-x divide-gray-100 px-0">
             {/* Green shots */}
             <div className="flex flex-col items-center py-4 gap-2">
@@ -762,6 +739,29 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
             </div>
           </div>
 
+          {/* Score name row — below counters */}
+          <div className={`border-t-2 ${scoreStyle.border} ${scoreStyle.bg} px-4 py-4`}>
+            <div className="flex items-center justify-between">
+              <button
+                onClick={() => adjustManualScore(-1)}
+                className="w-12 h-12 rounded-full bg-white border border-gray-300 text-gray-600 flex items-center justify-center text-2xl font-bold active:scale-90 transition-transform shadow-sm"
+              >−</button>
+              <div className="text-center">
+                <p className={`text-4xl font-extrabold tracking-tight ${scoreStyle.text}`}>{scoreName}</p>
+                <p className={`text-sm mt-0.5 font-medium ${scoreStyle.text} opacity-70`}>
+                  {overPar === 0
+                    ? `총 ${hole.total_strokes}타`
+                    : `${overPar > 0 ? `+${overPar}` : overPar} · 총 ${hole.total_strokes}타`}
+                </p>
+              </div>
+              <button
+                onClick={() => adjustManualScore(1)}
+                disabled={isMaxScore}
+                className="w-12 h-12 rounded-full bg-white border border-gray-300 text-gray-600 flex items-center justify-center text-2xl font-bold active:scale-90 transition-transform shadow-sm disabled:opacity-30 disabled:cursor-not-allowed"
+              >+</button>
+            </div>
+          </div>
+
           {/* Penalty info row — display only, not reflected in score */}
           {getPenaltyStrokes(hole) > 0 && (
             <div className="mx-4 mb-3 flex justify-between items-center bg-orange-50 rounded-xl px-3 py-2 border border-orange-100">
@@ -774,8 +774,8 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
             {isManual && <Lock size={11} className="text-orange-400 flex-shrink-0" />}
             <p className={`text-[10px] leading-relaxed ${isManual ? 'text-orange-500' : 'text-gray-400'}`}>
               {isManual
-                ? '수동 집계 중. 위 카운터를 누르면 자동 집계로 전환돼요.'
-                : '카운터를 입력하면 자동 집계. 위 +−로 직접 수정 가능.'}
+                ? '수동 집계 중. 카운터를 누르면 자동 집계로 전환돼요.'
+                : '카운터를 입력하면 자동 집계. 아래 +−로 직접 수정 가능.'}
             </p>
           </div>
         </div>
