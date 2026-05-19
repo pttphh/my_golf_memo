@@ -190,7 +190,7 @@ function TeeShotBlock({ par, topResult, subResult, miss, memo, onTopChange, onSu
 }) {
   const isPar3 = par === 3;
   const topOptions = isPar3
-    ? ['그린 온 (GIR)', '그린 미스']
+    ? ['그린 온', '그린 미스']
     : ['페어웨이', '페어웨이 미스'];
   const missLabel = isPar3 ? '그린 미스' : '페어웨이 미스';
   const showSub = topResult === missLabel;
@@ -332,7 +332,7 @@ function SecondShotBlock({ result, penaltyType, missDetail, miss, memo, isExtra,
   onMissChange: (v: string) => void;
   onMemoChange: (v: string) => void;
 }) {
-  const greenOnLabel = isExtra ? '그린 온' : '그린 온 (GIR)';
+  const greenOnLabel = isExtra ? '그린 온' : '그린 온';
   const showSub = result === '그린 미스';
   const details = parseDetail(missDetail);
 

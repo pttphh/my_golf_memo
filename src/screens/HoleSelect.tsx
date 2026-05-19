@@ -151,16 +151,32 @@ export default function HoleSelect({ roundId, onBack, onConfirm: _onConfirm, onE
 
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-xs font-bold text-gray-500">전반 (1-9홀)</span>
+            <span className="text-xs font-bold text-gray-500 whitespace-nowrap">전반 (1-9홀)</span>
             <div className="flex-1 h-px bg-gray-200" />
+            {(() => {
+              const f = holes.filter(h => h.hole_number <= 9);
+              if (f.length === 0) return null;
+              const score = f.reduce((s, h) => s + h.total_strokes, 0);
+              const over = f.reduce((s, h) => s + h.over_par, 0);
+              const overStr = over === 0 ? '파' : over > 0 ? `+${over}` : `${over}`;
+              return <span className="text-xs text-gray-500 whitespace-nowrap">{score}타 {overStr}</span>;
+            })()}
           </div>
           {renderGrid(1, 9)}
         </div>
 
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-xs font-bold text-gray-500">후반 (10-18홀)</span>
+            <span className="text-xs font-bold text-gray-500 whitespace-nowrap">후반 (10-18홀)</span>
             <div className="flex-1 h-px bg-gray-200" />
+            {(() => {
+              const b = holes.filter(h => h.hole_number >= 10);
+              if (b.length === 0) return null;
+              const score = b.reduce((s, h) => s + h.total_strokes, 0);
+              const over = b.reduce((s, h) => s + h.over_par, 0);
+              const overStr = over === 0 ? '파' : over > 0 ? `+${over}` : `${over}`;
+              return <span className="text-xs text-gray-500 whitespace-nowrap">{score}타 {overStr}</span>;
+            })()}
           </div>
           {renderGrid(10, 18)}
         </div>
