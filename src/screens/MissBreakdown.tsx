@@ -1,12 +1,47 @@
 import { useState, useEffect } from 'react';
 import { ChevronLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { collectMissPatterns, type MissEntry } from '../lib/missPattern';
 import type { Hole } from '../types';
 
 interface Props {
   roundId: string;
   onBack: () => void;
+}
+
+interface MissEntry {
+  label: string;
+  count: number;
+}
+
+function parseMiss(raw: string): string[] {
+  if (!raw) return [];
+  return raw.split(',').map(s => s.trim()).filter(Boolean);
+}
+
+function collectMisses(raws: string[], canonicalOrder: string[]): MissEntry[] {
+  const counts: Record<string, number> = {};
+  for (const raw of raws) {
+    if (!raw) continue;
+    const items = parseMiss(raw);
+    if (items.length === 0) continue;
+    if (items.length === 1) {
+      counts[items[0]] = (counts[items[0]] ?? 0) + 1;
+    } else {
+      const sorted = [...items].sort((a, b) => {
+        const ai = canonicalOrder.indexOf(a);
+        const bi = canonicalOrder.indexOf(b);
+        if (ai === -1 && bi === -1) return a.localeCompare(b);
+        if (ai === -1) return 1;
+        if (bi === -1) return -1;
+        return ai - bi;
+      });
+      const key = sorted.join('+');
+      counts[key] = (counts[key] ?? 0) + 1;
+    }
+  }
+  return Object.entries(counts)
+    .map(([label, count]) => ({ label, count }))
+    .sort((a, b) => b.count - a.count);
 }
 
 const TEE_DIRECTION = ['풀', '훅', '푸쉬', '슬라이스'];
@@ -89,10 +124,10 @@ export default function MissBreakdown({ roundId, onBack }: Props) {
   ];
   const puttMisses = holes.map(h => h.putt_miss);
 
-  const teeAll = collectMissPatterns(teeMisses);
-  const secondAll = collectMissPatterns(secondMisses);
-  const approachAll = collectMissPatterns(approachMisses);
-  const puttAll = collectMissPatterns(puttMisses);
+  const teeAll = collectMisses(teeMisses, [...TEE_DIRECTION, ...TEE_CONTACT]);
+  const secondAll = collectMisses(secondMisses, [...SECOND_DIRECTION, ...SECOND_CONTACT]);
+  const approachAll = collectMisses(approachMisses, APPROACH_ALL);
+  const puttAll = collectMisses(puttMisses, PUTT_ALL);
 
   const teeDirection = filterEntries(teeAll, TEE_DIRECTION);
   const teeContact = filterEntries(teeAll, TEE_CONTACT);

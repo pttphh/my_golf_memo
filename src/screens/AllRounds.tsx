@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Trophy, TrendingUp } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { incrementMissPattern, missPatternKey } from '../lib/missPattern';
 import type { Round, Hole } from '../types';
 
 interface Props {
@@ -109,26 +108,29 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
   const allBestData = data.length > 0 ? data.reduce((best, d) => d.totalStrokes < best.totalStrokes ? d : best) : null;
   const last6BestData = last6.length > 0 ? last6.reduce((best, d) => d.totalStrokes < best.totalStrokes ? d : best) : null;
 
-  // Miss analysis (패턴 단위: "풀, 훅" → "풀+훅" 1회)
+  // Miss analysis
   const missCountMap: Record<string, number> = {};
   const clubMissRaw: Record<string, number> = { '드라이버': 0, '아이언': 0, '어프로치': 0, '퍼터': 0 };
 
   for (const d of last6) {
+    const seenMiss = new Set<string>();
     for (const h of d.holes) {
-      for (const raw of [
-        h.tee_miss, h.second1_miss, h.second2_miss, h.second3_miss,
-        h.approach1_miss, h.approach2_miss, h.putt_miss,
-      ]) {
-        incrementMissPattern(missCountMap, raw);
+      for (const raw of [h.tee_miss, h.second1_miss, h.second2_miss, h.second3_miss, h.approach1_miss, h.approach2_miss]) {
+        if (!raw) continue;
+        for (const m of raw.split(',').map(s => s.trim()).filter(Boolean)) seenMiss.add(m);
       }
-      if (missPatternKey(h.tee_miss)) clubMissRaw['드라이버'] += 1;
-      for (const raw of [h.second1_miss, h.second2_miss, h.second3_miss]) {
-        if (missPatternKey(raw)) clubMissRaw['아이언'] += 1;
+    }
+    for (const m of seenMiss) missCountMap[m] = (missCountMap[m] ?? 0) + 1;
+
+    for (const h of d.holes) {
+      if (h.tee_miss) clubMissRaw['드라이버'] += h.tee_miss.split(',').filter(Boolean).length;
+      for (const m of [h.second1_miss, h.second2_miss, h.second3_miss].filter(Boolean)) {
+        clubMissRaw['아이언'] += (m as string).split(',').filter(Boolean).length;
       }
-      for (const raw of [h.approach1_miss, h.approach2_miss]) {
-        if (missPatternKey(raw)) clubMissRaw['어프로치'] += 1;
+      for (const m of [h.approach1_miss, h.approach2_miss].filter(Boolean)) {
+        clubMissRaw['어프로치'] += (m as string).split(',').filter(Boolean).length;
       }
-      if (missPatternKey(h.putt_miss)) clubMissRaw['퍼터'] += 1;
+      if (h.putt_miss) clubMissRaw['퍼터'] += h.putt_miss.split(',').filter(Boolean).length;
     }
   }
 
