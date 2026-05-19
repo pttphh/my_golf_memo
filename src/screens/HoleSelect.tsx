@@ -30,7 +30,6 @@ export default function HoleSelect({ roundId, onBack, onConfirm, onEditHole, onC
     fetch();
   }, [roundId]);
 
-  const savedNums = new Set(holes.map(h => h.hole_number));
   const isComplete = holes.length >= 18;
   const nextHole = isComplete ? null : (
     holes.length === 0 ? 1 : Math.max(...holes.map(h => h.hole_number)) + 1
@@ -76,6 +75,60 @@ export default function HoleSelect({ roundId, onBack, onConfirm, onEditHole, onC
     );
   }
 
+  function renderGrid(start: number, end: number) {
+    return (
+      <div className="grid grid-cols-3 gap-3">
+        {Array.from({ length: end - start + 1 }, (_, i) => start + i).map(num => {
+          const hole = holes.find(h => h.hole_number === num);
+          const idx = holes.findIndex(h => h.hole_number === num);
+          const isSelected = idx >= 0 && selected.has(idx);
+
+          // 미입력 홀 — 클릭하면 입력 가능
+          if (!hole) {
+            return (
+              <button
+                key={num}
+                onClick={() => onEditHole(num)}
+                className="rounded-2xl border-2 border-dashed border-gray-300 p-3 text-center active:scale-95 transition-all hover:border-[#1a6b3a] hover:bg-green-50"
+              >
+                <p className="text-xs font-semibold text-gray-400 mb-1">{num}홀</p>
+                <p className="text-sm text-gray-300 mb-1">-</p>
+                <p className="text-[9px] text-gray-300">탭하여 입력</p>
+              </button>
+            );
+          }
+
+          const overPar = hole.over_par;
+          const overStr = overPar > 0 ? `+${overPar}` : overPar === 0 ? 'E' : `${overPar}`;
+
+          return (
+            <div key={num} className="relative">
+              <button
+                onClick={() => onEditHole(num)}
+                className={`w-full rounded-2xl border-2 p-3 text-center transition-all active:scale-95 ${scoreBg(overPar, isSelected)}`}
+              >
+                <p className={`text-xs font-semibold mb-0.5 ${isSelected ? 'text-white' : 'text-gray-500'}`}>{num}홀</p>
+                <p className={`text-lg font-extrabold leading-none ${isSelected ? 'text-white' : scoreColor(overPar)}`}>
+                  {overStr}
+                </p>
+                <p className={`text-[10px] mt-1 ${isSelected ? 'text-green-100' : 'text-gray-400'}`}>
+                  🟢 {hole.green_shots}온 · {hole.putts}퍼팅
+                </p>
+                <p className={`text-[9px] mt-0.5 font-medium ${isSelected ? 'text-green-100' : 'text-gray-300'}`}>탭하여 수정</p>
+              </button>
+              <button
+                onClick={e => { e.stopPropagation(); idx >= 0 && toggle(idx); }}
+                className={`absolute top-1.5 right-1.5 w-4 h-4 rounded-full border flex items-center justify-center transition-all ${isSelected ? 'bg-white border-white' : 'bg-white/80 border-gray-300'}`}
+              >
+                {isSelected && <div className="w-2 h-2 rounded-full bg-[#1a6b3a]" />}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <div className="bg-[#1a6b3a] text-white px-4 pt-4 pb-5">
@@ -90,7 +143,7 @@ export default function HoleSelect({ roundId, onBack, onConfirm, onEditHole, onC
       </div>
 
       <div className="flex-1 px-4 py-5 space-y-4 pb-36">
-        {/* 이어서 입력하기 버튼 */}
+        {/* 이어서 입력하기 — 18홀 미완료 시만 표시 */}
         {!isComplete && nextHole !== null && (
           <button
             onClick={() => onContinue(nextHole)}
@@ -108,55 +161,23 @@ export default function HoleSelect({ roundId, onBack, onConfirm, onEditHole, onC
           )}
         </div>
 
-        {holes.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center text-gray-400">
-            <p className="text-sm">저장된 홀 기록이 없습니다</p>
+        {/* 전반 */}
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xs font-bold text-gray-500">전반 (1-9홀)</span>
+            <div className="flex-1 h-px bg-gray-200" />
           </div>
-        ) : (
-          <div className="grid grid-cols-3 gap-3">
-            {Array.from({ length: 18 }, (_, i) => i + 1).map(num => {
-              const hole = holes.find(h => h.hole_number === num);
-              const idx = holes.findIndex(h => h.hole_number === num);
-              const isSelected = idx >= 0 && selected.has(idx);
+          {renderGrid(1, 9)}
+        </div>
 
-              if (!hole) {
-                return (
-                  <div key={num} className="rounded-2xl border-2 border-dashed border-gray-200 p-3 text-center opacity-40">
-                    <p className="text-xs font-semibold text-gray-400 mb-1">{num}홀</p>
-                    <p className="text-sm text-gray-300">-</p>
-                  </div>
-                );
-              }
-
-              const overPar = hole.over_par;
-              const overStr = overPar > 0 ? `+${overPar}` : overPar === 0 ? 'E' : `${overPar}`;
-
-              return (
-                <div key={num} className="relative">
-                  <button
-                    onClick={() => onEditHole(num)}
-                    className={`w-full rounded-2xl border-2 p-3 text-center transition-all active:scale-95 ${scoreBg(overPar, isSelected)}`}
-                  >
-                    <p className={`text-xs font-semibold mb-0.5 ${isSelected ? 'text-white' : 'text-gray-500'}`}>{num}홀</p>
-                    <p className={`text-lg font-extrabold leading-none ${isSelected ? 'text-white' : scoreColor(overPar)}`}>
-                      {overStr}
-                    </p>
-                    <p className={`text-[10px] mt-0.5 ${isSelected ? 'text-green-100' : 'text-gray-400'}`}>
-                      {hole.total_strokes}타 / 파{hole.par}
-                    </p>
-                    <p className={`text-[9px] mt-1 font-medium ${isSelected ? 'text-green-100' : 'text-gray-300'}`}>탭하여 수정</p>
-                  </button>
-                  <button
-                    onClick={e => { e.stopPropagation(); idx >= 0 && toggle(idx); }}
-                    className={`absolute top-1.5 right-1.5 w-4 h-4 rounded-full border flex items-center justify-center transition-all ${isSelected ? 'bg-white border-white' : 'bg-white/80 border-gray-300'}`}
-                  >
-                    {isSelected && <div className="w-2 h-2 rounded-full bg-[#1a6b3a]" />}
-                  </button>
-                </div>
-              );
-            })}
+        {/* 후반 */}
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xs font-bold text-gray-500">후반 (10-18홀)</span>
+            <div className="flex-1 h-px bg-gray-200" />
           </div>
-        )}
+          {renderGrid(10, 18)}
+        </div>
       </div>
 
       {selected.size > 0 && (
