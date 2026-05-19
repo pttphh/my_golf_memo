@@ -93,7 +93,7 @@ export default function HoleSelect({ roundId, onBack, onConfirm: _onConfirm, onE
           }
 
           const overPar = hole.over_par;
-          const overStr = overPar > 0 ? `+${overPar}` : overPar === 0 ? 'E' : `${overPar}`;
+          const overStr = overPar > 0 ? `+${overPar}` : overPar === 0 ? '파' : `${overPar}`;
           const { ob, hazard } = getPenalties(hole);
 
           return (

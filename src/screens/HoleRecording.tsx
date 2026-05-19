@@ -593,6 +593,7 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
   async function handleSave(goNext: boolean) {
     setSaving(true);
     await upsertHole(hole);
+    setSavedHoles(prev => ({ ...prev, [holeNumber]: hole }));
     setSaving(false);
     if (goNext && holeNumber === 18) {
       onFinish();
@@ -601,26 +602,41 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
     setCurrentHoleIndex(goNext ? currentHoleIndex + 1 : currentHoleIndex - 1);
   }
 
-  // Header stats from savedHoles + current hole
-  const allKnown = { ...savedHoles, [holeNumber]: hole };
-  const completedEntries = Object.values(allKnown).filter(h => h.hole_number < holeNumber);
-  const completedScore = completedEntries.reduce((s, h) => s + h.total_strokes, 0);
-  const completedPar = completedEntries.reduce((s, h) => s + h.par, 0);
-  const totalScore = completedScore + hole.total_strokes;
-  const totalOver = totalScore - completedPar - hole.par;
+  // Header stats: savedHoles holds previously saved holes (excluding current)
+  // current hole is always included live in calculations
   const overPar = hole.over_par;
 
-  const front9Entries = Object.values(allKnown).filter(h => h.hole_number <= 9);
-  const front9Score = front9Entries.reduce((s, h) => s + h.total_strokes, 0);
-  const front9Par = front9Entries.reduce((s, h) => s + h.par, 0);
-  const front9Over = front9Score - front9Par;
-  const front9Done = currentHoleIndex >= 9;
+  // All holes to consider for total: saved previous holes + current hole
+  const savedList = Object.values(savedHoles).filter(h => h.hole_number !== holeNumber);
+  const allLive = [...savedList, hole];
 
-  const back9Entries = Object.values(allKnown).filter(h => h.hole_number >= 10);
-  const back9Score = back9Entries.reduce((s, h) => s + h.total_strokes, 0);
-  const back9Par = back9Entries.reduce((s, h) => s + h.par, 0);
+  const totalScore = allLive.reduce((s, h) => s + h.total_strokes, 0);
+  const totalPar = allLive.reduce((s, h) => s + h.par, 0);
+  const totalOver = totalScore - totalPar;
+
+  const isBackNine = holeNumber >= 10;
+
+  // Front9: if currently in front9, show live (saved front9 + current); if in back9, show fixed final
+  const front9Saved = savedList.filter(h => h.hole_number <= 9);
+  const front9Score = isBackNine
+    ? front9Saved.reduce((s, h) => s + h.total_strokes, 0)
+    : [...front9Saved, hole].reduce((s, h) => s + h.total_strokes, 0);
+  const front9Par = isBackNine
+    ? front9Saved.reduce((s, h) => s + h.par, 0)
+    : [...front9Saved, hole].reduce((s, h) => s + h.par, 0);
+  const front9Over = front9Score - front9Par;
+  const front9Done = isBackNine;
+
+  // Back9: live only when in back9
+  const back9Saved = savedList.filter(h => h.hole_number >= 10);
+  const back9Score = isBackNine
+    ? [...back9Saved, hole].reduce((s, h) => s + h.total_strokes, 0)
+    : back9Saved.reduce((s, h) => s + h.total_strokes, 0);
+  const back9Par = isBackNine
+    ? [...back9Saved, hole].reduce((s, h) => s + h.par, 0)
+    : back9Saved.reduce((s, h) => s + h.par, 0);
   const back9Over = back9Score - back9Par;
-  const back9Started = currentHoleIndex >= 9;
+  const back9Started = isBackNine;
 
   const progressFraction = currentHoleIndex / 18;
 
