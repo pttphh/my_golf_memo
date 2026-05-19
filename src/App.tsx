@@ -119,10 +119,7 @@ export default function App() {
             <HoleSelect
               roundId={currentRound.id}
               onBack={() => setScreen('round-summary')}
-              onConfirm={indices => {
-                setSelectedHoleIndices(indices);
-                setScreen('hole-detail');
-              }}
+              onConfirm={() => {}}
               onEditHole={holeNumber => {
                 setEditHoleNumber(holeNumber);
                 setScreen('hole-edit');
