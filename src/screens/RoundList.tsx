@@ -11,7 +11,7 @@ interface RoundSummary {
   totalStrokes: number;
   overPar: number;
   threePuttPlus: number;
-  gir: number;
+  doubleOrWorse: number;
   penalties: number;
 }
 
@@ -32,7 +32,7 @@ export default function RoundList({ onRoundSelect }: Props) {
 
       const { data: allHoles } = await supabase
         .from('holes')
-        .select('round_id, par, total_strokes, putts, green_shots, tee_penalty_type, second1_penalty_type, second2_penalty_type, second3_penalty_type')
+        .select('round_id, par, total_strokes, over_par, putts, tee_penalty_type, second1_penalty_type, second2_penalty_type, second3_penalty_type')
         .in('round_id', roundRows.map(r => r.id));
 
       type HoleRow = typeof allHoles extends (infer T)[] | null ? T : never;
@@ -47,7 +47,7 @@ export default function RoundList({ onRoundSelect }: Props) {
         const totalStrokes = hs.reduce((s, h) => s + h.total_strokes, 0);
         const totalPar = hs.reduce((s, h) => s + h.par, 0);
         const threePuttPlus = hs.filter(h => h.putts >= 3).length;
-        const gir = hs.filter(h => h.green_shots > 0 && h.green_shots <= h.par - 2).length;
+        const doubleOrWorse = hs.filter(h => h.over_par >= 2).length;
         const penalties = hs.reduce((s, h) => {
           let pen = 0;
           for (const p of [h.tee_penalty_type, h.second1_penalty_type, h.second2_penalty_type, h.second3_penalty_type]) {
@@ -56,7 +56,7 @@ export default function RoundList({ onRoundSelect }: Props) {
           }
           return s + pen;
         }, 0);
-        return { round: r as Round, totalStrokes, overPar: totalStrokes - totalPar, threePuttPlus, gir, penalties };
+        return { round: r as Round, totalStrokes, overPar: totalStrokes - totalPar, threePuttPlus, doubleOrWorse, penalties };
       }));
       setLoading(false);
     }
@@ -109,8 +109,8 @@ export default function RoundList({ onRoundSelect }: Props) {
                   <p className="text-sm font-bold text-orange-500 mt-0.5">{s.threePuttPlus}회</p>
                 </div>
                 <div className="text-center border-x border-gray-100">
-                  <p className="text-xs text-gray-400">GIR</p>
-                  <p className="text-sm font-bold text-[#1a6b3a] mt-0.5">{s.gir}/18</p>
+                  <p className="text-xs text-gray-400">더블↑</p>
+                  <p className="text-sm font-bold text-orange-600 mt-0.5">{s.doubleOrWorse}/18</p>
                 </div>
                 <div className="text-center">
                   <p className="text-xs text-gray-400">벌타</p>
