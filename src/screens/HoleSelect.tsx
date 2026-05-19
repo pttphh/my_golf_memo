@@ -11,20 +11,19 @@ interface Props {
   onContinue: (holeNumber: number) => void;
 }
 
-const OB_VALUES = new Set(['OB']);
-const HAZ_VALUES = new Set(['해저드']);
-
-function getPenaltyType(hole: Hole): 'OB' | '해저드' | null {
+function getPenalties(hole: Hole): { ob: boolean; hazard: boolean } {
+  let ob = false;
+  let hazard = false;
   for (const p of [
     hole.tee_penalty_type,
     hole.second1_penalty_type,
     hole.second2_penalty_type,
     hole.second3_penalty_type,
   ]) {
-    if (OB_VALUES.has(p)) return 'OB';
-    if (HAZ_VALUES.has(p)) return '해저드';
+    if (p === 'OB') ob = true;
+    if (p === '해저드') hazard = true;
   }
-  return null;
+  return { ob, hazard };
 }
 
 function scoreColor(overPar: number) {
@@ -95,7 +94,7 @@ export default function HoleSelect({ roundId, onBack, onConfirm: _onConfirm, onE
 
           const overPar = hole.over_par;
           const overStr = overPar > 0 ? `+${overPar}` : overPar === 0 ? 'E' : `${overPar}`;
-          const penalty = getPenaltyType(hole);
+          const { ob, hazard } = getPenalties(hole);
 
           return (
             <button
@@ -110,11 +109,12 @@ export default function HoleSelect({ roundId, onBack, onConfirm: _onConfirm, onE
               <p className="text-[10px] mt-1 text-gray-400">
                 {hole.green_shots}온 · {hole.putts}퍼팅
               </p>
-              {penalty === 'OB' && (
-                <p className="text-[9px] font-bold text-red-500 mt-0.5">OB</p>
-              )}
-              {penalty === '해저드' && (
-                <p className="text-[9px] font-bold text-orange-500 mt-0.5">해저드</p>
+              {(ob || hazard) && (
+                <div className="flex items-center justify-center gap-1 mt-0.5">
+                  {ob && <span className="text-[9px] font-bold text-red-500">OB</span>}
+                  {ob && hazard && <span className="text-[9px] text-gray-300">·</span>}
+                  {hazard && <span className="text-[9px] font-bold text-orange-500">해저드</span>}
+                </div>
               )}
             </button>
           );
