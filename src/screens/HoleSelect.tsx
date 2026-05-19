@@ -60,8 +60,9 @@ export default function HoleSelect({ roundId, onBack, onConfirm: _onConfirm, onE
   }, [roundId]);
 
   const isComplete = holes.length >= 18;
+  const savedNumbers = new Set(holes.map(h => h.hole_number));
   const nextHole = isComplete ? null : (
-    holes.length === 0 ? 1 : Math.max(...holes.map(h => h.hole_number)) + 1
+    Array.from({ length: 18 }, (_, i) => i + 1).find(n => !savedNumbers.has(n)) ?? null
   );
 
   if (loading) {
