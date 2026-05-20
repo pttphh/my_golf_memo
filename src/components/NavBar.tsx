@@ -13,8 +13,8 @@ const TABS: { id: NavTab; label: string }[] = [
 
 export default function NavBar({ activeTab, onTabChange }: Props) {
   return (
-    <div className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm safe-top">
-      <div className="flex items-center px-4 pt-3 pb-0">
+    <div className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+      <div className="flex items-center px-4 pb-0">
         <div className="flex items-center gap-1.5 pb-3">
           <div className="w-6 h-6 rounded-full bg-[#1a6b3a] flex items-center justify-center">
             <div className="w-3 h-3 rounded-full border-2 border-white" />

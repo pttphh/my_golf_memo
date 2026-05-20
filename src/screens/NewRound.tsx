@@ -82,7 +82,7 @@ export default function NewRound({ onStart }: Props) {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <div className="bg-[#1a6b3a] text-white px-4 pt-4 pb-6">
+      <div className="bg-[#1a6b3a] text-white px-4 pb-6" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <h1 className="text-2xl font-bold tracking-tight">새 라운드</h1>
         <p className="text-green-200 text-sm mt-1">라운드 정보를 입력하세요</p>
       </div>
@@ -91,13 +91,14 @@ export default function NewRound({ onStart }: Props) {
         {/* Date & Time */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-4">
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">날짜 & 시간</h2>
-          <div>
+          <div style={{ overflow: 'hidden', width: '100%' }}>
             <label className="block text-xs text-gray-500 mb-1">날짜</label>
             <input
               type="date"
               value={date}
               onChange={e => setDate(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a6b3a]/30 focus:border-[#1a6b3a]"
+              style={{ width: '100%', boxSizing: 'border-box' }}
+              className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a6b3a]/30 focus:border-[#1a6b3a]"
             />
           </div>
           <div>

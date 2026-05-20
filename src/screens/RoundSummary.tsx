@@ -155,7 +155,7 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
       )}
 
       <div className="min-h-screen bg-gray-50 flex flex-col">
-        <div className="bg-[#1a6b3a] text-white px-4 pt-4 pb-6">
+        <div className="bg-[#1a6b3a] text-white px-4 pb-6" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
           <p className="text-green-200 text-xs mb-1">{round.date} · {round.time}</p>
           <h2 className="text-xl font-bold">{round.course_name}</h2>
           {(round.course_front || round.course_back) && (

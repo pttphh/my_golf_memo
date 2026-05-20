@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ChevronLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { collectMissPatterns } from '../lib/missPattern';
 import type { Hole } from '../types';
 
 interface Props {
@@ -13,32 +14,7 @@ interface MissEntry {
   count: number;
 }
 
-function parseMiss(raw: string): string[] {
-  if (!raw) return [];
-  return raw.split(',').map(s => s.trim()).filter(Boolean);
-}
-
-function collectMisses(raws: string[], canonicalOrder: string[]): MissEntry[] {
-  const counts: Record<string, number> = {};
-  for (const raw of raws) {
-    if (!raw) continue;
-    const items = parseMiss(raw);
-    if (items.length === 0) continue;
-    if (items.length === 1) {
-      counts[items[0]] = (counts[items[0]] ?? 0) + 1;
-    } else {
-      const sorted = [...items].sort((a, b) => {
-        const ai = canonicalOrder.indexOf(a);
-        const bi = canonicalOrder.indexOf(b);
-        if (ai === -1 && bi === -1) return a.localeCompare(b);
-        if (ai === -1) return 1;
-        if (bi === -1) return -1;
-        return ai - bi;
-      });
-      const key = sorted.join('+');
-      counts[key] = (counts[key] ?? 0) + 1;
-    }
-  }
+function toMissEntries(counts: Record<string, number>): MissEntry[] {
   return Object.entries(counts)
     .map(([label, count]) => ({ label, count }))
     .sort((a, b) => b.count - a.count);
@@ -48,9 +24,6 @@ const TEE_DIRECTION = ['풀', '훅', '푸쉬', '슬라이스'];
 const TEE_CONTACT = ['뒤땅', '탑볼', '뽕샷', '기타'];
 const SECOND_DIRECTION = ['풀', '훅', '푸쉬', '슬라이스'];
 const SECOND_CONTACT = ['뒤땅', '탑볼', '생크', '벙커 실패', '기타'];
-const APPROACH_ALL = ['오버', '숏', '뒤땅', '탑볼', '생크', '벙커 실패', '기타'];
-const PUTT_ALL = ['숏퍼팅 미스', '거리감 미스'];
-
 function filterEntries(entries: MissEntry[], canonicalItems: string[]): MissEntry[] {
   return entries.filter(e => {
     const parts = e.label.split('+');
@@ -124,10 +97,10 @@ export default function MissBreakdown({ roundId, onBack }: Props) {
   ];
   const puttMisses = holes.map(h => h.putt_miss);
 
-  const teeAll = collectMisses(teeMisses, [...TEE_DIRECTION, ...TEE_CONTACT]);
-  const secondAll = collectMisses(secondMisses, [...SECOND_DIRECTION, ...SECOND_CONTACT]);
-  const approachAll = collectMisses(approachMisses, APPROACH_ALL);
-  const puttAll = collectMisses(puttMisses, PUTT_ALL);
+  const teeAll = toMissEntries(collectMissPatterns(teeMisses));
+  const secondAll = toMissEntries(collectMissPatterns(secondMisses));
+  const approachAll = toMissEntries(collectMissPatterns(approachMisses));
+  const puttAll = toMissEntries(collectMissPatterns(puttMisses));
 
   const teeDirection = filterEntries(teeAll, TEE_DIRECTION);
   const teeContact = filterEntries(teeAll, TEE_CONTACT);
@@ -157,7 +130,7 @@ export default function MissBreakdown({ roundId, onBack }: Props) {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <div className="bg-[#1a6b3a] text-white px-4 pt-10 pb-5">
+      <div className="bg-[#1a6b3a] text-white px-4 pb-5" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <button onClick={onBack} className="flex items-center gap-1 text-green-200 text-sm mb-3 active:opacity-70">
           <ChevronLeft size={16} />
           라운드 요약으로

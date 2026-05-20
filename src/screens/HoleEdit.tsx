@@ -373,7 +373,7 @@ export default function HoleEdit({ round, holeNumber, onBack }: Props) {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <div className="bg-[#1a6b3a] text-white px-4 pt-4 pb-5">
+      <div className="bg-[#1a6b3a] text-white px-4 pb-5" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <button onClick={onBack} className="flex items-center gap-1.5 text-green-200 text-sm mb-3 active:opacity-70">
           <ChevronLeft size={16} /> 홀 목록으로
         </button>
