@@ -14,15 +14,15 @@ interface Props {
 
 function StatCard({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: string | number; sub?: string }) {
   return (
-    <div className="bg-white rounded-2xl p-3.5 border border-gray-100 shadow-sm flex flex-col gap-2">
+    <div className="bg-card rounded-2xl p-3.5 border border-gray-100 shadow-sm flex flex-col gap-2">
       <div className="flex items-center gap-2">
-        <div className="w-7 h-7 rounded-lg bg-green-50 flex items-center justify-center text-[#1a6b3a] flex-shrink-0">
+        <div className="w-7 h-7 rounded-lg bg-green-50 flex items-center justify-center text-[#1B4332] flex-shrink-0">
           {icon}
         </div>
         <p className="text-xs text-gray-500 leading-tight">{label}</p>
       </div>
       <p className="text-xl font-bold text-gray-800 leading-none">{value}</p>
-      {sub && <p className="text-[11px] text-gray-400">{sub}</p>}
+      {sub && <p className="text-[11px] text-gray-500">{sub}</p>}
     </div>
   );
 }
@@ -31,22 +31,22 @@ function DeleteModal({ onConfirm, onCancel, deleting }: { onConfirm: () => void;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-6">
       <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
-      <div className="relative bg-white rounded-2xl shadow-2xl p-6 w-full max-w-[340px]">
+      <div className="relative bg-card rounded-2xl shadow-2xl p-6 w-full max-w-[340px]">
         <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
           <Trash2 size={22} className="text-red-500" />
         </div>
-        <h3 className="text-base font-bold text-gray-800 text-center mb-2">라운드 삭제</h3>
+        <h3 className="text-base font-bold text-gray-800 text-center mb-2">??????? ?????</h3>
         <p className="text-sm text-gray-500 text-center leading-relaxed mb-6">
-          이 라운드를 삭제하시겠습니까?<br />삭제된 데이터는 복구할 수 없습니다.
+          ? ???????? ?????????????????????<br />??????? ???????? ????? ??? ????????????.
         </p>
         <div className="flex gap-3">
           <button onClick={onCancel} disabled={deleting}
             className="flex-1 py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold text-sm active:scale-95 transition-transform disabled:opacity-50">
-            취소
+            ????
           </button>
           <button onClick={onConfirm} disabled={deleting}
             className="flex-1 py-3 rounded-xl bg-red-500 text-white font-bold text-sm active:scale-95 transition-transform disabled:opacity-50">
-            {deleting ? '삭제 중...' : '삭제'}
+            {deleting ? '????? ??...' : '?????'}
           </button>
         </div>
       </div>
@@ -98,7 +98,7 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
   const totalPutts = holes.reduce((s, h) => s + h.putts, 0);
   const threePuttPlus = holes.filter(h => h.putts >= 3).length;
 
-  const PENALTY_MAP: Record<string, number> = { OB: 2, '해저드': 1 };
+  const PENALTY_MAP: Record<string, number> = { OB: 2, '????????': 1 };
   const penalties = holes.reduce((s, h) => {
     let pen = 0;
     for (const p of [h.tee_penalty_type, h.second1_penalty_type, h.second2_penalty_type, h.second3_penalty_type]) {
@@ -115,7 +115,7 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
   const doubleOrWorse = holes.filter(h => h.over_par >= 2).length;
   const par3Holes = holes.filter(h => h.par === 3).length;
   const fairwayDenom = 18 - par3Holes;
-  const fairwayHits = holes.filter(h => h.par !== 3 && h.tee_result === '페어웨이').length;
+  const fairwayHits = holes.filter(h => h.par !== 3 && h.tee_result === '??????????').length;
   const fairwayPct = fairwayDenom > 0 ? Math.round((fairwayHits / fairwayDenom) * 100) : 0;
 
   async function handleSave() {
@@ -138,8 +138,8 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-400 text-sm">불러오는 중...</p>
+      <div className="min-h-screen bg-surface flex items-center justify-center">
+        <p className="text-gray-500 text-sm">??????????? ??...</p>
       </div>
     );
   }
@@ -154,36 +154,36 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
         />
       )}
 
-      <div className="min-h-screen bg-gray-50 flex flex-col">
-        <div className="bg-[#1a6b3a] text-white px-4 pb-6" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-          <p className="text-green-200 text-xs mb-1">{round.date} · {round.time}</p>
+      <div className="min-h-screen bg-surface flex flex-col">
+        <div className="bg-[#1B4332] text-white px-4 pt-4 pb-4">
+          <p className="text-green-200 text-xs mb-1">{round.date} � {round.time}</p>
           <h2 className="text-xl font-bold">{round.course_name}</h2>
           {(round.course_front || round.course_back) && (
             <div className="flex gap-2 mt-1.5">
               {round.course_front && (
-                <span className="text-xs bg-green-800/50 text-green-200 px-2 py-0.5 rounded-full">전반 {round.course_front}</span>
+                <span className="text-xs bg-green-800/50 text-green-200 px-2 py-0.5 rounded-full">???? {round.course_front}</span>
               )}
               {round.course_back && (
-                <span className="text-xs bg-green-800/50 text-green-200 px-2 py-0.5 rounded-full">후반 {round.course_back}</span>
+                <span className="text-xs bg-green-800/50 text-green-200 px-2 py-0.5 rounded-full">????? {round.course_back}</span>
               )}
             </div>
           )}
           {holes.length === 0 ? (
-            <p className="mt-4 text-green-200 text-sm">홀 기록이 없습니다.</p>
+            <p className="mt-4 text-green-200 text-sm">??? ??? ????????????.</p>
           ) : (
             <>
               <div className="mt-4 flex items-end gap-3">
-                <span className="text-5xl font-extrabold">{totalStrokes}타</span>
-                <span className="text-green-200 text-xl font-semibold pb-1">{overSign} 오버파</span>
+                <span className="text-5xl font-extrabold">{totalStrokes}???</span>
+                <span className="text-green-200 text-xl font-semibold pb-1">{overSign} ????????</span>
               </div>
               <div className="mt-4 flex gap-3">
                 <div className="flex-1 bg-green-800/50 rounded-xl p-3 text-center">
-                  <p className="text-green-200 text-xs mb-1">전반 (1-9홀)</p>
+                  <p className="text-green-200 text-xs mb-1">???? (1-9???)</p>
                   <p className="text-white font-bold text-xl">{front9Score}</p>
                   <p className="text-green-300 text-sm">{f9Sign}</p>
                 </div>
                 <div className="flex-1 bg-green-800/50 rounded-xl p-3 text-center">
-                  <p className="text-green-200 text-xs mb-1">후반 (10-18홀)</p>
+                  <p className="text-green-200 text-xs mb-1">????? (10-18???)</p>
                   <p className="text-white font-bold text-xl">{back9Score}</p>
                   <p className="text-green-300 text-sm">{b9Sign}</p>
                 </div>
@@ -195,15 +195,15 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
         <div className="px-4 py-5 space-y-5">
           {holes.length > 0 && (
             <>
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-                <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">홀별 결과 분포</h3>
+              <div className="bg-card rounded-2xl border border-gray-100 shadow-sm p-4">
+                <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">????? ?? ???</h3>
                 <div className="grid grid-cols-5 gap-1">
                   {[
-                    { label: '버디↓', count: scoreDist.birdie, color: 'bg-blue-500', text: 'text-blue-600' },
-                    { label: '파', count: scoreDist.par, color: 'bg-[#1a6b3a]', text: 'text-[#1a6b3a]' },
-                    { label: '보기', count: scoreDist.bogey, color: 'bg-yellow-400', text: 'text-yellow-600' },
-                    { label: '더블', count: scoreDist.double, color: 'bg-orange-400', text: 'text-orange-600' },
-                    { label: '트리플↑', count: scoreDist.triple, color: 'bg-red-500', text: 'text-red-600' },
+                    { label: '????????', count: scoreDist.birdie, color: 'bg-blue-500', text: 'text-blue-600' },
+                    { label: '???', count: scoreDist.par, color: 'bg-[#1B4332]', text: 'text-[#1B4332]' },
+                    { label: '??', count: scoreDist.bogey, color: 'bg-yellow-400', text: 'text-yellow-600' },
+                    { label: '????', count: scoreDist.double, color: 'bg-orange-400', text: 'text-orange-600' },
+                    { label: '??????????', count: scoreDist.triple, color: 'bg-red-500', text: 'text-red-600' },
                   ].map(({ label, count, color, text }) => (
                     <div key={label} className="flex flex-col items-center gap-1">
                       <div className={`w-full rounded-xl py-2.5 text-white text-center font-extrabold text-xl ${color}`}>{count}</div>
@@ -214,25 +214,25 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <StatCard icon={<Flag size={16} />} label="페어웨이 안착률" value={`${fairwayHits} / ${fairwayDenom}`} sub={`${fairwayPct}%`} />
-                <StatCard icon={<Trophy size={16} />} label="GIR" value={`${gir} / 18`} sub="그린 적중 홀" />
-                <StatCard icon={<Target size={16} />} label="3퍼팅+" value={`${threePuttPlus}홀`} sub="3퍼팅 이상" />
-                <StatCard icon={<Target size={16} />} label="총 퍼팅" value={`${totalPutts}개`} />
-                <StatCard icon={<TrendingDown size={16} />} label="더블 이상" value={`${doubleOrWorse} / 18`} sub="더블보기 이상" />
-                <StatCard icon={<AlertTriangle size={16} />} label="벌타 손실" value={`${penalties}타`} sub="OB×2, 해저드×1" />
+                <StatCard icon={<Flag size={16} />} label="?????????? ?????" value={`${fairwayHits} / ${fairwayDenom}`} sub={`${fairwayPct}%`} />
+                <StatCard icon={<Trophy size={16} />} label="GIR" value={`${gir} / 18`} sub="?? ??? ???" />
+                <StatCard icon={<Target size={16} />} label="3????+" value={`${threePuttPlus}???`} sub="3???? ????" />
+                <StatCard icon={<Target size={16} />} label="? ????" value={`${totalPutts}??`} />
+                <StatCard icon={<TrendingDown size={16} />} label="???? ????" value={`${doubleOrWorse} / 18`} sub="?????? ????" />
+                <StatCard icon={<AlertTriangle size={16} />} label="????? ??????" value={`${penalties}???`} sub="OB??2, ??????????1" />
               </div>
 
               <button onClick={onMissBreakdown}
-                className="w-full bg-white border-2 border-[#1a6b3a]/30 text-[#1a6b3a] py-3.5 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                className="w-full bg-white border-2 border-[#1B4332]/30 text-[#1B4332] py-3.5 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
                 <BarChart2 size={16} />
-                미스 유형 집계 보기
+                ???? ?????? ???? ??
                 <ChevronRight size={14} />
               </button>
 
               <button onClick={onViewHoles}
-                className="w-full bg-white border-2 border-[#1a6b3a]/30 text-[#1a6b3a] py-3.5 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                className="w-full bg-white border-2 border-[#1B4332]/30 text-[#1B4332] py-3.5 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
                 <List size={16} />
-                각 홀 기록 보기
+                ? ??? ?? ??
                 <ChevronRight size={14} />
               </button>
             </>
@@ -240,14 +240,14 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
 
           {viewMode === 'recording' ? (
             <button onClick={handleSave} disabled={saving}
-              className="w-full bg-[#1a6b3a] text-white py-4 rounded-2xl font-bold text-base active:scale-95 transition-transform disabled:opacity-60 shadow-lg shadow-green-900/20">
-              {saving ? '저장 중...' : '라운드 저장 완료'}
+              className="w-full bg-[#1B4332] text-white py-4 rounded-2xl font-bold text-base active:scale-95 transition-transform disabled:opacity-60 shadow-lg shadow-green-900/20">
+              {saving ? '????? ??...' : '??????? ????? ?????'}
             </button>
           ) : (
             <button onClick={() => setShowDeleteModal(true)}
               className="w-full bg-white border-2 border-red-400 text-red-500 py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-2 active:scale-95 transition-transform">
               <Trash2 size={18} />
-              이 라운드 삭제
+              ? ??????? ?????
             </button>
           )}
         </div>

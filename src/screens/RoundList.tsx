@@ -66,7 +66,7 @@ export default function RoundList({ onRoundSelect }: Props) {
   if (loading) {
     return (
       <div className="min-h-[50vh] flex items-center justify-center">
-        <p className="text-gray-400 text-sm">불러오는 중...</p>
+        <p className="text-gray-500 text-sm">불러오는 중...</p>
       </div>
     );
   }
@@ -74,9 +74,9 @@ export default function RoundList({ onRoundSelect }: Props) {
   return (
     <div className="px-4 py-5 space-y-3">
       {rounds.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center">
-          <p className="text-gray-400 text-sm">저장된 라운드가 없습니다</p>
-          <p className="text-gray-300 text-xs mt-1">새 라운드를 시작해보세요</p>
+        <div className="bg-card rounded-2xl border border-gray-100 p-10 text-center">
+          <p className="text-gray-500 text-sm">저장된 라운드가 없습니다</p>
+          <p className="text-gray-500 text-xs mt-1">새 라운드를 시작해보세요</p>
         </div>
       ) : (
         rounds.map(s => {
@@ -87,33 +87,33 @@ export default function RoundList({ onRoundSelect }: Props) {
             <button
               key={s.round.id}
               onClick={() => onRoundSelect(s.round)}
-              className="w-full bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-left active:scale-[0.98] transition-transform"
+              className="w-full bg-card rounded-2xl border border-gray-100 shadow-sm p-4 text-left active:scale-[0.98] transition-transform"
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-gray-800 truncate">{s.round.course_name}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{s.round.date} · {s.round.time}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{s.round.date} · {s.round.time}</p>
                 </div>
                 <div className="ml-4 text-right flex-shrink-0">
                   <p className="text-2xl font-extrabold text-gray-900 leading-none">
                     {hasData ? `${s.totalStrokes}타` : '-'}
                   </p>
-                  <p className={`text-sm font-semibold mt-0.5 ${over > 0 ? 'text-red-500' : over < 0 ? 'text-[#1a6b3a]' : 'text-gray-500'}`}>
+                  <p className={`text-sm font-semibold mt-0.5 ${over > 0 ? 'text-red-500' : over < 0 ? 'text-[#1B4332]' : 'text-gray-500'}`}>
                     {hasData ? overStr : '기록 없음'}
                   </p>
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-0 mt-3 pt-3 border-t border-gray-100">
                 <div className="text-center">
-                  <p className="text-xs text-gray-400">3퍼팅+</p>
+                  <p className="text-xs text-gray-500">3퍼팅+</p>
                   <p className="text-sm font-bold text-orange-500 mt-0.5">{s.threePuttPlus}회</p>
                 </div>
                 <div className="text-center border-x border-gray-100">
-                  <p className="text-xs text-gray-400">더블↑</p>
+                  <p className="text-xs text-gray-500">더블↑</p>
                   <p className="text-sm font-bold text-orange-600 mt-0.5">{s.doubleOrWorse}/18</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-xs text-gray-400">벌타</p>
+                  <p className="text-xs text-gray-500">벌타</p>
                   <p className="text-sm font-bold text-red-500 mt-0.5">{s.penalties}타</p>
                 </div>
               </div>

@@ -80,16 +80,16 @@ export default function NewRound({ onStart }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-surface flex flex-col">
       {/* Header */}
-      <div className="bg-[#1a6b3a] text-white px-4 pb-6" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-        <h1 className="text-2xl font-bold tracking-tight">새 라운드</h1>
+      <div className="bg-[#1B4332] text-white px-4 pt-4 pb-4">
+        <h1 className="text-xl font-bold tracking-tight">새 라운드</h1>
         <p className="text-green-200 text-sm mt-1">라운드 정보를 입력하세요</p>
       </div>
 
       <div className="flex-1 px-4 py-6 space-y-5">
         {/* Date & Time */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-4">
+        <div className="bg-card rounded-2xl shadow-sm border border-gray-100 p-4 space-y-4">
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">날짜 & 시간</h2>
           <div style={{ overflow: 'hidden', width: '100%' }}>
             <label className="block text-xs text-gray-500 mb-1">날짜</label>
@@ -98,7 +98,7 @@ export default function NewRound({ onStart }: Props) {
               value={date}
               onChange={e => setDate(e.target.value)}
               style={{ width: '100%', boxSizing: 'border-box' }}
-              className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a6b3a]/30 focus:border-[#1a6b3a]"
+              className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]"
             />
           </div>
           <div>
@@ -107,14 +107,14 @@ export default function NewRound({ onStart }: Props) {
               <select
                 value={hour}
                 onChange={e => setHour(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1a6b3a]/30 focus:border-[#1a6b3a] text-gray-700"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332] text-gray-700"
               >
                 {HOURS.map(h => <option key={h} value={h}>{h}시</option>)}
               </select>
               <select
                 value={minute}
                 onChange={e => setMinute(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1a6b3a]/30 focus:border-[#1a6b3a] text-gray-700"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332] text-gray-700"
               >
                 {MINUTES.map(m => <option key={m} value={m}>{m}분</option>)}
               </select>
@@ -123,44 +123,44 @@ export default function NewRound({ onStart }: Props) {
         </div>
 
         {/* Course */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">
+        <div className="bg-card rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">골프장</h2>
           <input
             type="text"
             placeholder="골프장 이름 입력"
             value={courseName}
             onChange={e => setCourseName(e.target.value)}
-            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a6b3a]/30 focus:border-[#1a6b3a]"
+            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]"
           />
           <div>
-            <label className="block text-xs text-gray-500 mb-1.5">코스 <span className="text-gray-400">(선택)</span></label>
+            <label className="block text-xs text-gray-500 mb-1.5">코스 <span className="text-gray-500">(선택)</span></label>
             <div className="grid grid-cols-2 gap-3">
               <input
                 type="text"
                 placeholder="전반 코스명"
                 value={courseFront}
                 onChange={e => setCourseFront(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a6b3a]/30 focus:border-[#1a6b3a]"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]"
               />
               <input
                 type="text"
                 placeholder="후반 코스명"
                 value={courseBack}
                 onChange={e => setCourseBack(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a6b3a]/30 focus:border-[#1a6b3a]"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]"
               />
             </div>
           </div>
         </div>
 
         {/* Companions */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">
+        <div className="bg-card rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">동반자 ({companions.length}/3)</h2>
           {companions.map((name, i) => (
             <div key={i} className="flex items-center gap-2 bg-green-50 border border-green-100 rounded-xl px-3 py-2">
-              <div className="w-6 h-6 rounded-full bg-[#1a6b3a] text-white flex items-center justify-center text-xs font-bold flex-shrink-0">{i + 1}</div>
+              <div className="w-6 h-6 rounded-full bg-[#1B4332] text-white flex items-center justify-center text-xs font-bold flex-shrink-0">{i + 1}</div>
               <span className="flex-1 text-sm text-gray-800">{name}</span>
-              <button onClick={() => removeCompanion(i)} className="text-gray-400 hover:text-red-500 transition-colors p-0.5">
+              <button onClick={() => removeCompanion(i)} className="text-gray-500 hover:text-red-500 transition-colors p-0.5">
                 <X size={15} />
               </button>
             </div>
@@ -173,12 +173,12 @@ export default function NewRound({ onStart }: Props) {
                 value={companionInput}
                 onChange={e => setCompanionInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && addCompanion()}
-                className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a6b3a]/30 focus:border-[#1a6b3a]"
+                className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]"
               />
               <button
                 onClick={addCompanion}
                 disabled={!companionInput.trim()}
-                className="w-10 h-10 rounded-xl bg-[#1a6b3a] text-white flex items-center justify-center disabled:opacity-40 active:scale-95 transition-transform"
+                className="w-10 h-10 rounded-xl bg-[#1B4332] text-white flex items-center justify-center disabled:opacity-40 active:scale-95 transition-transform"
               >
                 <Plus size={18} />
               </button>
@@ -191,7 +191,7 @@ export default function NewRound({ onStart }: Props) {
         <button
           onClick={handleStart}
           disabled={loading}
-          className="w-full bg-[#1a6b3a] text-white py-4 rounded-2xl font-bold text-base active:scale-95 transition-transform disabled:opacity-60 shadow-lg shadow-green-900/20"
+          className="w-full bg-[#1B4332] text-white py-4 rounded-2xl font-bold text-base active:scale-95 transition-transform disabled:opacity-60 shadow-lg shadow-green-900/20"
         >
           {loading ? '시작 중...' : '라운드 시작'}
         </button>

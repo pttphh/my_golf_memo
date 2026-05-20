@@ -24,7 +24,7 @@ function getScoreStyle(par: number, total: number, overPar: number) {
   if (total >= par * 2) return { text: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200' };
   if (par === 3 && total === 1) return { text: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200' };
   if (overPar <= -1) return { text: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200' };
-  if (overPar === 0) return { text: 'text-[#1a6b3a]', bg: 'bg-green-50', border: 'border-green-200' };
+  if (overPar === 0) return { text: 'text-[#1B4332]', bg: 'bg-green-50', border: 'border-green-200' };
   if (overPar <= 2) return { text: 'text-yellow-700', bg: 'bg-yellow-50', border: 'border-yellow-300' };
   return { text: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200' };
 }
@@ -73,13 +73,13 @@ function Chip({ label, selected, onClick, variant = 'default' }: {
   const base = 'px-3 py-1.5 rounded-full text-sm font-medium border transition-all active:scale-95 cursor-pointer select-none';
   if (variant === 'miss') return <button onClick={onClick} className={`${base} ${selected ? 'bg-red-500 border-red-500 text-white' : 'bg-red-50 border-red-300 text-red-600'}`}>{label}</button>;
   if (variant === 'penalty') return <button onClick={onClick} className={`${base} ${selected ? 'bg-orange-500 border-orange-500 text-white' : 'bg-orange-50 border-orange-300 text-orange-600'}`}>{label}</button>;
-  return <button onClick={onClick} className={`${base} ${selected ? 'bg-[#1a6b3a] border-[#1a6b3a] text-white' : 'bg-white border-gray-200 text-gray-700'}`}>{label}</button>;
+  return <button onClick={onClick} className={`${base} ${selected ? 'bg-[#1B4332] border-[#1B4332] text-white' : 'bg-white border-gray-200 text-gray-700'}`}>{label}</button>;
 }
 
 function ClubSelect({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: string[] }) {
   return (
     <select value={value} onChange={e => onChange(e.target.value)}
-      className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1a6b3a]/30 focus:border-[#1a6b3a] text-gray-700">
+      className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332] text-gray-700">
       <option value="">클럽 선택</option>
       {options.map(o => <option key={o} value={o}>{o}</option>)}
     </select>
@@ -89,7 +89,7 @@ function ClubSelect({ value, onChange, options }: { value: string; onChange: (v:
 function SectionHeader({ title }: { title: string }) {
   return (
     <div className="flex items-center gap-2 mb-3">
-      <div className="w-1 h-5 rounded-full bg-[#1a6b3a]" />
+      <div className="w-1 h-5 rounded-full bg-[#1B4332]" />
       <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider">{title}</h3>
     </div>
   );
@@ -102,7 +102,7 @@ function MissChips({ value, options, onChange, hint = true }: {
   const maxReached = selected.length >= 2;
   return (
     <div className="space-y-1.5">
-      {hint && <p className="text-[11px] text-gray-400">ex) 풀훅일 경우 풀과 훅 모두 선택</p>}
+      {hint && <p className="text-[11px] text-gray-500">ex) 풀훅일 경우 풀과 훅 모두 선택</p>}
       <div className="flex flex-wrap gap-2">
         {options.map(m => {
           const isSelected = selected.includes(m);
@@ -110,7 +110,7 @@ function MissChips({ value, options, onChange, hint = true }: {
           const base = 'px-3 py-1.5 rounded-full text-sm font-medium border transition-all active:scale-95 select-none';
           return (
             <button key={m} disabled={isDisabled} onClick={() => onChange(toggleMiss(value, m))}
-              className={`${base} ${isSelected ? 'bg-red-500 border-red-500 text-white cursor-pointer' : isDisabled ? 'bg-gray-100 border-gray-200 text-gray-300 cursor-not-allowed' : 'bg-red-50 border-red-300 text-red-600 cursor-pointer'}`}>
+              className={`${base} ${isSelected ? 'bg-red-500 border-red-500 text-white cursor-pointer' : isDisabled ? 'bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed' : 'bg-red-50 border-red-300 text-red-600 cursor-pointer'}`}>
               {m}
             </button>
           );
@@ -139,20 +139,20 @@ function TeeShotBlock({ par, topResult, subResult, miss, memo, onTopChange, onSu
   return (
     <div className="space-y-3">
       <div>
-        <p className="text-xs text-gray-400 mb-1.5">결과</p>
+        <p className="text-xs text-gray-500 mb-1.5">결과</p>
         <div className="flex flex-wrap gap-2">
           {topOptions.map(opt => <Chip key={opt} label={opt} selected={topResult === opt} onClick={() => handleTopClick(opt)} />)}
         </div>
       </div>
       {showSub && (
         <div className="pl-3 border-l-2 border-gray-200 space-y-2">
-          <p className="text-xs text-gray-400">세부 위치</p>
+          <p className="text-xs text-gray-500">세부 위치</p>
           <div className="flex flex-wrap gap-2">
             {TEE_FAIRWAY_MISS_SUB.map(s => {
               const isOBHaz = FAIRWAY_MISS_PENALTY[s] !== undefined;
               return (
                 <button key={s} onClick={() => onSubChange(subResult === s ? '' : s)}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all active:scale-95 cursor-pointer select-none ${subResult === s ? isOBHaz ? 'bg-orange-500 border-orange-500 text-white' : 'bg-[#1a6b3a] border-[#1a6b3a] text-white' : isOBHaz ? 'bg-orange-50 border-orange-300 text-orange-600' : 'bg-white border-gray-200 text-gray-700'}`}>
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all active:scale-95 cursor-pointer select-none ${subResult === s ? isOBHaz ? 'bg-orange-500 border-orange-500 text-white' : 'bg-[#1B4332] border-[#1B4332] text-white' : isOBHaz ? 'bg-orange-50 border-orange-300 text-orange-600' : 'bg-white border-gray-200 text-gray-700'}`}>
                   {s}
                 </button>
               );
@@ -161,11 +161,11 @@ function TeeShotBlock({ par, topResult, subResult, miss, memo, onTopChange, onSu
         </div>
       )}
       <div className="border-t border-gray-100 pt-3">
-        <p className="text-xs text-gray-400 mb-1.5">미스 유형 (해당 시)</p>
+        <p className="text-xs text-gray-500 mb-1.5">미스 유형 (해당 시)</p>
         <MissChips value={miss} options={missOptions} onChange={onMissChange} />
       </div>
       <input type="text" placeholder="메모" value={memo} onChange={e => onMemoChange(e.target.value)}
-        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a6b3a]/30 focus:border-[#1a6b3a]" />
+        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]" />
     </div>
   );
 }
@@ -197,14 +197,14 @@ function SecondShotBlock({ result, penaltyType, missDetail, miss, memo, isExtra,
   return (
     <div className="space-y-3">
       <div>
-        <p className="text-xs text-gray-400 mb-1.5">결과</p>
+        <p className="text-xs text-gray-500 mb-1.5">결과</p>
         <div className="flex flex-wrap gap-2">
           {[greenOnLabel, '그린 미스'].map(opt => <Chip key={opt} label={opt} selected={result === opt} onClick={() => handleTopClick(opt)} />)}
         </div>
       </div>
       {showSub && (
         <div className="pl-3 border-l-2 border-gray-200 space-y-2">
-          <p className="text-xs text-gray-400">세부 위치 (복수 선택 가능)</p>
+          <p className="text-xs text-gray-500">세부 위치 (복수 선택 가능)</p>
           <div className="flex flex-wrap gap-2">
             {SECOND_GREEN_MISS_SUB.map(s => <Chip key={s} label={s} selected={details.includes(s)} onClick={() => toggleDetail(s)} />)}
             {SECOND_PENALTY_SUB.map(s => (
@@ -217,11 +217,11 @@ function SecondShotBlock({ result, penaltyType, missDetail, miss, memo, isExtra,
         </div>
       )}
       <div className="border-t border-gray-100 pt-3">
-        <p className="text-xs text-gray-400 mb-1.5">미스 유형 (해당 시)</p>
+        <p className="text-xs text-gray-500 mb-1.5">미스 유형 (해당 시)</p>
         <MissChips value={miss} options={SECOND_MISS} onChange={onMissChange} />
       </div>
       <input type="text" placeholder="메모" value={memo} onChange={e => onMemoChange(e.target.value)}
-        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a6b3a]/30 focus:border-[#1a6b3a]" />
+        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]" />
     </div>
   );
 }
@@ -246,7 +246,7 @@ function ApproachBlock({ result, missDetail, miss, memo, onResultChange, onMissD
   return (
     <div className="space-y-3">
       <div>
-        <p className="text-xs text-gray-400 mb-1.5">결과</p>
+        <p className="text-xs text-gray-500 mb-1.5">결과</p>
         <div className="flex flex-wrap gap-2">
           {APPROACH_RESULTS.map(r => (
             <Chip key={r} label={r} selected={result === r}
@@ -256,13 +256,13 @@ function ApproachBlock({ result, missDetail, miss, memo, onResultChange, onMissD
       </div>
       {showSub && (
         <div className="pl-3 border-l-2 border-gray-200 space-y-2">
-          <p className="text-xs text-gray-400">세부 위치 (복수 선택 가능)</p>
+          <p className="text-xs text-gray-500">세부 위치 (복수 선택 가능)</p>
           <div className="flex flex-wrap gap-2">
             {APPROACH_MISS_SUB.map(s => {
               const isPenalty = APPROACH_PENALTY_MAP[s] !== undefined;
               return (
                 <button key={s} onClick={() => toggleDetail(s)}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all active:scale-95 cursor-pointer select-none ${details.includes(s) ? isPenalty ? 'bg-orange-500 border-orange-500 text-white' : 'bg-[#1a6b3a] border-[#1a6b3a] text-white' : isPenalty ? 'bg-orange-50 border-orange-300 text-orange-600' : 'bg-white border-gray-200 text-gray-700'}`}>
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all active:scale-95 cursor-pointer select-none ${details.includes(s) ? isPenalty ? 'bg-orange-500 border-orange-500 text-white' : 'bg-[#1B4332] border-[#1B4332] text-white' : isPenalty ? 'bg-orange-50 border-orange-300 text-orange-600' : 'bg-white border-gray-200 text-gray-700'}`}>
                   {s}
                 </button>
               );
@@ -272,12 +272,12 @@ function ApproachBlock({ result, missDetail, miss, memo, onResultChange, onMissD
         </div>
       )}
       <div className="border-t border-gray-100 pt-3">
-        <p className="text-xs text-gray-400 mb-1.5">미스 유형 (해당 시)</p>
+        <p className="text-xs text-gray-500 mb-1.5">미스 유형 (해당 시)</p>
         <MissChips value={miss} options={APPROACH_MISS} onChange={onMissChange} />
-        <p className="text-[10px] text-gray-400 mt-2 leading-relaxed">오버/숏: 20m 이내 어프로치에서 핀을 5m 이상 지나치거나 못 미친 경우</p>
+        <p className="text-[10px] text-gray-500 mt-2 leading-relaxed">오버/숏: 20m 이내 어프로치에서 핀을 5m 이상 지나치거나 못 미친 경우</p>
       </div>
       <input type="text" placeholder="메모" value={memo} onChange={e => onMemoChange(e.target.value)}
-        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a6b3a]/30 focus:border-[#1a6b3a]" />
+        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]" />
     </div>
   );
 }
@@ -372,15 +372,15 @@ export default function HoleEdit({ round, holeNumber, onBack }: Props) {
   const secondKeys = ([1, 2, 3] as const).slice(0, secondShotsCount);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <div className="bg-[#1a6b3a] text-white px-4 pb-5" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+    <div className="min-h-screen bg-surface flex flex-col">
+      <div className="bg-[#1B4332] text-white px-4 pb-4" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1rem)' }}>
         <button onClick={onBack} className="flex items-center gap-1.5 text-green-200 text-sm mb-3 active:opacity-70">
           <ChevronLeft size={16} /> 홀 목록으로
         </button>
         <div className="flex items-center justify-between">
           <div>
             <p className="text-green-200 text-xs">{round.course_name}</p>
-            <h2 className="text-2xl font-extrabold">{holeNumber}번 홀 수정</h2>
+            <h2 className="text-xl font-extrabold">{holeNumber}번 홀 수정</h2>
           </div>
           <div className="text-right">
             <p className={`text-3xl font-extrabold ${hole.over_par > 0 ? 'text-yellow-300' : hole.over_par < 0 ? 'text-blue-200' : 'text-white'}`}>
@@ -393,12 +393,12 @@ export default function HoleEdit({ round, holeNumber, onBack }: Props) {
 
       <div className="flex-1 px-4 py-4 space-y-4 pb-24">
         {/* Par */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+        <div className="bg-card rounded-2xl shadow-sm border border-gray-100 p-4">
           <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">파 선택</div>
           <div className="flex gap-3">
             {[3, 4, 5].map(p => (
               <button key={p} onClick={() => handleParChange(p)}
-                className={`flex-1 py-3 rounded-xl font-bold text-base border-2 transition-all active:scale-95 ${hole.par === p ? 'bg-[#1a6b3a] border-[#1a6b3a] text-white' : 'bg-white border-gray-200 text-gray-700'}`}>
+                className={`flex-1 py-3 rounded-xl font-bold text-base border-2 transition-all active:scale-95 ${hole.par === p ? 'bg-[#1B4332] border-[#1B4332] text-white' : 'bg-white border-gray-200 text-gray-700'}`}>
                 파{p}
               </button>
             ))}
@@ -406,7 +406,7 @@ export default function HoleEdit({ round, holeNumber, onBack }: Props) {
         </div>
 
         {/* Score */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-card rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className={`border-b-2 ${scoreStyle.border} ${scoreStyle.bg} px-4 py-4`}>
             <div className="flex items-center justify-between">
               <button onClick={() => adjustManualScore(-1)}
@@ -427,29 +427,29 @@ export default function HoleEdit({ round, holeNumber, onBack }: Props) {
               { label: '퍼팅', key: 'putts' as const },
             ].map(({ label, key }) => (
               <div key={key} className="flex flex-col items-center py-4 gap-2">
-                <p className="text-xs text-gray-400 font-medium">{label}</p>
+                <p className="text-xs text-gray-500 font-medium">{label}</p>
                 <div className="flex items-center gap-3">
                   <button onClick={() => updateAuto({ [key]: Math.max(0, hole[key] - 1) })}
                     className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 text-gray-600 flex items-center justify-center text-xl font-bold active:scale-90 transition-transform">−</button>
                   <span className="w-7 text-center font-bold text-2xl text-gray-800">
-                    {isManual ? <span className="text-gray-300 text-xl">?</span> : hole[key]}
+                    {isManual ? <span className="text-gray-500 text-xl">?</span> : hole[key]}
                   </span>
                   <button onClick={() => updateAuto({ [key]: hole[key] + 1 })}
-                    className="w-9 h-9 rounded-full bg-[#1a6b3a] text-white flex items-center justify-center text-xl font-bold active:scale-90 transition-transform">+</button>
+                    className="w-9 h-9 rounded-full bg-[#1B4332] text-white flex items-center justify-center text-xl font-bold active:scale-90 transition-transform">+</button>
                 </div>
               </div>
             ))}
           </div>
           <div className={`mx-4 mb-3 flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 ${isManual ? 'bg-orange-50' : 'bg-gray-50'}`}>
             {isManual && <Lock size={11} className="text-orange-400 flex-shrink-0" />}
-            <p className={`text-[10px] ${isManual ? 'text-orange-500' : 'text-gray-400'}`}>
+            <p className={`text-[10px] ${isManual ? 'text-orange-500' : 'text-gray-500'}`}>
               {isManual ? '수동 집계 중. 위 카운터를 누르면 자동 집계로 전환돼요.' : '카운터를 입력하면 자동 집계. 위 +−로 직접 수정 가능.'}
             </p>
           </div>
         </div>
 
         {/* Tee Shot */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+        <div className="bg-card rounded-2xl shadow-sm border border-gray-100 p-4">
           <SectionHeader title="티샷" />
           <div className="space-y-3">
             <ClubSelect value={hole.tee_club} onChange={v => updateField({ tee_club: v })} options={TEE_CLUBS} />
@@ -460,14 +460,14 @@ export default function HoleEdit({ round, holeNumber, onBack }: Props) {
         </div>
 
         {/* Second Shots */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+        <div className="bg-card rounded-2xl shadow-sm border border-gray-100 p-4">
           <SectionHeader title="세컨샷" />
           <div className="space-y-4">
             {secondKeys.map(i => (
               <div key={i} className={i > 1 ? 'pt-3 border-t border-gray-100' : ''}>
                 {secondShotsCount > 1 && (
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs font-semibold text-gray-400">{i}번째 샷</p>
+                    <p className="text-xs font-semibold text-gray-500">{i}번째 샷</p>
                     {i > 1 && (
                       <button onClick={() => { updateField(clearSecondShot(i as 2 | 3)); setSecondShotsCount(i - 1); }}
                         className="w-6 h-6 rounded-full bg-red-50 border border-red-200 text-red-500 flex items-center justify-center active:scale-90 transition-transform">
@@ -504,12 +504,12 @@ export default function HoleEdit({ round, holeNumber, onBack }: Props) {
         </div>
 
         {/* Approach */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+        <div className="bg-card rounded-2xl shadow-sm border border-gray-100 p-4">
           <SectionHeader title="어프로치" />
           <div className="space-y-4">
             {([1, 2] as const).slice(0, approachCount).map(i => (
               <div key={i} className={i > 1 ? 'pt-3 border-t border-gray-100' : ''}>
-                {approachCount > 1 && <p className="text-xs font-semibold text-gray-400 mb-2">{i}번째 어프로치</p>}
+                {approachCount > 1 && <p className="text-xs font-semibold text-gray-500 mb-2">{i}번째 어프로치</p>}
                 <div className="space-y-3">
                   <ClubSelect value={hole[`approach${i}_club` as keyof Hole] as string} onChange={v => updateField({ [`approach${i}_club`]: v })} options={APPROACH_CLUBS} />
                   <ApproachBlock
@@ -535,7 +535,7 @@ export default function HoleEdit({ round, holeNumber, onBack }: Props) {
         </div>
 
         {/* Putting */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+        <div className="bg-card rounded-2xl shadow-sm border border-gray-100 p-4">
           <SectionHeader title="퍼팅" />
           <div className="space-y-3">
             <div className={`flex gap-2 ${isManual ? 'opacity-40 pointer-events-none' : ''}`}>
@@ -543,29 +543,29 @@ export default function HoleEdit({ round, holeNumber, onBack }: Props) {
                 const val = typeof p === 'number' ? p : 4;
                 return (
                   <button key={p} onClick={() => updateAuto({ putts: val })}
-                    className={`flex-1 py-3 rounded-xl font-bold text-base border-2 transition-all active:scale-95 ${hole.putts === val ? 'bg-[#1a6b3a] border-[#1a6b3a] text-white' : 'bg-white border-gray-200 text-gray-700'}`}>
+                    className={`flex-1 py-3 rounded-xl font-bold text-base border-2 transition-all active:scale-95 ${hole.putts === val ? 'bg-[#1B4332] border-[#1B4332] text-white' : 'bg-white border-gray-200 text-gray-700'}`}>
                     {p}
                   </button>
                 );
               })}
             </div>
             <div className="border-t border-gray-100 pt-3">
-              <p className="text-xs text-gray-400 mb-1.5">미스 유형 (해당 시)</p>
+              <p className="text-xs text-gray-500 mb-1.5">미스 유형 (해당 시)</p>
               <MissChips value={hole.putt_miss} options={PUTT_MISS} onChange={v => updateField({ putt_miss: v })} hint={false} />
             </div>
             <input type="text" placeholder="메모" value={hole.putt_memo} onChange={e => updateField({ putt_memo: e.target.value })}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a6b3a]/30 focus:border-[#1a6b3a]" />
+              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]" />
           </div>
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[390px] bg-white border-t border-gray-100 px-4 pt-3 pb-4 shadow-lg">
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[390px] bg-card border-t border-gray-100 px-4 pt-3 pb-4 shadow-lg">
         <div className="flex gap-3">
           <button onClick={onBack} className="flex-1 py-4 rounded-2xl border-2 border-gray-200 text-gray-600 font-semibold text-sm active:scale-95 transition-transform">
             취소
           </button>
           <button onClick={handleSave} disabled={saving}
-            className={`flex-[2] py-4 rounded-2xl font-bold text-base active:scale-95 transition-all shadow-lg disabled:opacity-60 ${saved ? 'bg-blue-500 text-white' : 'bg-[#1a6b3a] text-white shadow-green-900/20'}`}>
+            className={`flex-[2] py-4 rounded-2xl font-bold text-base active:scale-95 transition-all shadow-lg disabled:opacity-60 ${saved ? 'bg-blue-500 text-white' : 'bg-[#1B4332] text-white shadow-green-900/20'}`}>
             {saving ? '저장 중...' : saved ? '저장 완료!' : '저장'}
           </button>
         </div>

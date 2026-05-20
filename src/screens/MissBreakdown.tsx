@@ -47,10 +47,10 @@ function MissBar({ entry, max }: { entry: MissEntry; max: number }) {
 function CategorySection({ title, entries }: { title: string; entries: MissEntry[] }) {
   const max = entries[0]?.count ?? 1;
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+    <div className="bg-card rounded-2xl border border-gray-100 shadow-sm p-4">
       <h3 className="text-sm font-bold text-gray-600 mb-3">{title}</h3>
       {entries.length === 0 ? (
-        <p className="text-sm text-gray-300">기록 없음</p>
+        <p className="text-sm text-gray-500">기록 없음</p>
       ) : (
         <div className="space-y-3">
           {entries.map(e => <MissBar key={e.label} entry={e} max={max} />)}
@@ -79,8 +79,8 @@ export default function MissBreakdown({ roundId, onBack }: Props) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-400 text-sm">불러오는 중...</p>
+      <div className="min-h-screen bg-surface flex items-center justify-center">
+        <p className="text-gray-500 text-sm">불러오는 중...</p>
       </div>
     );
   }
@@ -129,8 +129,8 @@ export default function MissBreakdown({ roundId, onBack }: Props) {
     puttAll.reduce((s, e) => s + e.count, 0);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <div className="bg-[#1a6b3a] text-white px-4 pb-5" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+    <div className="min-h-screen bg-surface flex flex-col">
+      <div className="bg-[#1B4332] text-white px-4 pt-4 pb-4">
         <button onClick={onBack} className="flex items-center gap-1 text-green-200 text-sm mb-3 active:opacity-70">
           <ChevronLeft size={16} />
           라운드 요약으로
@@ -141,21 +141,21 @@ export default function MissBreakdown({ roundId, onBack }: Props) {
 
       <div className="px-4 py-5 space-y-4">
         {totalMisses === 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center text-gray-400">
+          <div className="bg-card rounded-2xl border border-gray-100 p-8 text-center text-gray-500">
             기록된 미스가 없습니다
           </div>
         ) : (
           <>
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-              <h3 className="text-sm font-bold text-[#1a6b3a] mb-1">방향 미스</h3>
-              <p className="text-[11px] text-gray-400 mb-3">티샷 · 세컨샷 방향 미스 합산</p>
+            <div className="bg-card rounded-2xl border border-gray-100 shadow-sm p-4">
+              <h3 className="text-sm font-bold text-[#1B4332] mb-1">방향 미스</h3>
+              <p className="text-[11px] text-gray-500 mb-3">티샷 · 세컨샷 방향 미스 합산</p>
               {(teeDirectionFull.length === 0 && secondDirectionFull.length === 0) ? (
-                <p className="text-sm text-gray-300">기록 없음</p>
+                <p className="text-sm text-gray-500">기록 없음</p>
               ) : (
                 <div className="space-y-4">
                   {teeDirectionFull.length > 0 && (
                     <div>
-                      <p className="text-xs font-semibold text-gray-400 mb-2">티샷</p>
+                      <p className="text-xs font-semibold text-gray-500 mb-2">티샷</p>
                       <div className="space-y-3">
                         {teeDirectionFull.map(e => <MissBar key={e.label} entry={e} max={teeDirectionFull[0].count} />)}
                       </div>
@@ -163,7 +163,7 @@ export default function MissBreakdown({ roundId, onBack }: Props) {
                   )}
                   {secondDirectionFull.length > 0 && (
                     <div>
-                      <p className="text-xs font-semibold text-gray-400 mb-2">세컨샷</p>
+                      <p className="text-xs font-semibold text-gray-500 mb-2">세컨샷</p>
                       <div className="space-y-3">
                         {secondDirectionFull.map(e => <MissBar key={e.label} entry={e} max={secondDirectionFull[0].count} />)}
                       </div>
@@ -173,16 +173,16 @@ export default function MissBreakdown({ roundId, onBack }: Props) {
               )}
             </div>
 
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-              <h3 className="text-sm font-bold text-[#1a6b3a] mb-1">컨택 미스</h3>
-              <p className="text-[11px] text-gray-400 mb-3">티샷 · 세컨샷 컨택 미스 합산</p>
+            <div className="bg-card rounded-2xl border border-gray-100 shadow-sm p-4">
+              <h3 className="text-sm font-bold text-[#1B4332] mb-1">컨택 미스</h3>
+              <p className="text-[11px] text-gray-500 mb-3">티샷 · 세컨샷 컨택 미스 합산</p>
               {(teeContact.length === 0 && secondContact.length === 0) ? (
-                <p className="text-sm text-gray-300">기록 없음</p>
+                <p className="text-sm text-gray-500">기록 없음</p>
               ) : (
                 <div className="space-y-4">
                   {teeContact.length > 0 && (
                     <div>
-                      <p className="text-xs font-semibold text-gray-400 mb-2">티샷</p>
+                      <p className="text-xs font-semibold text-gray-500 mb-2">티샷</p>
                       <div className="space-y-3">
                         {teeContact.map(e => <MissBar key={e.label} entry={e} max={teeContact[0].count} />)}
                       </div>
@@ -190,7 +190,7 @@ export default function MissBreakdown({ roundId, onBack }: Props) {
                   )}
                   {secondContact.length > 0 && (
                     <div>
-                      <p className="text-xs font-semibold text-gray-400 mb-2">세컨샷</p>
+                      <p className="text-xs font-semibold text-gray-500 mb-2">세컨샷</p>
                       <div className="space-y-3">
                         {secondContact.map(e => <MissBar key={e.label} entry={e} max={secondContact[0].count} />)}
                       </div>
@@ -206,7 +206,7 @@ export default function MissBreakdown({ roundId, onBack }: Props) {
         )}
 
         <button onClick={onBack}
-          className="w-full bg-[#1a6b3a] text-white py-4 rounded-2xl font-bold text-base active:scale-95 transition-transform">
+          className="w-full bg-[#1B4332] text-white py-4 rounded-2xl font-bold text-base active:scale-95 transition-transform">
           라운드 요약으로 돌아가기
         </button>
       </div>

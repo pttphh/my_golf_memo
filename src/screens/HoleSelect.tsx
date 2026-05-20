@@ -28,7 +28,7 @@ function getPenalties(hole: Hole): { ob: boolean; hazard: boolean } {
 
 function scoreColor(overPar: number) {
   if (overPar < 0) return 'text-blue-500';
-  if (overPar === 0) return 'text-[#1a6b3a]';
+  if (overPar === 0) return 'text-[#1B4332]';
   if (overPar === 1) return 'text-yellow-600';
   if (overPar === 2) return 'text-orange-500';
   return 'text-red-500';
@@ -67,8 +67,8 @@ export default function HoleSelect({ roundId, onBack, onConfirm: _onConfirm, onE
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-400 text-sm">불러오는 중...</p>
+      <div className="min-h-screen bg-surface flex items-center justify-center">
+        <p className="text-gray-500 text-sm">불러오는 중...</p>
       </div>
     );
   }
@@ -84,11 +84,11 @@ export default function HoleSelect({ roundId, onBack, onConfirm: _onConfirm, onE
               <button
                 key={num}
                 onClick={() => onEditHole(num)}
-                className="rounded-2xl border-2 border-dashed border-gray-300 p-3 text-center active:scale-95 transition-all hover:border-[#1a6b3a] hover:bg-green-50"
+                className="rounded-2xl border-2 border-dashed border-gray-300 p-3 text-center active:scale-95 transition-all hover:border-[#1B4332] hover:bg-green-50"
               >
-                <p className="text-xs font-semibold text-gray-400 mb-1">{num}홀</p>
-                <p className="text-sm text-gray-300 mb-1">-</p>
-                <p className="text-[9px] text-gray-300">탭하여 입력</p>
+                <p className="text-xs font-semibold text-gray-500 mb-1">{num}홀</p>
+                <p className="text-sm text-gray-500 mb-1">-</p>
+                <p className="text-[9px] text-gray-500">탭하여 입력</p>
               </button>
             );
           }
@@ -107,13 +107,13 @@ export default function HoleSelect({ roundId, onBack, onConfirm: _onConfirm, onE
               <p className={`text-lg font-extrabold leading-none ${scoreColor(overPar)}`}>
                 {overStr}
               </p>
-              <p className="text-[10px] mt-1 text-gray-400">
+              <p className="text-[10px] mt-1 text-gray-500">
                 {hole.green_shots}온 · {hole.putts}퍼팅
               </p>
               {(ob || hazard) && (
                 <div className="flex items-center justify-center gap-1 mt-0.5">
                   {ob && <span className="text-[9px] font-bold text-red-500">OB</span>}
-                  {ob && hazard && <span className="text-[9px] text-gray-300">·</span>}
+                  {ob && hazard && <span className="text-[9px] text-gray-500">·</span>}
                   {hazard && <span className="text-[9px] font-bold text-orange-500">해저드</span>}
                 </div>
               )}
@@ -125,8 +125,8 @@ export default function HoleSelect({ roundId, onBack, onConfirm: _onConfirm, onE
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <div className="bg-[#1a6b3a] text-white px-4 pb-5" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+    <div className="min-h-screen bg-surface flex flex-col">
+      <div className="bg-[#1B4332] text-white px-4 pt-4 pb-4">
         <button onClick={onBack} className="flex items-center gap-1.5 text-green-200 text-sm mb-3 active:opacity-70">
           <ChevronLeft size={16} /> 뒤로
         </button>
@@ -141,14 +141,14 @@ export default function HoleSelect({ roundId, onBack, onConfirm: _onConfirm, onE
         {!isComplete && nextHole !== null && (
           <button
             onClick={() => onContinue(nextHole)}
-            className="w-full flex items-center justify-between bg-[#1a6b3a] text-white px-4 py-3.5 rounded-2xl font-semibold text-sm active:scale-[0.98] transition-transform shadow-lg shadow-green-900/20"
+            className="w-full flex items-center justify-between bg-[#1B4332] text-white px-4 py-3.5 rounded-2xl font-semibold text-sm active:scale-[0.98] transition-transform shadow-lg shadow-green-900/20"
           >
             <span>{nextHole}번 홀부터 이어서 입력하기</span>
             <ChevronRight size={16} />
           </button>
         )}
 
-        <p className="text-sm text-gray-400">각 홀을 탭하여 수정할 수 있어요</p>
+        <p className="text-sm text-gray-500">각 홀을 탭하여 수정할 수 있어요</p>
 
         <div>
           <div className="flex items-center gap-2 mb-2">

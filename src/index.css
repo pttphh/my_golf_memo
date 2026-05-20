@@ -3,6 +3,9 @@
 @tailwind utilities;
 
 :root {
+  --color-brand: #1B4332;
+  --color-surface: #f4f4f1;
+  --color-card: #f9f9f7;
   --safe-top: env(safe-area-inset-top);
   --safe-bottom: env(safe-area-inset-bottom);
   --safe-left: env(safe-area-inset-left);

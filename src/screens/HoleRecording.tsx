@@ -26,7 +26,7 @@ function getScoreStyle(par: number, total: number, overPar: number): { text: str
   if (isYangpa(par, total)) return { text: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200' };
   if (par === 3 && total === 1) return { text: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200' };
   if (overPar <= -1) return { text: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200' };
-  if (overPar === 0) return { text: 'text-[#1a6b3a]', bg: 'bg-green-50', border: 'border-green-200' };
+  if (overPar === 0) return { text: 'text-[#1B4332]', bg: 'bg-green-50', border: 'border-green-200' };
   if (overPar <= 2) return { text: 'text-yellow-700', bg: 'bg-yellow-50', border: 'border-yellow-300' };
   return { text: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200' };
 }
@@ -101,14 +101,14 @@ function Chip({ label, selected, onClick, variant = 'default' }: {
     <button onClick={onClick} className={`${base} ${selected ? 'bg-orange-500 border-orange-500 text-white' : 'bg-orange-50 border-orange-300 text-orange-600'}`}>{label}</button>
   );
   return (
-    <button onClick={onClick} className={`${base} ${selected ? 'bg-[#1a6b3a] border-[#1a6b3a] text-white' : 'bg-white border-gray-200 text-gray-700'}`}>{label}</button>
+    <button onClick={onClick} className={`${base} ${selected ? 'bg-[#1B4332] border-[#1B4332] text-white' : 'bg-white border-gray-200 text-gray-700'}`}>{label}</button>
   );
 }
 
 function ClubSelect({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: string[] }) {
   return (
     <select value={value} onChange={e => onChange(e.target.value)}
-      className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1a6b3a]/30 focus:border-[#1a6b3a] text-gray-700">
+      className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332] text-gray-700">
       <option value="">클럽 선택</option>
       {options.map(o => <option key={o} value={o}>{o}</option>)}
     </select>
@@ -123,10 +123,10 @@ function Counter({ label, value, onChange, isUnknown }: { label: string; value: 
         <button onClick={() => onChange(Math.max(0, value - 1))}
           className="w-8 h-8 rounded-full bg-white border border-gray-200 text-gray-600 flex items-center justify-center text-lg font-bold active:scale-90 transition-transform shadow-sm">−</button>
         <span className="w-6 text-center font-bold text-lg">
-          {isUnknown ? <span className="text-gray-400">?</span> : <span className="text-gray-800">{value}</span>}
+          {isUnknown ? <span className="text-gray-500">?</span> : <span className="text-gray-800">{value}</span>}
         </span>
         <button onClick={() => onChange(value + 1)}
-          className="w-8 h-8 rounded-full bg-[#1a6b3a] text-white flex items-center justify-center text-lg font-bold active:scale-90 transition-transform shadow-sm">+</button>
+          className="w-8 h-8 rounded-full bg-[#1B4332] text-white flex items-center justify-center text-lg font-bold active:scale-90 transition-transform shadow-sm">+</button>
       </div>
     </div>
   );
@@ -135,7 +135,7 @@ function Counter({ label, value, onChange, isUnknown }: { label: string; value: 
 function SectionHeader({ title }: { title: string }) {
   return (
     <div className="flex items-center gap-2 mb-3">
-      <div className="w-1 h-5 rounded-full bg-[#1a6b3a]" />
+      <div className="w-1 h-5 rounded-full bg-[#1B4332]" />
       <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider">{title}</h3>
     </div>
   );
@@ -150,7 +150,7 @@ function ShotBlock({ result, penaltyType, miss, memo, resultOptions, missOptions
   return (
     <div className="space-y-3">
       <div>
-        <p className="text-xs text-gray-400 mb-1.5">결과</p>
+        <p className="text-xs text-gray-500 mb-1.5">결과</p>
         <div className="flex flex-wrap gap-2">
           {resultOptions.map(r => <Chip key={r} label={r} selected={result === r} onClick={() => onResultChange(result === r ? '' : r)} />)}
         </div>
@@ -161,13 +161,13 @@ function ShotBlock({ result, penaltyType, miss, memo, resultOptions, missOptions
         </div>
       )}
       <div className="border-t border-gray-100 pt-3">
-        <p className="text-xs text-gray-400 mb-1.5">미스 유형 (해당 시)</p>
+        <p className="text-xs text-gray-500 mb-1.5">미스 유형 (해당 시)</p>
         <div className="flex flex-wrap gap-2">
           {missOptions.map(m => <Chip key={m} label={m} selected={miss === m} onClick={() => onMissChange(miss === m ? '' : m)} variant="miss" />)}
         </div>
       </div>
       <input type="text" placeholder="메모" value={memo} onChange={e => onMemoChange(e.target.value)}
-        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a6b3a]/30 focus:border-[#1a6b3a]" />
+        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]" />
     </div>
   );
 }
@@ -215,7 +215,7 @@ function TeeShotBlock({ par, topResult, subResult, miss, memo, onTopChange, onSu
   return (
     <div className="space-y-3">
       <div>
-        <p className="text-xs text-gray-400 mb-1.5">결과</p>
+        <p className="text-xs text-gray-500 mb-1.5">결과</p>
         <div className="flex flex-wrap gap-2">
           {topOptions.map(opt => (
             <Chip key={opt} label={opt} selected={topResult === opt} onClick={() => handleTopClick(opt)} />
@@ -225,7 +225,7 @@ function TeeShotBlock({ par, topResult, subResult, miss, memo, onTopChange, onSu
 
       {showSub && (
         <div className="pl-3 border-l-2 border-gray-200 space-y-2">
-          <p className="text-xs text-gray-400">세부 위치</p>
+          <p className="text-xs text-gray-500">세부 위치</p>
           <div className="flex flex-wrap gap-2">
             {TEE_FAIRWAY_MISS_SUB.map(s => {
               const pen = FAIRWAY_MISS_PENALTY[s];
@@ -236,7 +236,7 @@ function TeeShotBlock({ par, topResult, subResult, miss, memo, onTopChange, onSu
                   onClick={() => handleSubClick(s)}
                   className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all active:scale-95 cursor-pointer select-none ${
                     subResult === s
-                      ? isOBHaz ? 'bg-orange-500 border-orange-500 text-white' : 'bg-[#1a6b3a] border-[#1a6b3a] text-white'
+                      ? isOBHaz ? 'bg-orange-500 border-orange-500 text-white' : 'bg-[#1B4332] border-[#1B4332] text-white'
                       : isOBHaz ? 'bg-orange-50 border-orange-300 text-orange-600' : 'bg-white border-gray-200 text-gray-700'
                   }`}
                 >
@@ -249,11 +249,11 @@ function TeeShotBlock({ par, topResult, subResult, miss, memo, onTopChange, onSu
       )}
 
       <div className="border-t border-gray-100 pt-3">
-        <p className="text-xs text-gray-400 mb-1.5">미스 유형 (해당 시)</p>
+        <p className="text-xs text-gray-500 mb-1.5">미스 유형 (해당 시)</p>
         <MissChips value={miss} options={missOptions} onChange={onMissChange} />
       </div>
       <input type="text" placeholder="메모" value={memo} onChange={e => onMemoChange(e.target.value)}
-        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a6b3a]/30 focus:border-[#1a6b3a]" />
+        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]" />
     </div>
   );
 }
@@ -282,7 +282,7 @@ function MissChips({ value, options, onChange, hint = true }: {
   const maxReached = selected.length >= 2;
   return (
     <div className="space-y-1.5">
-      {hint && <p className="text-[11px] text-gray-400">ex) 풀훅일 경우 풀과 훅 모두 선택</p>}
+      {hint && <p className="text-[11px] text-gray-500">ex) 풀훅일 경우 풀과 훅 모두 선택</p>}
       <div className="flex flex-wrap gap-2">
       {options.map(m => {
         const isSelected = selected.includes(m);
@@ -291,7 +291,7 @@ function MissChips({ value, options, onChange, hint = true }: {
         const cls = isSelected
           ? `${base} bg-red-500 border-red-500 text-white cursor-pointer`
           : isDisabled
-            ? `${base} bg-gray-100 border-gray-200 text-gray-300 cursor-not-allowed`
+            ? `${base} bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed`
             : `${base} bg-red-50 border-red-300 text-red-600 cursor-pointer`;
         return (
           <button key={m} disabled={isDisabled} onClick={() => onChange(toggleMiss(value, m))} className={cls}>
@@ -364,7 +364,7 @@ function SecondShotBlock({ result, penaltyType, missDetail, miss, memo, isExtra,
   return (
     <div className="space-y-3">
       <div>
-        <p className="text-xs text-gray-400 mb-1.5">결과</p>
+        <p className="text-xs text-gray-500 mb-1.5">결과</p>
         <div className="flex flex-wrap gap-2">
           {[greenOnLabel, '그린 미스'].map(opt => (
             <Chip key={opt} label={opt} selected={result === opt} onClick={() => handleTopClick(opt)} />
@@ -374,7 +374,7 @@ function SecondShotBlock({ result, penaltyType, missDetail, miss, memo, isExtra,
 
       {showSub && (
         <div className="pl-3 border-l-2 border-gray-200 space-y-2">
-          <p className="text-xs text-gray-400">세부 위치 (복수 선택 가능)</p>
+          <p className="text-xs text-gray-500">세부 위치 (복수 선택 가능)</p>
           <div className="flex flex-wrap gap-2">
             {SECOND_GREEN_MISS_SUB.map(s => (
               <Chip key={s} label={s} selected={details.includes(s)} onClick={() => toggleDetail(s)} />
@@ -394,11 +394,11 @@ function SecondShotBlock({ result, penaltyType, missDetail, miss, memo, isExtra,
       )}
 
       <div className="border-t border-gray-100 pt-3">
-        <p className="text-xs text-gray-400 mb-1.5">미스 유형 (해당 시)</p>
+        <p className="text-xs text-gray-500 mb-1.5">미스 유형 (해당 시)</p>
         <MissChips value={miss} options={SECOND_MISS} onChange={onMissChange} />
       </div>
       <input type="text" placeholder="메모" value={memo} onChange={e => onMemoChange(e.target.value)}
-        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a6b3a]/30 focus:border-[#1a6b3a]" />
+        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]" />
     </div>
   );
 }
@@ -446,7 +446,7 @@ function ApproachBlock({ result, missDetail, miss, memo,
   return (
     <div className="space-y-3">
       <div>
-        <p className="text-xs text-gray-400 mb-1.5">결과</p>
+        <p className="text-xs text-gray-500 mb-1.5">결과</p>
         <div className="flex flex-wrap gap-2">
           {APPROACH_RESULTS.map(r => (
             <Chip key={r} label={r} selected={result === r}
@@ -457,7 +457,7 @@ function ApproachBlock({ result, missDetail, miss, memo,
 
       {showSub && (
         <div className="pl-3 border-l-2 border-gray-200 space-y-2">
-          <p className="text-xs text-gray-400">세부 위치 (복수 선택 가능)</p>
+          <p className="text-xs text-gray-500">세부 위치 (복수 선택 가능)</p>
           <div className="flex flex-wrap gap-2">
             {APPROACH_MISS_SUB.map(s => {
               const isPenalty = APPROACH_PENALTY_MAP[s] !== undefined;
@@ -465,7 +465,7 @@ function ApproachBlock({ result, missDetail, miss, memo,
                 <button key={s} onClick={() => toggleDetail(s)}
                   className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all active:scale-95 cursor-pointer select-none ${
                     details.includes(s)
-                      ? isPenalty ? 'bg-orange-500 border-orange-500 text-white' : 'bg-[#1a6b3a] border-[#1a6b3a] text-white'
+                      ? isPenalty ? 'bg-orange-500 border-orange-500 text-white' : 'bg-[#1B4332] border-[#1B4332] text-white'
                       : isPenalty ? 'bg-orange-50 border-orange-300 text-orange-600' : 'bg-white border-gray-200 text-gray-700'
                   }`}>
                   {s}
@@ -480,12 +480,12 @@ function ApproachBlock({ result, missDetail, miss, memo,
       )}
 
       <div className="border-t border-gray-100 pt-3">
-        <p className="text-xs text-gray-400 mb-1.5">미스 유형 (해당 시)</p>
+        <p className="text-xs text-gray-500 mb-1.5">미스 유형 (해당 시)</p>
         <MissChips value={miss} options={APPROACH_MISS} onChange={onMissChange} />
-        <p className="text-[10px] text-gray-400 mt-2 leading-relaxed">오버/숏: 20m 이내 어프로치에서 핀을 5m 이상 지나치거나 못 미친 경우</p>
+        <p className="text-[10px] text-gray-500 mt-2 leading-relaxed">오버/숏: 20m 이내 어프로치에서 핀을 5m 이상 지나치거나 못 미친 경우</p>
       </div>
       <input type="text" placeholder="메모" value={memo} onChange={e => onMemoChange(e.target.value)}
-        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a6b3a]/30 focus:border-[#1a6b3a]" />
+        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]" />
     </div>
   );
 }
@@ -647,14 +647,14 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
   const secondKeys = ([1, 2, 3] as const).slice(0, secondShotsCount);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-surface flex flex-col">
       {/* Header */}
-      <div className="bg-[#1a6b3a] text-white px-4 pb-4" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 0.75rem)' }}>
+      <div className="bg-[#1B4332] text-white px-4 pb-4" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1rem)' }}>
         {/* Top row: hole number | cumulative score */}
         <div className="flex items-center justify-between mb-4">
           <div>
             <p className="text-green-200 text-[11px]">{round.course_name}</p>
-            <h2 className="text-2xl font-extrabold leading-tight">{holeNumber}번 홀</h2>
+            <h2 className="text-xl font-extrabold leading-tight">{holeNumber}번 홀</h2>
           </div>
           <div className="text-right">
             <p className={`text-3xl font-extrabold leading-none ${totalOver > 0 ? 'text-yellow-300' : totalOver < 0 ? 'text-blue-200' : 'text-white'}`}>
@@ -693,12 +693,12 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
 
       <div className="flex-1 px-4 py-4 space-y-4 pb-24">
         {/* Par */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+        <div className="bg-card rounded-2xl shadow-sm border border-gray-100 p-4">
           <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">파 선택</div>
           <div className="flex gap-3">
             {[3, 4, 5].map(p => (
               <button key={p} onClick={() => handleParChange(p)}
-                className={`flex-1 py-3 rounded-xl font-bold text-base border-2 transition-all active:scale-95 ${hole.par === p ? 'bg-[#1a6b3a] border-[#1a6b3a] text-white shadow-lg shadow-green-900/20' : 'bg-white border-gray-200 text-gray-700'}`}>
+                className={`flex-1 py-3 rounded-xl font-bold text-base border-2 transition-all active:scale-95 ${hole.par === p ? 'bg-[#1B4332] border-[#1B4332] text-white shadow-lg shadow-green-900/20' : 'bg-white border-gray-200 text-gray-700'}`}>
                 파{p}
               </button>
             ))}
@@ -706,36 +706,36 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
         </div>
 
         {/* Score display box + counters combined */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-card rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           {/* Counters side by side — first */}
           <div className="grid grid-cols-2 divide-x divide-gray-100 px-0">
             {/* Green shots */}
             <div className="flex flex-col items-center py-4 gap-2">
-              <p className="text-xs text-gray-400 font-medium">온그린까지</p>
+              <p className="text-xs text-gray-500 font-medium">온그린까지</p>
               <div className="flex items-center gap-3">
                 <button onClick={() => updateAuto({ green_shots: Math.max(0, hole.green_shots - 1) })}
                   className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 text-gray-600 flex items-center justify-center text-xl font-bold active:scale-90 transition-transform">−</button>
                 <span className="w-7 text-center font-bold text-2xl text-gray-800">
-                  {isManual ? <span className="text-gray-300 text-xl">?</span> : hole.green_shots}
+                  {isManual ? <span className="text-gray-500 text-xl">?</span> : hole.green_shots}
                 </span>
                 <button onClick={() => updateAuto({ green_shots: hole.green_shots + 1 })}
-                  className="w-9 h-9 rounded-full bg-[#1a6b3a] text-white flex items-center justify-center text-xl font-bold active:scale-90 transition-transform">+</button>
+                  className="w-9 h-9 rounded-full bg-[#1B4332] text-white flex items-center justify-center text-xl font-bold active:scale-90 transition-transform">+</button>
               </div>
-              <p className="text-[10px] text-gray-300">타수</p>
+              <p className="text-[10px] text-gray-500">타수</p>
             </div>
             {/* Putts */}
             <div className="flex flex-col items-center py-4 gap-2">
-              <p className="text-xs text-gray-400 font-medium">퍼팅</p>
+              <p className="text-xs text-gray-500 font-medium">퍼팅</p>
               <div className="flex items-center gap-3">
                 <button onClick={() => updateAuto({ putts: Math.max(0, hole.putts - 1) })}
                   className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 text-gray-600 flex items-center justify-center text-xl font-bold active:scale-90 transition-transform">−</button>
                 <span className="w-7 text-center font-bold text-2xl text-gray-800">
-                  {isManual ? <span className="text-gray-300 text-xl">?</span> : hole.putts}
+                  {isManual ? <span className="text-gray-500 text-xl">?</span> : hole.putts}
                 </span>
                 <button onClick={() => updateAuto({ putts: hole.putts + 1 })}
-                  className="w-9 h-9 rounded-full bg-[#1a6b3a] text-white flex items-center justify-center text-xl font-bold active:scale-90 transition-transform">+</button>
+                  className="w-9 h-9 rounded-full bg-[#1B4332] text-white flex items-center justify-center text-xl font-bold active:scale-90 transition-transform">+</button>
               </div>
-              <p className="text-[10px] text-gray-300">수</p>
+              <p className="text-[10px] text-gray-500">수</p>
             </div>
           </div>
 
@@ -772,7 +772,7 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
           {/* Hint */}
           <div className={`mx-4 mb-3 flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 ${isManual ? 'bg-orange-50' : 'bg-gray-50'}`}>
             {isManual && <Lock size={11} className="text-orange-400 flex-shrink-0" />}
-            <p className={`text-[10px] leading-relaxed ${isManual ? 'text-orange-500' : 'text-gray-400'}`}>
+            <p className={`text-[10px] leading-relaxed ${isManual ? 'text-orange-500' : 'text-gray-500'}`}>
               {isManual
                 ? '수동 집계 중. 카운터를 누르면 자동 집계로 전환돼요.'
                 : '카운터를 입력하면 자동 집계. 아래 +−로 직접 수정 가능.'}
@@ -781,7 +781,7 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
         </div>
 
         {/* Tee Shot */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+        <div className="bg-card rounded-2xl shadow-sm border border-gray-100 p-4">
           <SectionHeader title="티샷" />
           <div className="space-y-3">
             <ClubSelect value={hole.tee_club} onChange={v => updateField({ tee_club: v })} options={TEE_CLUBS} />
@@ -800,14 +800,14 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
         </div>
 
         {/* Second Shots */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+        <div className="bg-card rounded-2xl shadow-sm border border-gray-100 p-4">
           <SectionHeader title="세컨샷" />
           <div className="space-y-4">
             {secondKeys.map(i => (
               <div key={i} className={`${i > 1 ? 'pt-3 border-t border-gray-100' : ''}`}>
                 {secondShotsCount > 1 && (
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs font-semibold text-gray-400">{i}번째 샷</p>
+                    <p className="text-xs font-semibold text-gray-500">{i}번째 샷</p>
                     {i > 1 && (
                       <button onClick={() => removeSecondShot(i as 2 | 3)}
                         className="w-6 h-6 rounded-full bg-red-50 border border-red-200 text-red-500 flex items-center justify-center active:scale-90 transition-transform">
@@ -848,12 +848,12 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
         </div>
 
         {/* Approach */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+        <div className="bg-card rounded-2xl shadow-sm border border-gray-100 p-4">
           <SectionHeader title="어프로치" />
           <div className="space-y-4">
             {([1, 2] as const).slice(0, approachCount).map(i => (
               <div key={i} className={`${i > 1 ? 'pt-3 border-t border-gray-100' : ''}`}>
-                {approachCount > 1 && <p className="text-xs font-semibold text-gray-400 mb-2">{i}번째 어프로치</p>}
+                {approachCount > 1 && <p className="text-xs font-semibold text-gray-500 mb-2">{i}번째 어프로치</p>}
                 <div className="space-y-3">
                   <ClubSelect
                     value={hole[`approach${i}_club` as keyof Hole] as string}
@@ -883,7 +883,7 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
         </div>
 
         {/* Putting */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+        <div className="bg-card rounded-2xl shadow-sm border border-gray-100 p-4">
           <SectionHeader title="퍼팅" />
           <div className="space-y-3">
             <div className={`flex gap-2 ${isManual ? 'opacity-40 pointer-events-none' : ''}`}>
@@ -891,7 +891,7 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
                 const val = typeof p === 'number' ? p : 4;
                 return (
                   <button key={p} onClick={() => updateAuto({ putts: val })}
-                    className={`flex-1 py-3 rounded-xl font-bold text-base border-2 transition-all active:scale-95 ${hole.putts === val ? 'bg-[#1a6b3a] border-[#1a6b3a] text-white' : 'bg-white border-gray-200 text-gray-700'}`}>
+                    className={`flex-1 py-3 rounded-xl font-bold text-base border-2 transition-all active:scale-95 ${hole.putts === val ? 'bg-[#1B4332] border-[#1B4332] text-white' : 'bg-white border-gray-200 text-gray-700'}`}>
                     {p}
                   </button>
                 );
@@ -903,21 +903,21 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
               </p>
             )}
             <div className="border-t border-gray-100 pt-3">
-              <p className="text-xs text-gray-400 mb-1.5">미스 유형 (해당 시)</p>
+              <p className="text-xs text-gray-500 mb-1.5">미스 유형 (해당 시)</p>
               <MissChips value={hole.putt_miss} options={PUTT_MISS} onChange={v => updateField({ putt_miss: v })} hint={false} />
-              <p className="text-[10px] text-gray-400 mt-2">숏퍼팅 미스: 2m 이내의 퍼팅 실패</p>
-              <p className="text-[10px] text-gray-400 mt-0.5">거리감 미스: 롱퍼팅을 3m 이상 남긴 경우</p>
+              <p className="text-[10px] text-gray-500 mt-2">숏퍼팅 미스: 2m 이내의 퍼팅 실패</p>
+              <p className="text-[10px] text-gray-500 mt-0.5">거리감 미스: 롱퍼팅을 3m 이상 남긴 경우</p>
             </div>
             <input type="text" placeholder="메모" value={hole.putt_memo}
               onChange={e => updateField({ putt_memo: e.target.value })}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a6b3a]/30 focus:border-[#1a6b3a]"
+              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]"
             />
           </div>
         </div>
       </div>
 
       {/* Bottom buttons */}
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[390px] bg-white border-t border-gray-100 px-4 pt-3 shadow-lg safe-bottom">
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[390px] bg-card border-t border-gray-100 px-4 pt-3 shadow-lg safe-bottom">
         <div className="flex gap-3">
           {holeNumber === 1 ? (
             <button onClick={() => setShowDeleteModal(true)}
@@ -931,7 +931,7 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
             </button>
           )}
           <button onClick={() => handleSave(true)} disabled={saving}
-            className="flex-[2] flex items-center justify-center gap-1.5 bg-[#1a6b3a] text-white py-4 rounded-2xl font-bold text-base active:scale-95 transition-transform shadow-lg shadow-green-900/20 disabled:opacity-60">
+            className="flex-[2] flex items-center justify-center gap-1.5 bg-[#1B4332] text-white py-4 rounded-2xl font-bold text-base active:scale-95 transition-transform shadow-lg shadow-green-900/20 disabled:opacity-60">
             {saving ? '저장 중...' : holeNumber === 18 ? '라운드 완료' : '저장 · 다음 홀'}
             {!saving && holeNumber < 18 && <ChevronRight size={16} />}
           </button>
@@ -942,7 +942,7 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-6">
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowDeleteModal(false)} />
-          <div className="relative bg-white rounded-2xl shadow-xl p-6 w-full max-w-[320px]">
+          <div className="relative bg-card rounded-2xl shadow-xl p-6 w-full max-w-[320px]">
             <h3 className="text-base font-bold text-gray-900 mb-2">라운드를 삭제하시겠습니까?</h3>
             <p className="text-sm text-gray-500 mb-6">저장된 홀 기록이 모두 삭제됩니다.</p>
             <div className="flex gap-3">
