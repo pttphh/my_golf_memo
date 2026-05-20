@@ -28,7 +28,7 @@ interface RoundWithHoles {
   triple: number;
 }
 
-const PENALTY_MAP: Record<string, number> = { OB: 2, '????????': 1 };
+const PENALTY_MAP: Record<string, number> = { OB: 2, '해저드': 1 };
 
 function computeHoleStats(holes: Hole[]): Omit<RoundWithHoles, 'round' | 'holes'> {
   const totalStrokes = holes.reduce((s, h) => s + h.total_strokes, 0);
@@ -46,7 +46,7 @@ function computeHoleStats(holes: Hole[]): Omit<RoundWithHoles, 'round' | 'holes'
   }, 0);
   const gir = holes.filter(h => h.green_shots <= h.par - 2 && h.green_shots > 0).length;
   const fairwayDenom = holes.filter(h => h.par !== 3).length;
-  const fairwayHits = holes.filter(h => h.par !== 3 && h.tee_result === '??????????').length;
+  const fairwayHits = holes.filter(h => h.par !== 3 && h.tee_result === '페어웨이').length;
   const birdie = holes.filter(h => h.over_par <= -1).length;
   const parHoles = holes.filter(h => h.over_par === 0).length;
   const bogey = holes.filter(h => h.over_par === 1).length;
@@ -109,9 +109,8 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
   const allBestData = data.length > 0 ? data.reduce((best, d) => d.totalStrokes < best.totalStrokes ? d : best) : null;
   const last6BestData = last6.length > 0 ? last6.reduce((best, d) => d.totalStrokes < best.totalStrokes ? d : best) : null;
 
-  // Miss analysis (?????? ??????: "???, ???" ??? "???+???" 1???)
   const missCountMap: Record<string, number> = {};
-  const clubMissRaw: Record<string, number> = { '???????': 0, '???????': 0, '??????????': 0, '????': 0 };
+  const clubMissRaw: Record<string, number> = { '드라이버': 0, '아이언': 0, '어프로치': 0, '퍼터': 0 };
 
   for (const d of last6) {
     for (const h of d.holes) {
@@ -122,14 +121,14 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
         const key = missPatternKey(raw);
         if (key) missCountMap[key] = (missCountMap[key] ?? 0) + 1;
       }
-      if (missPatternKey(h.tee_miss)) clubMissRaw['???????'] += 1;
+      if (missPatternKey(h.tee_miss)) clubMissRaw['드라이버'] += 1;
       for (const raw of [h.second1_miss, h.second2_miss, h.second3_miss]) {
-        if (missPatternKey(raw)) clubMissRaw['???????'] += 1;
+        if (missPatternKey(raw)) clubMissRaw['아이언'] += 1;
       }
       for (const raw of [h.approach1_miss, h.approach2_miss]) {
-        if (missPatternKey(raw)) clubMissRaw['??????????'] += 1;
+        if (missPatternKey(raw)) clubMissRaw['드라이버'] += 1;
       }
-      if (missPatternKey(h.putt_miss)) clubMissRaw['????'] += 1;
+      if (missPatternKey(h.putt_miss)) clubMissRaw['퍼터'] += 1;
     }
   }
 
@@ -139,19 +138,17 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
     .slice(0, 3);
 
   const topMiss = top3Miss[0];
-  const clubMissAvg = (['???????', '???????', '??????????', '????'] as const).map(club => ({
+  const clubMissAvg = (['드라이버', '아이언', '어프로치', '퍼터'] as const).map(club => ({
     club,
     avg: roundCount > 0 ? Math.round((clubMissRaw[club] / roundCount) * 10) / 10 : 0,
   }));
   const topClub = [...clubMissAvg].sort((a, b) => b.avg - a.avg)[0];
   const maxClubMiss = Math.max(...clubMissAvg.map(c => c.avg), 1);
 
-  // Averages
   const avgOver = avg(last6.map(d => d.overPar));
   const avgScore = avgInt(last6.map(d => d.totalStrokes));
   const avgPutts = avg(last6.map(d => d.totalPutts));
 
-  // Score distribution
   const avgBirdie = avg(last6.map(d => d.birdie));
   const avgPar = avg(last6.map(d => d.parHoles));
   const avgBogey = avg(last6.map(d => d.bogey));
@@ -159,7 +156,6 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
   const avgTriple = avg(last6.map(d => d.triple));
   const distMax = Math.max(avgBirdie, avgPar, avgBogey, avgDouble, avgTriple, 1);
 
-  // Shot accuracy
   const avgFairway = last6.length > 0
     ? Math.round(last6.reduce((s, d) => s + (d.fairwayDenom > 0 ? d.fairwayHits / d.fairwayDenom : 0), 0) / last6.length * 100)
     : 0;
@@ -171,7 +167,7 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
   if (loading) {
     return (
       <div className="min-h-screen bg-surface flex items-center justify-center">
-        <div className="text-gray-500">??????????? ??...</div>
+        <div className="text-gray-500">불러오는 중...</div>
       </div>
     );
   }
@@ -179,31 +175,30 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
   return (
     <div className="min-h-screen bg-surface flex flex-col">
       <div className="bg-[#1B4332] text-white px-4 pt-4 pb-4">
-        <h2 className="text-xl font-bold">??? ?????</h2>
-        <p className="text-green-200 text-sm mt-0.5">??? 6??????? ???</p>
+        <h2 className="text-xl font-bold">전체 통계</h2>
+        <p className="text-green-200 text-sm mt-0.5">최근 6라운드 기준</p>
       </div>
 
       <div className="px-4 py-5 space-y-4">
         {data.length === 0 ? (
           <div className="bg-card rounded-2xl border border-gray-100 p-8 text-center text-gray-500">
-            ??????? ????????? ????????????
+            저장된 라운드가 없습니다
           </div>
         ) : (
           <>
-            {/* ??? ????? ????? ????? */}
             <div className="bg-[#e8f5ee] rounded-2xl border border-[#b6dfc8] p-4">
               <div className="flex items-center gap-2 mb-3">
                 <TrendingUp size={16} className="text-[#1B4332]" />
-                <h3 className="text-sm font-bold text-[#1B4332]">????? ????? ?????</h3>
+                <h3 className="text-sm font-bold text-[#1B4332]">나의 개선 포인트</h3>
               </div>
               {topMiss || (topClub && topClub.avg > 0) ? (
                 <>
                   <p className="text-sm text-[#1B4332] leading-relaxed mb-3">
                     {topMiss && topClub && topClub.avg > 0
-                      ? `"${topMiss.type}" ?????? ?????????? ??? ${topMiss.avg}??? ????????? ???????, ${topClub.club} ?????? ????? ???????????. ???? ??????? ???????????????.`
+                      ? `"${topMiss.type}" 미스가 라운드당 평균 ${topMiss.avg}회 발생하고 있으며, ${topClub.club} 미스가 가장 많습니다. 집중 연습이 필요합니다.`
                       : topMiss
-                      ? `"${topMiss.type}" ?????? ?????????? ??? ${topMiss.avg}??? ????????? ????????????.`
-                      : `${topClub!.club} ?????? ????? ??? ????????? ????????????.`}
+                      ? `"${topMiss.type}" 미스가 라운드당 평균 ${topMiss.avg}회 발생하고 있습니다.`
+                      : `${topClub!.club} 미스가 가장 많이 발생하고 있습니다.`}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {topMiss && (
@@ -215,41 +210,39 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
                   </div>
                 </>
               ) : (
-                <p className="text-sm text-gray-500">???? ??????? ????????????. ??? ???? ?? ??????????????.</p>
+                <p className="text-sm text-gray-500">미스 데이터가 부족합니다. 홀 기록을 더 입력해보세요.</p>
               )}
             </div>
 
-            {/* ??? ??? 6??????? ??? */}
             <div className="bg-card rounded-2xl border border-gray-100 shadow-sm p-4">
-              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">??? 6??????? ???</h3>
+              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">최근 6라운드 평균</h3>
               <div className="grid grid-cols-3 divide-x divide-gray-100">
                 <div className="text-center pr-2">
-                  <p className="text-[11px] text-gray-500 mb-1">??? ????????</p>
+                  <p className="text-[11px] text-gray-500 mb-1">평균 오버파</p>
                   <p className={`text-2xl font-extrabold leading-none ${avgOver > 0 ? 'text-red-500' : avgOver < 0 ? 'text-[#1B4332]' : 'text-gray-700'}`}>
                     {avgOver > 0 ? `+${avgOver}` : avgOver === 0 ? 'E' : avgOver}
                   </p>
                 </div>
                 <div className="text-center px-2">
-                  <p className="text-[11px] text-gray-500 mb-1">??? ??????</p>
-                  <p className="text-2xl font-extrabold leading-none text-gray-800">{avgScore}<span className="text-xs font-normal text-gray-500 ml-0.5">???</span></p>
+                  <p className="text-[11px] text-gray-500 mb-1">평균 타수</p>
+                  <p className="text-2xl font-extrabold leading-none text-gray-800">{avgScore}<span className="text-xs font-normal text-gray-500 ml-0.5">타</span></p>
                 </div>
                 <div className="text-center pl-2">
-                  <p className="text-[11px] text-gray-500 mb-1">??? ????</p>
-                  <p className="text-2xl font-extrabold leading-none text-blue-500">{avgPutts}<span className="text-xs font-normal text-gray-500 ml-0.5">??</span></p>
+                  <p className="text-[11px] text-gray-500 mb-1">평균 퍼팅</p>
+                  <p className="text-2xl font-extrabold leading-none text-blue-500">{avgPutts}<span className="text-xs font-normal text-gray-500 ml-0.5">개</span></p>
                 </div>
               </div>
             </div>
 
-            {/* ??? ???????? ??? */}
             <div className="bg-card rounded-2xl border border-gray-100 shadow-sm p-4">
-              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">???????? ??? (??????? ??? ??? ???)</h3>
+              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">스코어 분포 (라운드 평균 홀 수)</h3>
               <div className="space-y-2.5">
                 {[
-                  { label: '????? ????', value: avgBirdie, color: 'bg-blue-500', textColor: 'text-blue-600' },
-                  { label: '???', value: avgPar, color: 'bg-[#1B4332]', textColor: 'text-[#1B4332]' },
-                  { label: '??', value: avgBogey, color: 'bg-yellow-400', textColor: 'text-yellow-600' },
-                  { label: '????', value: avgDouble, color: 'bg-orange-400', textColor: 'text-orange-600' },
-                  { label: '???????+', value: avgTriple, color: 'bg-red-500', textColor: 'text-red-600' },
+                  { label: '버디 이하', value: avgBirdie, color: 'bg-blue-500', textColor: 'text-blue-600' },
+                  { label: '파', value: avgPar, color: 'bg-[#1B4332]', textColor: 'text-[#1B4332]' },
+                  { label: '보기', value: avgBogey, color: 'bg-yellow-400', textColor: 'text-yellow-600' },
+                  { label: '더블', value: avgDouble, color: 'bg-orange-400', textColor: 'text-orange-600' },
+                  { label: '트리플+', value: avgTriple, color: 'bg-red-500', textColor: 'text-red-600' },
                 ].map(({ label, value, color, textColor }) => (
                   <div key={label} className="flex items-center gap-2">
                     <span className="text-xs text-gray-500 w-14 flex-shrink-0">{label}</span>
@@ -262,17 +255,16 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
               </div>
             </div>
 
-            {/* ??? ??? ??????? */}
             <div className="bg-card rounded-2xl border border-gray-100 shadow-sm p-4">
-              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">??? ???????</h3>
+              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">샷 정확도</h3>
               <div className="space-y-3">
                 {[
-                  { label: '?????????? ?????', value: avgFairway, max: 100, display: `${avgFairway}%`, color: 'bg-[#1B4332]', textColor: 'text-[#1B4332]' },
-                  { label: 'GIR', value: avgGir, max: 18, display: `${avgGir}???`, color: 'bg-blue-400', textColor: 'text-blue-600' },
-                  { label: '??? ???? ???', value: avgPutts, max: 40, display: `${avgPutts}??`, color: 'bg-sky-400', textColor: 'text-sky-600' },
-                  { label: '3???? ????', value: avg3Putt, max: 9, display: `${avg3Putt}???`, color: 'bg-orange-400', textColor: 'text-orange-600' },
-                  { label: '?????? ????', value: avgDbl, max: 9, display: `${avgDbl}???`, color: 'bg-red-400', textColor: 'text-red-600' },
-                  { label: '????? ??????', value: avgPenalty, max: 10, display: `${avgPenalty}???`, color: 'bg-red-600', textColor: 'text-red-700' },
+                  { label: '페어웨이 안착률', value: avgFairway, max: 100, display: `${avgFairway}%`, color: 'bg-[#1B4332]', textColor: 'text-[#1B4332]' },
+                  { label: 'GIR', value: avgGir, max: 18, display: `${avgGir}홀`, color: 'bg-blue-400', textColor: 'text-blue-600' },
+                  { label: '평균 퍼팅 수', value: avgPutts, max: 40, display: `${avgPutts}개`, color: 'bg-sky-400', textColor: 'text-sky-600' },
+                  { label: '3퍼팅 이상', value: avg3Putt, max: 9, display: `${avg3Putt}홀`, color: 'bg-orange-400', textColor: 'text-orange-600' },
+                  { label: '더블보기 이상', value: avgDbl, max: 9, display: `${avgDbl}홀`, color: 'bg-red-400', textColor: 'text-red-600' },
+                  { label: 's 손실', value: avgPenalty, max: 10, display: `${avgPenalty}타`, color: 'bg-red-600', textColor: 'text-red-700' },
                 ].map(({ label, value, max, display, color, textColor }) => (
                   <div key={label}>
                     <div className="flex items-center justify-between mb-1">
@@ -287,11 +279,10 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
               </div>
             </div>
 
-            {/* ??? ???? ?????? TOP3 */}
             {top3Miss.length > 0 && (
               <div className="bg-card rounded-2xl border border-gray-100 shadow-sm p-4">
-                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">???? ?????? TOP 3</h3>
-                <p className="text-[11px] text-gray-500 mb-3">??????? ??? ????? ??????</p>
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">미스 유형 TOP 3</h3>
+                <p className="text-[11px] text-gray-500 mb-3">라운드 평균 발생 횟수</p>
                 <div className="space-y-3">
                   {top3Miss.map(({ type, avg: a }, i) => (
                     <div key={type}>
@@ -300,7 +291,7 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
                           <span className={`w-5 h-5 rounded-full text-xs flex items-center justify-center font-bold text-white ${i === 0 ? 'bg-red-500' : i === 1 ? 'bg-red-400' : 'bg-red-300'}`}>{i + 1}</span>
                           <span className="text-sm text-gray-700">{type}</span>
                         </div>
-                        <span className="text-sm font-bold text-red-500">??? {a}???</span>
+                        <span className="text-sm font-bold text-red-500">평균 {a}회</span>
                       </div>
                       <div className="h-2 bg-red-50 rounded-full overflow-hidden">
                         <div className="h-full bg-red-400 rounded-full" style={{ width: `${(a / (top3Miss[0].avg || 1)) * 100}%` }} />
@@ -311,10 +302,9 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
               </div>
             )}
 
-            {/* ??? ?????? ???? ?????? */}
             <div className="bg-card rounded-2xl border border-gray-100 shadow-sm p-4">
-              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">?????? ???? ??????</h3>
-              <p className="text-[11px] text-gray-500 mb-3">??????? ???</p>
+              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">클럽별 미스 횟수</h3>
+              <p className="text-[11px] text-gray-500 mb-3">라운드 평균</p>
               <div className="space-y-3">
                 {clubMissAvg.map(({ club, avg: a }) => {
                   const ratio = a / maxClubMiss;
@@ -324,7 +314,7 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
                     <div key={club}>
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs text-gray-600">{club}</span>
-                        <span className={`text-xs font-bold ${textColor}`}>??? {a}???</span>
+                        <span className={`text-xs font-bold ${textColor}`}>평균 {a}회</span>
                       </div>
                       <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                         <div className={`h-full rounded-full ${barColor}`} style={{ width: `${ratio * 100}%` }} />
@@ -335,20 +325,19 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
               </div>
             </div>
 
-            {/* ??? ??????? ???????? */}
             <div className="bg-card rounded-2xl border border-gray-100 shadow-sm p-4">
-              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">??????? ????????</h3>
+              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">베스트 스코어</h3>
               <div className="space-y-2">
                 {allBestData && (
                   <div className="flex items-center justify-between py-2 border-b border-gray-50">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
                       <Trophy size={14} className="text-yellow-500 flex-shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-gray-700 leading-none">????????? ????</p>
-                        <p className="text-xs text-gray-500 truncate mt-0.5">{allBestData.round.course_name} � {allBestData.round.date}</p>
+                        <p className="text-sm font-semibold text-gray-700 leading-none">올타임 최저</p>
+                        <p className="text-xs text-gray-500 truncate mt-0.5">{allBestData.round.course_name} · {allBestData.round.date}</p>
                       </div>
                     </div>
-                    <span className="font-extrabold text-gray-900 ml-3 flex-shrink-0">{allBestData.totalStrokes}???</span>
+                    <span className="font-extrabold text-gray-900 ml-3 flex-shrink-0">{allBestData.totalStrokes}타</span>
                   </div>
                 )}
                 {last6BestData && (
@@ -356,11 +345,11 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
                     <div className="flex items-center gap-2 flex-1 min-w-0">
                       <Trophy size={14} className="text-[#1B4332] flex-shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-gray-700 leading-none">??? 6??????? ????</p>
-                        <p className="text-xs text-gray-500 truncate mt-0.5">{last6BestData.round.course_name} � {last6BestData.round.date}</p>
+                        <p className="text-sm font-semibold text-gray-700 leading-none">최근 6라운드 최저</p>
+                        <p className="text-xs text-gray-500 truncate mt-0.5">{last6BestData.round.course_name} · {last6BestData.round.date}</p>
                       </div>
                     </div>
-                    <span className="font-extrabold text-[#1B4332] ml-3 flex-shrink-0">{last6BestData.totalStrokes}???</span>
+                    <span className="font-extrabold text-[#1B4332] ml-3 flex-shrink-0">{last6BestData.totalStrokes}타</span>
                   </div>
                 )}
               </div>
