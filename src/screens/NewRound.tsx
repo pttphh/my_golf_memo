@@ -97,8 +97,8 @@ export default function NewRound({ onStart }: Props) {
               type="date"
               value={date}
               onChange={e => setDate(e.target.value)}
-              style={{ width: '100%', boxSizing: 'border-box' }}
-              className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]"
+              style={{ width: '100%', boxSizing: 'border-box', borderRadius: '0.75rem' }}
+              className="border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]"
             />
           </div>
           <div>
