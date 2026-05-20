@@ -1,7 +1,7 @@
 {
   "name": "Golf Memo",
   "short_name": "Golf Memo",
-  "description": "??? ?? ??? ?? ?",
+  "description": "골프 라운드 기록 앱",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#1B4332",
@@ -9,10 +9,14 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "src": "/icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
     }
   ]
 }
