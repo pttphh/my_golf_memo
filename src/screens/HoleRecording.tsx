@@ -36,6 +36,7 @@ interface Props {
   initialHoleIndex?: number;
   onFinish: () => void;
   onDeleteRound: () => void;
+  onExit?: () => void;
 }
 
 const TEE_CLUBS = ['드라이버', '우드', '유틸', '아이언', '웨지'];
@@ -495,14 +496,13 @@ function makeDefaultHole(roundId: string, holeNumber: number): Hole {
   return { ...emptyHole(roundId, holeNumber), ...defaults, total_strokes: defaults.green_shots + defaults.putts, over_par: 1 };
 }
 
-export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, onDeleteRound }: Props) {
+export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, onDeleteRound, onExit }: Props) {
   const [currentHoleIndex, setCurrentHoleIndex] = useState(initialHoleIndex);
   const holeNumber = currentHoleIndex + 1;
 
   const [hole, setHole] = useState<Hole>(() => makeDefaultHole(round.id, 1));
   const [isManual, setIsManual] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [secondShotsCount, setSecondShotsCount] = useState(1);
   const [approachCount, setApproachCount] = useState(1);
 
@@ -650,11 +650,21 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
     <div className="min-h-screen bg-[#f9f9f7] flex flex-col">
       {/* Header - Slim version */}
       <div className="bg-[#1B4332] text-white px-4 pb-3" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 0.75rem)' }}>
-        {/* Top row: hole number | cumulative score */}
+        {/* Top row: X button | hole number | cumulative score */}
         <div className="flex items-center justify-between mb-2">
-          <div>
-            <p className="text-green-300 text-[10px]">{round.course_name}</p>
-            <h2 className="text-lg font-bold leading-tight">{holeNumber}번 홀</h2>
+          <div className="flex items-center gap-3">
+            {onExit && (
+              <button 
+                onClick={onExit}
+                className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center active:bg-white/20 transition-colors"
+              >
+                <X size={18} className="text-white/80" />
+              </button>
+            )}
+            <div>
+              <p className="text-green-300 text-[10px]">{round.course_name}</p>
+              <h2 className="text-lg font-bold leading-tight">{holeNumber}번 홀</h2>
+            </div>
           </div>
           <div className="text-right">
             <p className={`text-2xl font-extrabold leading-none ${totalOver > 0 ? 'text-yellow-300' : totalOver < 0 ? 'text-blue-200' : 'text-white'}`}>
@@ -687,64 +697,67 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
         </div>
       </div>
 
-      <div className="flex-1 px-4 py-4 space-y-4 pb-24">
-        {/* Par */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">파 선택</div>
-          <div className="flex gap-3">
-            {[3, 4, 5].map(p => (
-              <button key={p} onClick={() => handleParChange(p)}
-                className={`flex-1 py-3 rounded-xl font-bold text-base border-2 transition-all active:scale-95 ${hole.par === p ? 'bg-[#1B4332] border-[#1B4332] text-white shadow-lg shadow-green-900/20' : 'bg-white border-gray-200 text-gray-700'}`}>
-                파{p}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Score display box + counters combined */}
+      <div className="flex-1 px-4 py-4 space-y-4 pb-28">
+        {/* Combined: Par + On-Green + Putting + Score */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          {/* Counters side by side — first */}
-          <div className="grid grid-cols-2 divide-x divide-gray-100 px-0">
+          {/* Par Selection */}
+          <div className="p-4 pb-3">
+            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">파 선택</div>
+            <div className="flex gap-2">
+              {[3, 4, 5].map(p => (
+                <button key={p} onClick={() => handleParChange(p)}
+                  className={`flex-1 py-2.5 rounded-xl font-bold text-sm border-2 transition-all active:scale-95 ${hole.par === p ? 'bg-[#1B4332] border-[#1B4332] text-white' : 'bg-white border-gray-200 text-gray-700'}`}>
+                  파{p}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="h-px bg-gray-100 mx-4" />
+
+          {/* Counters side by side */}
+          <div className="grid grid-cols-2 divide-x divide-gray-100">
             {/* Green shots */}
             <div className="flex flex-col items-center py-4 gap-2">
               <p className="text-xs text-gray-500 font-medium">온그린까지</p>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5">
                 <button onClick={() => updateAuto({ green_shots: Math.max(0, hole.green_shots - 1) })}
-                  className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 text-gray-600 flex items-center justify-center text-xl font-bold active:scale-90 transition-transform">−</button>
-                <span className="w-7 text-center font-bold text-2xl text-gray-800">
-                  {isManual ? <span className="text-gray-500 text-xl">?</span> : hole.green_shots}
+                  className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 text-gray-600 flex items-center justify-center text-lg font-bold active:scale-90 transition-transform">−</button>
+                <span className="w-6 text-center font-bold text-xl text-gray-800">
+                  {isManual ? <span className="text-gray-400 text-lg">?</span> : hole.green_shots}
                 </span>
                 <button onClick={() => updateAuto({ green_shots: hole.green_shots + 1 })}
-                  className="w-9 h-9 rounded-full bg-[#1B4332] text-white flex items-center justify-center text-xl font-bold active:scale-90 transition-transform">+</button>
+                  className="w-8 h-8 rounded-full bg-[#1B4332] text-white flex items-center justify-center text-lg font-bold active:scale-90 transition-transform">+</button>
               </div>
-              <p className="text-[10px] text-gray-500">타수</p>
+              <p className="text-[10px] text-gray-400">타수</p>
             </div>
             {/* Putts */}
             <div className="flex flex-col items-center py-4 gap-2">
               <p className="text-xs text-gray-500 font-medium">퍼팅</p>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5">
                 <button onClick={() => updateAuto({ putts: Math.max(0, hole.putts - 1) })}
-                  className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 text-gray-600 flex items-center justify-center text-xl font-bold active:scale-90 transition-transform">−</button>
-                <span className="w-7 text-center font-bold text-2xl text-gray-800">
-                  {isManual ? <span className="text-gray-500 text-xl">?</span> : hole.putts}
+                  className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 text-gray-600 flex items-center justify-center text-lg font-bold active:scale-90 transition-transform">−</button>
+                <span className="w-6 text-center font-bold text-xl text-gray-800">
+                  {isManual ? <span className="text-gray-400 text-lg">?</span> : hole.putts}
                 </span>
                 <button onClick={() => updateAuto({ putts: hole.putts + 1 })}
-                  className="w-9 h-9 rounded-full bg-[#1B4332] text-white flex items-center justify-center text-xl font-bold active:scale-90 transition-transform">+</button>
+                  className="w-8 h-8 rounded-full bg-[#1B4332] text-white flex items-center justify-center text-lg font-bold active:scale-90 transition-transform">+</button>
               </div>
-              <p className="text-[10px] text-gray-500">수</p>
+              <p className="text-[10px] text-gray-400">수</p>
             </div>
           </div>
 
-          {/* Score name row — below counters */}
-          <div className={`border-t-2 ${scoreStyle.border} ${scoreStyle.bg} px-4 py-4`}>
+          {/* Score Result */}
+          <div className={`border-t-2 ${scoreStyle.border} ${scoreStyle.bg} px-4 py-3`}>
             <div className="flex items-center justify-between">
               <button
                 onClick={() => adjustManualScore(-1)}
-                className="w-12 h-12 rounded-full bg-white border border-gray-300 text-gray-600 flex items-center justify-center text-2xl font-bold active:scale-90 transition-transform shadow-sm"
+                className="w-10 h-10 rounded-full bg-white border border-gray-200 text-gray-500 flex items-center justify-center text-xl font-bold active:scale-90 transition-transform shadow-sm"
               >−</button>
               <div className="text-center">
-                <p className={`text-4xl font-extrabold tracking-tight ${scoreStyle.text}`}>{scoreName}</p>
-                <p className={`text-sm mt-0.5 font-medium ${scoreStyle.text} opacity-70`}>
+                <p className={`text-2xl font-extrabold tracking-tight ${scoreStyle.text}`}>{scoreName}</p>
+                <p className={`text-xs mt-0.5 font-medium ${scoreStyle.text} opacity-70`}>
                   {overPar === 0
                     ? `총 ${hole.total_strokes}타`
                     : `${overPar > 0 ? `+${overPar}` : overPar} · 총 ${hole.total_strokes}타`}
@@ -753,25 +766,25 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
               <button
                 onClick={() => adjustManualScore(1)}
                 disabled={isMaxScore}
-                className="w-12 h-12 rounded-full bg-white border border-gray-300 text-gray-600 flex items-center justify-center text-2xl font-bold active:scale-90 transition-transform shadow-sm disabled:opacity-30 disabled:cursor-not-allowed"
+                className="w-10 h-10 rounded-full bg-white border border-gray-200 text-gray-500 flex items-center justify-center text-xl font-bold active:scale-90 transition-transform shadow-sm disabled:opacity-30 disabled:cursor-not-allowed"
               >+</button>
             </div>
           </div>
 
-          {/* Penalty info row — display only, not reflected in score */}
+          {/* Penalty info */}
           {getPenaltyStrokes(hole) > 0 && (
-            <div className="mx-4 mb-3 flex justify-between items-center bg-orange-50 rounded-xl px-3 py-2 border border-orange-100">
+            <div className="mx-4 mb-3 mt-2 flex justify-between items-center bg-orange-50 rounded-xl px-3 py-2 border border-orange-100">
               <span className="text-xs text-orange-600 font-medium">벌타 +{getPenaltyStrokes(hole)}타 포함</span>
             </div>
           )}
 
           {/* Hint */}
-          <div className={`mx-4 mb-3 flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 ${isManual ? 'bg-orange-50' : 'bg-gray-50'}`}>
+          <div className={`mx-4 mb-3 ${getPenaltyStrokes(hole) === 0 ? 'mt-2' : ''} flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 ${isManual ? 'bg-orange-50' : 'bg-gray-50'}`}>
             {isManual && <Lock size={11} className="text-orange-400 flex-shrink-0" />}
-            <p className={`text-[10px] leading-relaxed ${isManual ? 'text-orange-500' : 'text-gray-500'}`}>
+            <p className={`text-[10px] leading-relaxed ${isManual ? 'text-orange-500' : 'text-gray-400'}`}>
               {isManual
-                ? '수동 집계 중. 카운터를 누르면 자동 집계로 전환돼요.'
-                : '카운터를 입력하면 자동 집계. 아래 +−로 직접 수정 가능.'}
+                ? '수동 집계 중. 카운터를 누르면 자동 집계로 전환'
+                : '카운터 입력 시 자동 집계 · +−로 직접 수정 가능'}
             </p>
           </div>
         </div>
@@ -878,32 +891,12 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
           </div>
         </div>
 
-        {/* Putting */}
+        {/* Putting Miss Types */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-          <SectionHeader title="퍼팅" />
+          <SectionHeader title="퍼팅 미스" />
           <div className="space-y-3">
-            <div className={`flex gap-2 ${isManual ? 'opacity-40 pointer-events-none' : ''}`}>
-              {([0, 1, 2, 3, '4+'] as const).map(p => {
-                const val = typeof p === 'number' ? p : 4;
-                return (
-                  <button key={p} onClick={() => updateAuto({ putts: val })}
-                    className={`flex-1 py-3 rounded-xl font-bold text-base border-2 transition-all active:scale-95 ${hole.putts === val ? 'bg-[#1B4332] border-[#1B4332] text-white' : 'bg-white border-gray-200 text-gray-700'}`}>
-                    {p}
-                  </button>
-                );
-              })}
-            </div>
-            {isManual && (
-              <p className="text-xs text-orange-500 flex items-center gap-1">
-                <Lock size={11} /> 수동 집계 중 퍼팅 버튼이 잠겨 있어요
-              </p>
-            )}
-            <div className="border-t border-gray-100 pt-3">
-              <p className="text-xs text-gray-500 mb-1.5">미스 유형 (해당 시)</p>
-              <MissChips value={hole.putt_miss} options={PUTT_MISS} onChange={v => updateField({ putt_miss: v })} hint={false} />
-              <p className="text-[10px] text-gray-500 mt-2">숏퍼팅 미스: 2m 이내의 퍼팅 실패</p>
-              <p className="text-[10px] text-gray-500 mt-0.5">거리감 미스: 롱퍼팅을 3m 이상 남긴 경우</p>
-            </div>
+            <MissChips value={hole.putt_miss} options={PUTT_MISS} onChange={v => updateField({ putt_miss: v })} hint={false} />
+            <p className="text-[10px] text-gray-400">숏퍼팅 미스: 2m 이내 실패 · 거리감 미스: 3m 이상 남김</p>
             <input type="text" placeholder="메모" value={hole.putt_memo}
               onChange={e => updateField({ putt_memo: e.target.value })}
               className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]"
@@ -913,47 +906,22 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
       </div>
 
       {/* Bottom buttons */}
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[390px] bg-white border-t border-gray-100 px-4 pt-3 shadow-lg safe-bottom">
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[390px] bg-white border-t border-gray-100 px-4 pt-3 pb-6 shadow-lg">
         <div className="flex gap-3">
-          {holeNumber === 1 ? (
-            <button onClick={() => setShowDeleteModal(true)}
-              className="flex-1 flex items-center justify-center gap-1.5 py-4 rounded-2xl border-2 border-red-400 text-red-500 bg-white font-semibold text-sm active:scale-95 transition-transform">
-              라운드 삭제
-            </button>
-          ) : (
+          {holeNumber > 1 && (
             <button onClick={() => handleSave(false)} disabled={saving}
-              className="flex-1 flex items-center justify-center gap-1.5 py-4 rounded-2xl border-2 border-gray-200 text-gray-600 font-semibold text-sm active:scale-95 transition-transform disabled:opacity-60">
+              className="flex-shrink-0 flex items-center justify-center gap-1 px-4 py-3.5 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold text-sm active:scale-95 transition-transform disabled:opacity-60">
               <ChevronLeft size={16} /> 이전 홀
             </button>
           )}
           <button onClick={() => handleSave(true)} disabled={saving}
-            className="flex-[2] flex items-center justify-center gap-1.5 bg-[#1B4332] text-white py-4 rounded-2xl font-bold text-base active:scale-95 transition-transform shadow-lg shadow-green-900/20 disabled:opacity-60">
+            className="flex-1 flex items-center justify-center gap-1.5 bg-[#1B4332] text-white py-3.5 rounded-xl font-bold text-sm active:scale-95 transition-transform shadow-lg shadow-green-900/20 disabled:opacity-60">
             {saving ? '저장 중...' : holeNumber === 18 ? '라운드 완료' : '저장 · 다음 홀'}
             {!saving && holeNumber < 18 && <ChevronRight size={16} />}
           </button>
         </div>
       </div>
 
-      {/* Delete confirmation modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-6">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setShowDeleteModal(false)} />
-          <div className="relative bg-white rounded-2xl shadow-xl p-6 w-full max-w-[320px]">
-            <h3 className="text-base font-bold text-gray-900 mb-2">라운드를 삭제하시겠습니까?</h3>
-            <p className="text-sm text-gray-500 mb-6">저장된 홀 기록이 모두 삭제됩니다.</p>
-            <div className="flex gap-3">
-              <button onClick={() => setShowDeleteModal(false)}
-                className="flex-1 py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold text-sm active:scale-95 transition-transform">
-                취소
-              </button>
-              <button onClick={() => { setShowDeleteModal(false); onDeleteRound(); }}
-                className="flex-1 py-3 rounded-xl bg-red-500 text-white font-bold text-sm active:scale-95 transition-transform">
-                삭제
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

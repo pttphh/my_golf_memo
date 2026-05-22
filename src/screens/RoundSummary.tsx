@@ -192,7 +192,7 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
           )}
         </div>
 
-        <div className="px-4 py-5 space-y-5">
+        <div className="px-4 py-5 space-y-5 pb-28">
           {holes.length > 0 && (
             <>
               <div className="bg-card rounded-2xl border border-gray-100 shadow-sm p-4">

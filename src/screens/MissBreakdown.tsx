@@ -139,7 +139,7 @@ export default function MissBreakdown({ roundId, onBack }: Props) {
         <p className="text-green-200 text-sm mt-1">{holes.length}홀 · 총 {totalMisses}회 미스</p>
       </div>
 
-      <div className="px-4 py-5 space-y-4">
+      <div className="px-4 py-5 space-y-4 pb-28">
         {totalMisses === 0 ? (
           <div className="bg-card rounded-2xl border border-gray-100 p-8 text-center text-gray-500">
             기록된 미스가 없습니다

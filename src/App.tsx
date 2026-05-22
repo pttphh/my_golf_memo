@@ -59,6 +59,11 @@ export default function App() {
     setScreen('round-summary');
   }
 
+  function handleIncompleteRoundSelect(round: Round) {
+    setCurrentRound(round);
+    setScreen('hole-select');
+  }
+
   async function handleDeleteRound() {
     if (!currentRound) return;
     await supabase.from('holes').delete().eq('round_id', currentRound.id);
@@ -83,6 +88,7 @@ export default function App() {
               initialHoleIndex={continueFromHole - 1}
               onFinish={handleFinish}
               onDeleteRound={handleDeleteRound}
+              onExit={() => setScreen('round-list')}
             />
           )}
 
@@ -97,6 +103,7 @@ export default function App() {
           {screen === 'round-list' && (
             <RoundList 
               onRoundSelect={handleRoundSelect} 
+              onIncompleteRoundSelect={handleIncompleteRoundSelect}
               onAddRound={() => setScreen('new-round')}
             />
           )}

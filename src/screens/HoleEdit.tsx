@@ -391,7 +391,7 @@ export default function HoleEdit({ round, holeNumber, onBack }: Props) {
         </div>
       </div>
 
-      <div className="flex-1 px-4 py-4 space-y-4 pb-24">
+      <div className="flex-1 px-4 py-4 space-y-4 pb-28">
         {/* Par */}
         <div className="bg-card rounded-2xl shadow-sm border border-gray-100 p-4">
           <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">파 선택</div>

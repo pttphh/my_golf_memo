@@ -156,7 +156,7 @@ export default function HoleDetail({ roundId, selectedIndices, onBack }: Props) 
         <p className="text-green-200 text-sm mt-0.5">{selectedHoles.length}개 홀 상세 기록</p>
       </div>
 
-      <div className="px-4 py-5 space-y-4">
+      <div className="px-4 py-5 space-y-4 pb-28">
         {selectedHoles.map(hole => (
           <HoleCard key={hole.hole_number} hole={hole} />
         ))}

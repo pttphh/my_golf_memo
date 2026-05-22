@@ -137,7 +137,7 @@ export default function HoleSelect({ roundId, onBack, onConfirm: _onConfirm, onE
         </p>
       </div>
 
-      <div className="flex-1 px-4 py-5 space-y-4 pb-8">
+      <div className="flex-1 px-4 py-5 space-y-4 pb-28">
         {!isComplete && nextHole !== null && (
           <button
             onClick={() => onContinue(nextHole)}

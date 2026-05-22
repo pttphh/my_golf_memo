@@ -5,6 +5,7 @@ import type { Round } from '../types';
 
 interface Props {
   onRoundSelect: (round: Round) => void;
+  onIncompleteRoundSelect: (round: Round) => void;
   onAddRound: () => void;
 }
 
@@ -15,9 +16,10 @@ interface RoundSummary {
   threePuttPlus: number;
   doubleOrWorse: number;
   penalties: number;
+  holeCount: number;
 }
 
-export default function RoundList({ onRoundSelect, onAddRound }: Props) {
+export default function RoundList({ onRoundSelect, onIncompleteRoundSelect, onAddRound }: Props) {
   const [rounds, setRounds] = useState<RoundSummary[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -58,7 +60,7 @@ export default function RoundList({ onRoundSelect, onAddRound }: Props) {
           }
           return s + pen;
         }, 0);
-        return { round: r as Round, totalStrokes, overPar: totalStrokes - totalPar, threePuttPlus, doubleOrWorse, penalties };
+        return { round: r as Round, totalStrokes, overPar: totalStrokes - totalPar, threePuttPlus, doubleOrWorse, penalties, holeCount: hs.length };
       }));
       setLoading(false);
     }
@@ -102,17 +104,25 @@ export default function RoundList({ onRoundSelect, onAddRound }: Props) {
           const over = s.overPar;
           const overStr = over > 0 ? `+${over}` : over === 0 ? 'E' : `${over}`;
           const hasData = s.totalStrokes > 0;
+          const isComplete = s.holeCount >= 18;
           return (
             <button
               key={s.round.id}
-              onClick={() => onRoundSelect(s.round)}
+              onClick={() => isComplete ? onRoundSelect(s.round) : onIncompleteRoundSelect(s.round)}
               className="w-full rounded-2xl border border-gray-200 shadow-sm overflow-hidden text-left active:scale-[0.98] transition-transform"
             >
               {/* Top Section - Light Green */}
               <div className="bg-[#f0f4f0] px-4 py-3.5">
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-gray-800 truncate text-base">{s.round.course_name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-bold text-gray-800 truncate text-base">{s.round.course_name}</p>
+                      {!isComplete && (
+                        <span className="flex-shrink-0 text-[10px] font-semibold bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded">
+                          {s.holeCount}/18홀
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-gray-500 mt-0.5">{s.round.date} · {s.round.time}</p>
                   </div>
                   <div className="ml-4 text-right flex-shrink-0">
