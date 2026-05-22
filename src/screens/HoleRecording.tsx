@@ -647,44 +647,40 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
   const secondKeys = ([1, 2, 3] as const).slice(0, secondShotsCount);
 
   return (
-    <div className="min-h-screen bg-surface flex flex-col">
-      {/* Header */}
-      <div className="bg-[#1B4332] text-white px-4 pb-4" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1rem)' }}>
+    <div className="min-h-screen bg-[#f9f9f7] flex flex-col">
+      {/* Header - Slim version */}
+      <div className="bg-[#1B4332] text-white px-4 pb-3" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 0.75rem)' }}>
         {/* Top row: hole number | cumulative score */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-2">
           <div>
-            <p className="text-green-200 text-[11px]">{round.course_name}</p>
-            <h2 className="text-xl font-extrabold leading-tight">{holeNumber}번 홀</h2>
+            <p className="text-green-300 text-[10px]">{round.course_name}</p>
+            <h2 className="text-lg font-bold leading-tight">{holeNumber}번 홀</h2>
           </div>
           <div className="text-right">
-            <p className={`text-3xl font-extrabold leading-none ${totalOver > 0 ? 'text-yellow-300' : totalOver < 0 ? 'text-blue-200' : 'text-white'}`}>
+            <p className={`text-2xl font-extrabold leading-none ${totalOver > 0 ? 'text-yellow-300' : totalOver < 0 ? 'text-blue-200' : 'text-white'}`}>
               {totalOver === 0 ? 'E' : totalOver > 0 ? `+${totalOver}` : totalOver}
             </p>
-            <p className="text-green-200 text-sm font-medium mt-0.5">{totalScore}타</p>
+            <p className="text-green-300 text-xs font-medium">{totalScore}타</p>
           </div>
         </div>
 
-        {/* Progress bar */}
-        <div className="mb-1.5">
-          <div className="flex justify-between text-[10px] text-green-300 mb-1">
-            <span>전반</span>
-            <span>후반</span>
-          </div>
-          <div className="relative h-2 bg-green-800 rounded-full overflow-hidden">
+        {/* Progress bar - Compact */}
+        <div>
+          <div className="relative h-1.5 bg-green-800/50 rounded-full overflow-hidden">
             <div
               className="absolute left-0 top-0 h-full bg-white rounded-full transition-all duration-300"
               style={{ width: `${progressFraction * 100}%` }}
             />
           </div>
-          <div className="flex justify-between mt-1.5">
-            <span className={`text-xs font-semibold transition-opacity ${front9Done ? 'opacity-40' : 'opacity-100'} text-white`}>
-              {front9Over === 0 ? 'E' : front9Over > 0 ? `+${front9Over}` : front9Over}
-              <span className="text-green-300 font-normal ml-1">· {front9Score}타</span>
+          <div className="flex justify-between mt-1">
+            <span className={`text-[10px] font-medium transition-opacity ${front9Done ? 'opacity-50' : 'opacity-100'} text-white`}>
+              전반 {front9Over === 0 ? 'E' : front9Over > 0 ? `+${front9Over}` : front9Over}
+              <span className="text-green-300 ml-0.5">({front9Score})</span>
             </span>
-            <span className={`text-xs font-semibold transition-opacity ${back9Started ? 'opacity-100' : 'opacity-40'} text-white text-right`}>
-              {back9Started
-                ? <>{back9Over === 0 ? 'E' : back9Over > 0 ? `+${back9Over}` : back9Over}<span className="text-green-300 font-normal ml-1">· {back9Score}타</span></>
-                : <span className="text-green-300 font-normal">미진행</span>
+            <span className={`text-[10px] font-medium transition-opacity ${back9Started ? 'opacity-100' : 'opacity-50'} text-white`}>
+              후반 {back9Started
+                ? <>{back9Over === 0 ? 'E' : back9Over > 0 ? `+${back9Over}` : back9Over}<span className="text-green-300 ml-0.5">({back9Score})</span></>
+                : <span className="text-green-300">-</span>
               }
             </span>
           </div>
@@ -693,7 +689,7 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
 
       <div className="flex-1 px-4 py-4 space-y-4 pb-24">
         {/* Par */}
-        <div className="bg-card rounded-2xl shadow-sm border border-gray-100 p-4">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
           <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">파 선택</div>
           <div className="flex gap-3">
             {[3, 4, 5].map(p => (
@@ -706,7 +702,7 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
         </div>
 
         {/* Score display box + counters combined */}
-        <div className="bg-card rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           {/* Counters side by side — first */}
           <div className="grid grid-cols-2 divide-x divide-gray-100 px-0">
             {/* Green shots */}
@@ -781,7 +777,7 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
         </div>
 
         {/* Tee Shot */}
-        <div className="bg-card rounded-2xl shadow-sm border border-gray-100 p-4">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
           <SectionHeader title="티샷" />
           <div className="space-y-3">
             <ClubSelect value={hole.tee_club} onChange={v => updateField({ tee_club: v })} options={TEE_CLUBS} />
@@ -800,7 +796,7 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
         </div>
 
         {/* Second Shots */}
-        <div className="bg-card rounded-2xl shadow-sm border border-gray-100 p-4">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
           <SectionHeader title="세컨샷" />
           <div className="space-y-4">
             {secondKeys.map(i => (
@@ -848,7 +844,7 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
         </div>
 
         {/* Approach */}
-        <div className="bg-card rounded-2xl shadow-sm border border-gray-100 p-4">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
           <SectionHeader title="어프로치" />
           <div className="space-y-4">
             {([1, 2] as const).slice(0, approachCount).map(i => (
@@ -883,7 +879,7 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
         </div>
 
         {/* Putting */}
-        <div className="bg-card rounded-2xl shadow-sm border border-gray-100 p-4">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
           <SectionHeader title="퍼팅" />
           <div className="space-y-3">
             <div className={`flex gap-2 ${isManual ? 'opacity-40 pointer-events-none' : ''}`}>
@@ -917,7 +913,7 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
       </div>
 
       {/* Bottom buttons */}
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[390px] bg-card border-t border-gray-100 px-4 pt-3 shadow-lg safe-bottom">
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[390px] bg-white border-t border-gray-100 px-4 pt-3 shadow-lg safe-bottom">
         <div className="flex gap-3">
           {holeNumber === 1 ? (
             <button onClick={() => setShowDeleteModal(true)}
@@ -942,7 +938,7 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-6">
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowDeleteModal(false)} />
-          <div className="relative bg-card rounded-2xl shadow-xl p-6 w-full max-w-[320px]">
+          <div className="relative bg-white rounded-2xl shadow-xl p-6 w-full max-w-[320px]">
             <h3 className="text-base font-bold text-gray-900 mb-2">라운드를 삭제하시겠습니까?</h3>
             <p className="text-sm text-gray-500 mb-6">저장된 홀 기록이 모두 삭제됩니다.</p>
             <div className="flex gap-3">

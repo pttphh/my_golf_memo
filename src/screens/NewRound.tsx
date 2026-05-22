@@ -80,16 +80,16 @@ export default function NewRound({ onStart }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-surface flex flex-col">
+    <div className="min-h-screen bg-[#f9f9f7] flex flex-col">
       {/* Header */}
-      <div className="bg-[#1B4332] text-white px-4 pt-4 pb-4">
-        <h1 className="text-xl font-bold tracking-tight">새 라운드</h1>
-        <p className="text-green-200 text-sm mt-1">라운드 정보를 입력하세요</p>
+      <div className="px-4 pt-6 pb-4">
+        <h1 className="text-xl font-bold text-gray-900">새 라운드</h1>
+        <p className="text-gray-500 text-sm mt-0.5">라운드 정보를 입력하세요</p>
       </div>
 
-      <div className="flex-1 px-4 py-6 pb-28 space-y-5">
+      <div className="flex-1 px-4 pb-28 space-y-4">
         {/* Date & Time */}
-        <div className="bg-card rounded-2xl shadow-sm border border-gray-100 p-4 space-y-4">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-4">
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">날짜 & 시간</h2>
           <div style={{ overflow: 'hidden', width: '100%' }}>
             <label className="block text-xs text-gray-500 mb-1">날짜</label>
@@ -125,7 +125,7 @@ export default function NewRound({ onStart }: Props) {
         </div>
 
         {/* Course */}
-        <div className="bg-card rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">골프장</h2>
           <input
             type="text"
@@ -156,7 +156,7 @@ export default function NewRound({ onStart }: Props) {
         </div>
 
         {/* Companions */}
-        <div className="bg-card rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">동반자 ({companions.length}/3)</h2>
           {companions.map((name, i) => (
             <div key={i} className="flex items-center gap-2 bg-green-50 border border-green-100 rounded-xl px-3 py-2">
