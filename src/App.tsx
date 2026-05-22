@@ -17,6 +17,7 @@ import Profile from './screens/Profile';
 function screenToTab(screen: Screen): NavTab {
   if (screen === 'all-rounds') return 'all-rounds';
   if (screen === 'profile') return 'profile';
+  if (screen === 'settings') return 'settings';
   return 'round-list';
 }
 
@@ -33,7 +34,7 @@ export default function App() {
   function handleTabChange(tab: NavTab) {
     if (tab === 'all-rounds') setScreen('all-rounds');
     else if (tab === 'round-list') setScreen('round-list');
-    else if (tab === 'settings') setScreen('profile');
+    else if (tab === 'settings') setScreen('settings');
     else if (tab === 'profile') setScreen('profile');
   }
 
@@ -153,9 +154,13 @@ export default function App() {
             <AllRounds onRoundSelect={handleRoundSelect} />
           )}
 
-          {screen === 'profile' && (
-            <Profile />
-          )}
+{screen === 'settings' && (
+  <Profile />
+)}
+
+{screen === 'profile' && (
+  <Profile />
+)}
         </div>
 
         {showNav && <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />}
