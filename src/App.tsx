@@ -16,7 +16,7 @@ import Profile from './screens/Profile';
 
 function screenToTab(screen: Screen): NavTab {
   if (screen === 'all-rounds') return 'all-rounds';
-  if (screen === 'new-round') return 'new-round';
+  if (screen === 'settings') return 'settings';
   if (screen === 'profile') return 'profile';
   return 'round-list';
 }
@@ -32,7 +32,7 @@ export default function App() {
   const activeTab = screenToTab(screen);
 
   function handleTabChange(tab: NavTab) {
-    if (tab === 'new-round') setScreen('new-round');
+    if (tab === settings') setScreen('settings');
     else if (tab === 'all-rounds') setScreen('all-rounds');
     else if (tab === 'round-list') setScreen('round-list');
     else if (tab === 'profile') setScreen('profile');

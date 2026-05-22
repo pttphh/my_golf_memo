@@ -1,6 +1,6 @@
 import { Flag, BarChart3, Settings, User } from 'lucide-react';
 
-export type NavTab = 'round-list' | 'all-rounds' | 'new-round' | 'profile';
+export type NavTab = 'round-list' | 'all-rounds' | 'settings' | 'profile';
 
 interface Props {
   activeTab: NavTab;
@@ -10,7 +10,7 @@ interface Props {
 const TABS: { id: NavTab; label: string; icon: typeof Flag }[] = [
   { id: 'round-list', label: '라운드', icon: Flag },
   { id: 'all-rounds', label: '통계', icon: BarChart3 },
-  { id: 'new-round', label: '세팅', icon: Settings },
+  { id: 'settings', label: '세팅', icon: Settings },
   { id: 'profile', label: '개인', icon: User },
 ];
 
@@ -27,13 +27,11 @@ export default function BottomNav({ activeTab, onTabChange }: Props) {
                 key={tab.id}
                 onClick={() => onTabChange(tab.id)}
                 className={`flex-1 flex flex-col items-center gap-0.5 py-1.5 rounded-full transition-all ${
-                  isActive 
-                    ? 'bg-[#1B4332]/10' 
-                    : ''
+                  isActive ? 'bg-[#1B4332]/10' : ''
                 }`}
               >
-                <Icon 
-                  size={20} 
+                <Icon
+                  size={20}
                   className={`transition-colors ${isActive ? 'text-[#1B4332]' : 'text-gray-400'}`}
                   strokeWidth={isActive ? 2.5 : 2}
                 />
