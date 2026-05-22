@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
+import { Plus } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Round } from '../types';
 
 interface Props {
   onRoundSelect: (round: Round) => void;
+  onAddRound: () => void;
 }
 
 interface RoundSummary {
@@ -15,7 +17,7 @@ interface RoundSummary {
   penalties: number;
 }
 
-export default function RoundList({ onRoundSelect }: Props) {
+export default function RoundList({ onRoundSelect, onAddRound }: Props) {
   const [rounds, setRounds] = useState<RoundSummary[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -72,9 +74,26 @@ export default function RoundList({ onRoundSelect }: Props) {
   }
 
   return (
-    <div className="px-4 py-5 space-y-3">
+    <div className="px-4 py-5 pb-28 space-y-3">
+      {/* Header */}
+      <div className="flex items-center gap-2 mb-2">
+        <div className="w-7 h-7 rounded-full bg-[#1B4332] flex items-center justify-center">
+          <div className="w-3.5 h-3.5 rounded-full border-2 border-white" />
+        </div>
+        <span className="text-base font-bold text-gray-800 tracking-tight">Golf Memo</span>
+      </div>
+
+      {/* Add Round Button */}
+      <button
+        onClick={onAddRound}
+        className="w-full flex items-center justify-center gap-2 py-3 bg-[#1B4332] text-white rounded-xl font-semibold text-sm active:scale-[0.98] transition-transform shadow-sm"
+      >
+        <Plus size={18} strokeWidth={2.5} />
+        <span>라운드 기록 추가하기</span>
+      </button>
+
       {rounds.length === 0 ? (
-        <div className="bg-card rounded-2xl border border-gray-100 p-10 text-center">
+        <div className="bg-card rounded-2xl border border-gray-100 p-10 text-center mt-4">
           <p className="text-gray-500 text-sm">저장된 라운드가 없습니다</p>
           <p className="text-gray-500 text-xs mt-1">새 라운드를 시작해보세요</p>
         </div>
@@ -87,34 +106,40 @@ export default function RoundList({ onRoundSelect }: Props) {
             <button
               key={s.round.id}
               onClick={() => onRoundSelect(s.round)}
-              className="w-full bg-card rounded-2xl border border-gray-100 shadow-sm p-4 text-left active:scale-[0.98] transition-transform"
+              className="w-full rounded-2xl border border-gray-200 shadow-sm overflow-hidden text-left active:scale-[0.98] transition-transform"
             >
-              <div className="flex items-start justify-between">
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-gray-800 truncate">{s.round.course_name}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{s.round.date} · {s.round.time}</p>
-                </div>
-                <div className="ml-4 text-right flex-shrink-0">
-                  <p className="text-2xl font-extrabold text-gray-900 leading-none">
-                    {hasData ? `${s.totalStrokes}타` : '-'}
-                  </p>
-                  <p className={`text-sm font-semibold mt-0.5 ${over > 0 ? 'text-red-500' : over < 0 ? 'text-[#1B4332]' : 'text-gray-500'}`}>
-                    {hasData ? overStr : '기록 없음'}
-                  </p>
+              {/* Top Section - Light Green */}
+              <div className="bg-[#f0f4f0] px-4 py-3.5">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-gray-800 truncate text-base">{s.round.course_name}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{s.round.date} · {s.round.time}</p>
+                  </div>
+                  <div className="ml-4 text-right flex-shrink-0">
+                    <p className="text-2xl font-extrabold text-gray-900 leading-none">
+                      {hasData ? `${s.totalStrokes}타` : '-'}
+                    </p>
+                    <p className={`text-sm font-semibold mt-0.5 ${over > 0 ? 'text-red-500' : over < 0 ? 'text-[#1B4332]' : 'text-gray-500'}`}>
+                      {hasData ? overStr : '기록 없음'}
+                    </p>
+                  </div>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-0 mt-3 pt-3 border-t border-gray-100">
-                <div className="text-center">
-                  <p className="text-xs text-gray-500">3퍼팅+</p>
-                  <p className="text-sm font-bold text-orange-500 mt-0.5">{s.threePuttPlus}회</p>
-                </div>
-                <div className="text-center border-x border-gray-100">
-                  <p className="text-xs text-gray-500">더블↑</p>
-                  <p className="text-sm font-bold text-orange-600 mt-0.5">{s.doubleOrWorse}/18</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-xs text-gray-500">벌타</p>
-                  <p className="text-sm font-bold text-red-500 mt-0.5">{s.penalties}타</p>
+              {/* Bottom Section - White */}
+              <div className="bg-white px-4 py-3">
+                <div className="grid grid-cols-3 gap-0">
+                  <div className="text-center">
+                    <p className="text-[11px] text-gray-500">3퍼팅+</p>
+                    <p className="text-sm font-bold text-orange-500 mt-0.5">{s.threePuttPlus}회</p>
+                  </div>
+                  <div className="text-center border-x border-gray-100">
+                    <p className="text-[11px] text-gray-500">더블 이상</p>
+                    <p className="text-sm font-bold text-orange-600 mt-0.5">{s.doubleOrWorse}/18</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[11px] text-gray-500">벌타</p>
+                    <p className="text-sm font-bold text-red-500 mt-0.5">{s.penalties}타</p>
+                  </div>
                 </div>
               </div>
             </button>

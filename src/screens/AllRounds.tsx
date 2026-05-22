@@ -179,7 +179,7 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
         <p className="text-green-200 text-sm mt-0.5">최근 6라운드 기준</p>
       </div>
 
-      <div className="px-4 py-5 space-y-4">
+      <div className="px-4 py-5 pb-28 space-y-4">
         {data.length === 0 ? (
           <div className="bg-card rounded-2xl border border-gray-100 p-8 text-center text-gray-500">
             저장된 라운드가 없습니다

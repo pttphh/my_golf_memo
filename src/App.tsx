@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { supabase } from './lib/supabase';
 import type { Round, Screen } from './types';
 
-import NavBar, { type NavTab } from './components/NavBar';
+import BottomNav, { type NavTab } from './components/BottomNav';
 import NewRound from './screens/NewRound';
 import HoleRecording from './screens/HoleRecording';
 import HoleEdit from './screens/HoleEdit';
@@ -12,15 +12,17 @@ import RoundList from './screens/RoundList';
 import AllRounds from './screens/AllRounds';
 import HoleSelect from './screens/HoleSelect';
 import HoleDetail from './screens/HoleDetail';
+import Profile from './screens/Profile';
 
 function screenToTab(screen: Screen): NavTab {
   if (screen === 'all-rounds') return 'all-rounds';
-  if (['round-list', 'round-summary', 'miss-breakdown', 'hole-select', 'hole-detail', 'hole-edit'].includes(screen)) return 'round-list';
-  return 'new-round';
+  if (screen === 'new-round') return 'new-round';
+  if (screen === 'profile') return 'profile';
+  return 'round-list';
 }
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>('new-round');
+  const [screen, setScreen] = useState<Screen>('round-list');
   const [currentRound, setCurrentRound] = useState<Round | null>(null);
   const [selectedHoleIndices, setSelectedHoleIndices] = useState<number[]>([]);
   const [editHoleNumber, setEditHoleNumber] = useState<number>(1);
@@ -33,6 +35,7 @@ export default function App() {
     if (tab === 'new-round') setScreen('new-round');
     else if (tab === 'all-rounds') setScreen('all-rounds');
     else if (tab === 'round-list') setScreen('round-list');
+    else if (tab === 'profile') setScreen('profile');
   }
 
   function handleRoundStart(round: Round) {
@@ -47,7 +50,7 @@ export default function App() {
 
   function handleSaveRound() {
     setCurrentRound(null);
-    setScreen('new-round');
+    setScreen('round-list');
   }
 
   function handleRoundSelect(round: Round) {
@@ -69,8 +72,6 @@ export default function App() {
   return (
     <div className="flex justify-center bg-gray-200 min-h-screen">
       <div className="w-full max-w-[390px] relative bg-surface shadow-xl min-h-screen overflow-x-hidden flex flex-col">
-        {showNav && <NavBar activeTab={activeTab} onTabChange={handleTabChange} />}
-
         <div className="flex-1">
           {screen === 'new-round' && (
             <NewRound onStart={handleRoundStart} />
@@ -94,7 +95,10 @@ export default function App() {
           )}
 
           {screen === 'round-list' && (
-            <RoundList onRoundSelect={handleRoundSelect} />
+            <RoundList 
+              onRoundSelect={handleRoundSelect} 
+              onAddRound={() => setScreen('new-round')}
+            />
           )}
 
           {screen === 'round-summary' && currentRound && (
@@ -142,7 +146,13 @@ export default function App() {
           {screen === 'all-rounds' && (
             <AllRounds onRoundSelect={handleRoundSelect} />
           )}
+
+          {screen === 'profile' && (
+            <Profile />
+          )}
         </div>
+
+        {showNav && <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />}
       </div>
     </div>
   );

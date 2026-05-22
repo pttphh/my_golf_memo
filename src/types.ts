@@ -64,7 +64,7 @@ export interface Hole {
   putt_memo: string;
 }
 
-export type Screen = 'new-round' | 'hole-recording' | 'round-summary' | 'miss-breakdown' | 'all-rounds' | 'round-list' | 'hole-select' | 'hole-detail' | 'hole-edit';
+export type Screen = 'new-round' | 'hole-recording' | 'round-summary' | 'miss-breakdown' | 'all-rounds' | 'round-list' | 'hole-select' | 'hole-detail' | 'hole-edit' | 'profile';
 
 export interface AppState {
   screen: Screen;

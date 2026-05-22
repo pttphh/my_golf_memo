@@ -87,7 +87,7 @@ export default function NewRound({ onStart }: Props) {
         <p className="text-green-200 text-sm mt-1">라운드 정보를 입력하세요</p>
       </div>
 
-      <div className="flex-1 px-4 py-6 space-y-5">
+      <div className="flex-1 px-4 py-6 pb-28 space-y-5">
         {/* Date & Time */}
         <div className="bg-card rounded-2xl shadow-sm border border-gray-100 p-4 space-y-4">
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">날짜 & 시간</h2>
