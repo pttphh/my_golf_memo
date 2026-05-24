@@ -3,7 +3,7 @@ import { Settings, Clock, Database } from 'lucide-react';
 export default function Profile() {
   return (
     <div className="min-h-screen bg-surface pb-28">
-      <div className="px-4 pt-8 pb-4">
+      <div className="px-4 pb-4" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1.5rem)' }}>
         <h1 className="text-xl font-bold text-gray-800">라운드 세팅</h1>
         <p className="text-sm text-gray-500 mt-1">앱 환경을 설정해요</p>
       </div>
@@ -43,7 +43,8 @@ export default function Profile() {
         </div>
       </div>
 
-      <div className="px-4 pb-4" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1.5rem)' }}>        <div className="bg-[#1B4332]/5 rounded-2xl border border-[#1B4332]/10 p-4">
+      <div className="px-4 mt-4">
+        <div className="bg-[#1B4332]/5 rounded-2xl border border-[#1B4332]/10 p-4">
           <p className="text-xs text-[#1B4332] text-center leading-relaxed">
             세팅 기능은 순차적으로 업데이트될 예정이에요 😊
           </p>
