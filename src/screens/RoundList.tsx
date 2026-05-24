@@ -70,13 +70,16 @@ export default function RoundList({ onRoundSelect, onIncompleteRoundSelect, onAd
   if (loading) {
     return (
       <div className="min-h-[50vh] flex items-center justify-center">
-        <p className="text-gray-500 text-sm">불러오는 중...</p>
+        <p className="text-gray-500 text-sm">불러오는 중..</p>
       </div>
     );
   }
 
   return (
-    <div className="px-4 py-5 pb-28 space-y-3">
+    <div
+      className="px-4 pb-28 space-y-3"
+      style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1.25rem)' }}
+    >
       {/* Header */}
       <div className="flex items-center gap-2 mb-2">
         <div className="w-7 h-7 rounded-full bg-[#1B4332] flex items-center justify-center">
@@ -88,16 +91,16 @@ export default function RoundList({ onRoundSelect, onIncompleteRoundSelect, onAd
       {/* Add Round Button */}
       <button
         onClick={onAddRound}
-        className="w-full flex items-center justify-center gap-2 py-3 bg-[#1B4332] text-white rounded-xl font-semibold text-sm active:scale-[0.98] transition-transform shadow-sm"
+        className="w-full flex items-center justify-center gap-2 py-5 bg-[#1B4332] text-white rounded-xl font-semibold text-sm active:scale-[0.98] transition-transform shadow-sm"
       >
         <Plus size={18} strokeWidth={2.5} />
-        <span>라운드 기록 추가하기</span>
+        <span>+ 라운드 기록 추가하기</span>
       </button>
 
       {rounds.length === 0 ? (
         <div className="bg-card rounded-2xl border border-gray-100 p-10 text-center mt-4">
-          <p className="text-gray-500 text-sm">저장된 라운드가 없습니다</p>
-          <p className="text-gray-500 text-xs mt-1">새 라운드를 시작해보세요</p>
+          <p className="text-gray-500 text-sm">저장된 라운드가 없어요</p>
+          <p className="text-gray-500 text-xs mt-1">라운드를 추가해보세요</p>
         </div>
       ) : (
         rounds.map(s => {
@@ -138,24 +141,4 @@ export default function RoundList({ onRoundSelect, onIncompleteRoundSelect, onAd
               {/* Bottom Section - White */}
               <div className="bg-white px-4 py-3">
                 <div className="grid grid-cols-3 gap-0">
-                  <div className="text-center">
-                    <p className="text-[11px] text-gray-500">3퍼팅+</p>
-                    <p className="text-sm font-bold text-orange-500 mt-0.5">{s.threePuttPlus}회</p>
-                  </div>
-                  <div className="text-center border-x border-gray-100">
-                    <p className="text-[11px] text-gray-500">더블 이상</p>
-                    <p className="text-sm font-bold text-orange-600 mt-0.5">{s.doubleOrWorse}/18</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-[11px] text-gray-500">벌타</p>
-                    <p className="text-sm font-bold text-red-500 mt-0.5">{s.penalties}타</p>
-                  </div>
-                </div>
-              </div>
-            </button>
-          );
-        })
-      )}
-    </div>
-  );
-}
+                  <di
