@@ -181,8 +181,7 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
   return (
     <div className="min-h-screen bg-[#f9f9f7] flex flex-col">
       {/* Header */}
-      <div className="px-4 pt-6 pb-4">
-        <h2 className="text-xl font-bold text-gray-900">전체 통계</h2>
+      <div className="px-4 pb-4" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1.5rem)' }}>        <h2 className="text-xl font-bold text-gray-900">전체 통계</h2>
         <p className="text-gray-500 text-sm mt-0.5">{filterLabel} 기준</p>
       </div>
 
