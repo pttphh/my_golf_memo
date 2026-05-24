@@ -156,18 +156,15 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
 
       <div className="min-h-screen bg-surface flex flex-col">
         <div className="bg-[#1B4332] text-white px-4 pt-4 pb-4">
-          <p className="text-green-200 text-xs mb-1">{round.date} � {round.time}</p>
+          <p className="text-green-200 text-xs mb-1">{round.date}  . {round.time}</p>
           <h2 className="text-xl font-bold">{round.course_name}</h2>
-          {(round.course_front || round.course_back) && (
-            <div className="flex gap-2 mt-1.5">
-              {round.course_front && (
-                <span className="text-xs bg-green-800/50 text-green-200 px-2 py-0.5 rounded-full">전반 {round.course_front}</span>
-              )}
-              {round.course_back && (
-                <span className="text-xs bg-green-800/50 text-green-200 px-2 py-0.5 rounded-full">후반 {round.course_back}</span>
-              )}
-            </div>
-          )}
+          {(round.companion1 || round.companion2 || round.companion3) && (
+  <div className="flex gap-1.5 mt-1.5 flex-wrap">
+    {[round.companion1, round.companion2, round.companion3].filter(Boolean).map((name, i) => (
+      <span key={i} className="text-xs bg-green-800/50 text-green-200 px-2 py-0.5 rounded-full">{name}</span>
+    ))}
+  </div>
+)}
           {holes.length === 0 ? (
             <p className="mt-4 text-green-200 text-sm">홀 기록이 없습니다.</p>
           ) : (
@@ -178,12 +175,12 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
               </div>
               <div className="mt-4 flex gap-3">
                 <div className="flex-1 bg-green-800/50 rounded-xl p-3 text-center">
-                  <p className="text-green-200 text-xs mb-1">전반 (1-9홀)</p>
+                <p className="text-green-200 text-xs mb-1">전반 {round.course_front ? `(${round.course_front})` : '(1-9홀)'}</p>
                   <p className="text-white font-bold text-xl">{front9Score}</p>
                   <p className="text-green-300 text-sm">{f9Sign}</p>
                 </div>
                 <div className="flex-1 bg-green-800/50 rounded-xl p-3 text-center">
-                  <p className="text-green-200 text-xs mb-1">후반 (10-18홀)</p>
+                <p className="text-green-200 text-xs mb-1">후반 {round.course_back ? `(${round.course_back})` : '(10-18홀)'}</p>
                   <p className="text-white font-bold text-xl">{back9Score}</p>
                   <p className="text-green-300 text-sm">{b9Sign}</p>
                 </div>

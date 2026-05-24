@@ -652,27 +652,25 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
       <div className="bg-[#1B4332] text-white px-4 pb-3" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 0.75rem)' }}>
         {/* Top row: X button | hole number | cumulative score */}
         <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-3">
-            {onExit && (
-              <button 
-                onClick={onExit}
-                className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center active:bg-white/20 transition-colors"
-              >
-                <X size={18} className="text-white/80" />
-              </button>
-            )}
-            <div>
-              <p className="text-green-300 text-[10px]">{round.course_name}</p>
-              <h2 className="text-lg font-bold leading-tight">{holeNumber}번 홀</h2>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className={`text-2xl font-extrabold leading-none ${totalOver > 0 ? 'text-yellow-300' : totalOver < 0 ? 'text-blue-200' : 'text-white'}`}>
-              {totalOver === 0 ? 'E' : totalOver > 0 ? `+${totalOver}` : totalOver}
-            </p>
-            <p className="text-green-300 text-xs font-medium">{totalScore}타</p>
-          </div>
-        </div>
+  {onExit ? (
+    <button
+      onClick={onExit}
+      className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center active:bg-white/20 transition-colors flex-shrink-0"
+    >
+      <X size={18} className="text-white/80" />
+    </button>
+  ) : <div className="w-8" />}
+  <div className="text-center flex-1">
+    <p className="text-green-300 text-[10px]">{round.course_name}</p>
+    <h2 className="text-lg font-bold leading-tight">{holeNumber}번 홀</h2>
+  </div>
+  <div className="text-right flex-shrink-0">
+    <p className={`text-2xl font-extrabold leading-none ${totalOver > 0 ? 'text-yellow-300' : totalOver < 0 ? 'text-blue-200' : 'text-white'}`}>
+      {totalOver === 0 ? '파' : totalOver > 0 ? `+${totalOver}` : totalOver}
+    </p>
+    <p className="text-green-300 text-xs font-medium">{totalScore}타</p>
+</div>
+</div>  
 
         {/* Progress bar - Compact */}
         <div>
@@ -684,12 +682,12 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
           </div>
           <div className="flex justify-between mt-1">
             <span className={`text-[10px] font-medium transition-opacity ${front9Done ? 'opacity-50' : 'opacity-100'} text-white`}>
-              전반 {front9Over === 0 ? 'E' : front9Over > 0 ? `+${front9Over}` : front9Over}
+              전반 {front9Over === 0 ? '파' : front9Over > 0 ? `+${front9Over}` : front9Over}
               <span className="text-green-300 ml-0.5">({front9Score})</span>
             </span>
             <span className={`text-[10px] font-medium transition-opacity ${back9Started ? 'opacity-100' : 'opacity-50'} text-white`}>
               후반 {back9Started
-                ? <>{back9Over === 0 ? 'E' : back9Over > 0 ? `+${back9Over}` : back9Over}<span className="text-green-300 ml-0.5">({back9Score})</span></>
+                ? <>{back9Over === 0 ? '파' : back9Over > 0 ? `+${back9Over}` : back9Over}<span className="text-green-300 ml-0.5">({back9Score})</span></>
                 : <span className="text-green-300">-</span>
               }
             </span>

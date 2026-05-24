@@ -94,7 +94,7 @@ export default function RoundList({ onRoundSelect, onIncompleteRoundSelect, onAd
         className="w-full flex items-center justify-center gap-2 py-5 bg-[#1B4332] text-white rounded-xl font-semibold text-sm active:scale-[0.98] transition-transform shadow-sm"
       >
         <Plus size={18} strokeWidth={2.5} />
-        <span>+ 라운드 기록 추가하기</span>
+        <span>라운드 기록 추가하기</span>
       </button>
 
       {rounds.length === 0 ? (
@@ -141,4 +141,24 @@ export default function RoundList({ onRoundSelect, onIncompleteRoundSelect, onAd
               {/* Bottom Section - White */}
               <div className="bg-white px-4 py-3">
                 <div className="grid grid-cols-3 gap-0">
-                  <di
+                  <div className="text-center">
+                    <p className="text-[11px] text-gray-500">3퍼팅+</p>
+                    <p className="text-sm font-bold text-orange-500 mt-0.5">{s.threePuttPlus}회</p>
+                  </div>
+                  <div className="text-center border-x border-gray-100">
+                    <p className="text-[11px] text-gray-500">더블 이상</p>
+                    <p className="text-sm font-bold text-orange-600 mt-0.5">{s.doubleOrWorse}/18</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[11px] text-gray-500">벌타</p>
+                    <p className="text-sm font-bold text-red-500 mt-0.5">{s.penalties}타</p>
+                  </div>
+                </div>
+              </div>
+            </button>
+          );
+        })
+      )}
+    </div>
+  );
+}

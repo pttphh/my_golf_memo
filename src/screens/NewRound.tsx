@@ -7,24 +7,14 @@ interface Props {
   onStart: (round: Round) => void;
 }
 
-function getNow() {
+function getNowDateTimeLocal() {
   const now = new Date();
-  const date = now.toISOString().slice(0, 10);
-  const h = now.getHours().toString().padStart(2, '0');
-  const rawMin = now.getMinutes();
-  const roundedMin = Math.round(rawMin / 10) * 10;
-  const min = (roundedMin === 60 ? 0 : roundedMin).toString().padStart(2, '0');
-  return { date, hour: h, minute: min };
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
 }
 
-const HOURS = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
-const MINUTES = ['00', '10', '20', '30', '40', '50'];
-
 export default function NewRound({ onStart }: Props) {
-  const { date: todayDate, hour: nowHour, minute: nowMinute } = getNow();
-  const [date, setDate] = useState(todayDate);
-  const [hour, setHour] = useState(nowHour);
-  const [minute, setMinute] = useState(nowMinute);
+  const [dateTime, setDateTime] = useState(getNowDateTimeLocal());
   const [courseName, setCourseName] = useState('');
   const [courseFront, setCourseFront] = useState('');
   const [courseBack, setCourseBack] = useState('');
@@ -53,9 +43,11 @@ export default function NewRound({ onStart }: Props) {
     setError('');
     setLoading(true);
     try {
+      const date = dateTime.slice(0, 10);
+      const time = dateTime.slice(11, 16);
       const payload = {
         date,
-        time: `${hour}:${minute}`,
+        time,
         course_name: courseName.trim(),
         course_front: courseFront.trim(),
         course_back: courseBack.trim(),
@@ -81,7 +73,6 @@ export default function NewRound({ onStart }: Props) {
 
   return (
     <div className="min-h-screen bg-[#f9f9f7] flex flex-col">
-      {/* Header */}
       <div className="px-4 pt-6 pb-4">
         <h1 className="text-xl font-bold text-gray-900">새 라운드</h1>
         <p className="text-gray-500 text-sm mt-0.5">라운드 정보를 입력하세요</p>
@@ -89,40 +80,27 @@ export default function NewRound({ onStart }: Props) {
 
       <div className="flex-1 px-4 pb-28 space-y-4">
         {/* Date & Time */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-4">
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">날짜 & 시간</h2>
-          <div style={{ overflow: 'hidden', width: '100%' }}>
-            <label className="block text-xs text-gray-500 mb-1">날짜</label>
-            <input
-              type="text"
-              value={date}
-              onChange={e => setDate(e.target.value)}
-              placeholder="YYYY-MM-DD"
-              inputMode="numeric"
-              style={{ width: '100%', boxSizing: 'border-box' }}
-              className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]"
-            />
-          </div>
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">시간</label>
-            <div className="grid grid-cols-2 gap-3">
-              <select
-                value={hour}
-                onChange={e => setHour(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332] text-gray-700"
-              >
-                {HOURS.map(h => <option key={h} value={h}>{h}시</option>)}
-              </select>
-              <select
-                value={minute}
-                onChange={e => setMinute(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332] text-gray-700"
-              >
-                {MINUTES.map(m => <option key={m} value={m}>{m}분</option>)}
-              </select>
-            </div>
-          </div>
-        </div>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">
+  <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">날짜 & 시간</h2>
+  <div>
+    <label className="block text-xs text-gray-500 mb-1">날짜</label>
+    <input
+      type="date"
+      value={dateTime.slice(0, 10)}
+      onChange={e => setDateTime(e.target.value + 'T' + dateTime.slice(11, 16))}
+      className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332] text-gray-700"
+    />
+  </div>
+  <div>
+    <label className="block text-xs text-gray-500 mb-1">시간</label>
+    <input
+      type="time"
+      value={dateTime.slice(11, 16)}
+      onChange={e => setDateTime(dateTime.slice(0, 10) + 'T' + e.target.value)}
+      className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332] text-gray-700"
+    />
+  </div>
+</div>
 
         {/* Course */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">

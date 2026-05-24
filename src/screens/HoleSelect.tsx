@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Hole } from '../types';
 
@@ -9,6 +9,7 @@ interface Props {
   onConfirm: (selectedIndices: number[]) => void;
   onEditHole: (holeNumber: number) => void;
   onContinue: (holeNumber: number) => void;
+  onDelete?: () => void;
 }
 
 function getPenalties(hole: Hole): { ob: boolean; hazard: boolean } {
@@ -42,9 +43,10 @@ function scoreBg(overPar: number) {
   return 'bg-red-50 border-red-200';
 }
 
-export default function HoleSelect({ roundId, onBack, onConfirm: _onConfirm, onEditHole, onContinue }: Props) {
+export default function HoleSelect({ roundId, onBack, onConfirm: _onConfirm, onEditHole, onContinue, onDelete }: Props) {
   const [holes, setHoles] = useState<Hole[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -68,7 +70,7 @@ export default function HoleSelect({ roundId, onBack, onConfirm: _onConfirm, onE
   if (loading) {
     return (
       <div className="min-h-screen bg-surface flex items-center justify-center">
-        <p className="text-gray-500 text-sm">불러오는 중...</p>
+        <p className="text-gray-500 text-sm">불러오는 중..</p>
       </div>
     );
   }
@@ -181,7 +183,37 @@ export default function HoleSelect({ roundId, onBack, onConfirm: _onConfirm, onE
           </div>
           {renderGrid(10, 18)}
         </div>
+
+        {onDelete && (
+          <button
+            onClick={() => setShowDeleteModal(true)}
+            className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl border-2 border-red-300 text-red-500 font-semibold text-sm active:scale-95 transition-transform mt-4"
+          >
+            <Trash2 size={16} />
+            이 라운드 삭제
+          </button>
+        )}
       </div>
+
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-6">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowDeleteModal(false)} />
+          <div className="relative bg-white rounded-2xl shadow-xl p-6 w-full max-w-[320px]">
+            <h3 className="text-base font-bold text-gray-900 mb-2">라운드를 삭제할까요?</h3>
+            <p className="text-sm text-gray-500 mb-6">삭제된 데이터는 복구할 수 없어요.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowDeleteModal(false)}
+                className="flex-1 py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold text-sm active:scale-95 transition-transform">
+                취소
+              </button>
+              <button onClick={() => { setShowDeleteModal(false); onDelete?.(); }}
+                className="flex-1 py-3 rounded-xl bg-red-500 text-white font-bold text-sm active:scale-95 transition-transform">
+                삭제
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

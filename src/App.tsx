@@ -40,6 +40,7 @@ export default function App() {
 
   function handleRoundStart(round: Round) {
     setCurrentRound(round);
+    setContinueFromHole(1);
     setScreen('hole-recording');
   }
 
@@ -128,18 +129,19 @@ export default function App() {
 
           {screen === 'hole-select' && currentRound && (
             <HoleSelect
-              roundId={currentRound.id}
-              onBack={() => setScreen('round-summary')}
-              onConfirm={() => {}}
-              onEditHole={holeNumber => {
-                setEditHoleNumber(holeNumber);
-                setScreen('hole-edit');
-              }}
-              onContinue={holeNumber => {
-                setContinueFromHole(holeNumber);
-                setScreen('hole-recording');
-              }}
-            />
+            roundId={currentRound.id}
+            onBack={() => setScreen('round-summary')}
+            onConfirm={() => {}}
+            onEditHole={holeNumber => {
+              setEditHoleNumber(holeNumber);
+              setScreen('hole-edit');
+            }}
+            onContinue={holeNumber => {
+              setContinueFromHole(holeNumber);
+              setScreen('hole-recording');
+            }}
+            onDelete={handleDeleteRound}
+          />
           )}
 
           {screen === 'hole-detail' && currentRound && (
