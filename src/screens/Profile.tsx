@@ -43,8 +43,7 @@ export default function Profile() {
         </div>
       </div>
 
-      <div className="px-4 mt-4">
-        <div className="bg-[#1B4332]/5 rounded-2xl border border-[#1B4332]/10 p-4">
+      <div className="px-4 pb-4" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1.5rem)' }}>        <div className="bg-[#1B4332]/5 rounded-2xl border border-[#1B4332]/10 p-4">
           <p className="text-xs text-[#1B4332] text-center leading-relaxed">
             세팅 기능은 순차적으로 업데이트될 예정이에요 😊
           </p>
