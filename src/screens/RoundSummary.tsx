@@ -107,16 +107,33 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
     return s + pen;
   }, 0);
 
-  const gir = holes.filter(h => {
-    const requiredShots = h.par - 2;
-    return h.green_shots <= requiredShots && h.green_shots > 0;
-  }).length;
-
   const doubleOrWorse = holes.filter(h => h.over_par >= 2).length;
+  const yangpaCount = holes.filter(h => h.total_strokes >= h.par * 2).length;
   const par3Holes = holes.filter(h => h.par === 3).length;
   const fairwayDenom = 18 - par3Holes;
   const fairwayHits = holes.filter(h => h.par !== 3 && h.tee_result === '페어웨이').length;
   const fairwayPct = fairwayDenom > 0 ? Math.round((fairwayHits / fairwayDenom) * 100) : 0;
+
+  const girCount = holes.filter(
+    h => h.tee_result === '그린 온(GIR)' || h.second1_result === '그린 온(GIR)',
+  ).length;
+  const girPct = Math.round((girCount / 18) * 100);
+
+  const approachSuccess = holes.filter(
+    h => h.approach1_result === '5m이내안착' || h.approach2_result === '5m이내안착',
+  ).length;
+  const approachAttempts = holes.filter(
+    h => h.approach1_result !== '' || h.approach2_result !== '',
+  ).length;
+
+  const penaltyTypes = (h: Hole) => [
+    h.tee_penalty_type,
+    h.second1_penalty_type,
+    h.second2_penalty_type,
+    h.second3_penalty_type,
+  ];
+  const obHoles = holes.filter(h => penaltyTypes(h).includes('OB')).length;
+  const hazardHoles = holes.filter(h => penaltyTypes(h).includes('해저드')).length;
 
   async function handleSave() {
     setSaving(true);
@@ -211,12 +228,12 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <StatCard icon={<Flag size={16} />} label="페어웨이 안착률" value={`${fairwayHits} / ${fairwayDenom}`} sub={`${fairwayPct}%`} />
-                <StatCard icon={<Trophy size={16} />} label="GIR" value={`${gir} / 18`} sub="그린 적중 홀" />
-                <StatCard icon={<Target size={16} />} label="3퍼팅+" value={`${threePuttPlus}홀`} sub="3퍼팅 이상" />
-                <StatCard icon={<Target size={16} />} label="총 퍼팅" value={`${totalPutts}개`} />
-                <StatCard icon={<TrendingDown size={16} />} label="더블 이상" value={`${doubleOrWorse} / 18`} sub="더블보기 이상" />
-                <StatCard icon={<AlertTriangle size={16} />} label="s 손실" value={`${penalties}타`} sub="OB×2, 해저드×1" />
+                <StatCard icon={<Flag size={16} />} label="페어웨이 안착률" value={`${fairwayPct}%`} sub={`${fairwayHits} / ${fairwayDenom}`} />
+                <StatCard icon={<Trophy size={16} />} label="GIR" value={`${girPct}%`} sub={`${girCount} / 18`} />
+                <StatCard icon={<Target size={16} />} label="어프로치 성공" value={`${approachSuccess} / ${approachAttempts}`} sub="5m 이내 안착홀" />
+                <StatCard icon={<Target size={16} />} label="퍼팅" value={`총 ${totalPutts}개`} sub={`3퍼팅 이상 ${threePuttPlus}홀`} />
+                <StatCard icon={<TrendingDown size={16} />} label="더블보기 이상" value={`${doubleOrWorse} / 18`} sub={`양파 ${yangpaCount}홀`} />
+                <StatCard icon={<AlertTriangle size={16} />} label="손실 타수" value={`${penalties}타`} sub={`OB ${obHoles}홀 · 해저드 ${hazardHoles}홀`} />
               </div>
 
               <button onClick={onMissBreakdown}

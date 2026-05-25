@@ -22,6 +22,12 @@ function isYangpa(par: number, total: number): boolean {
   return total >= par * 2;
 }
 
+function formatOverPar(over: number): string {
+  if (over === 0) return '파';
+  if (over > 0) return `+${over}`;
+  return `${over}`;
+}
+
 function getScoreStyle(par: number, total: number, overPar: number): { text: string; bg: string; border: string } {
   if (isYangpa(par, total)) return { text: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200' };
   if (par === 3 && total === 1) return { text: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200' };
@@ -41,14 +47,23 @@ interface Props {
 
 const TEE_CLUBS = ['드라이버', '우드', '유틸', '아이언', '웨지'];
 const SHOT_CLUBS = ['우드', '유틸', '아이언', '웨지'];
-const APPROACH_CLUBS = ['50도 웨지', '58도 웨지'];
-
-const APPROACH_RESULTS = ['그린 온', '그린 미스'];
 const PENALTY_TRIGGER = '패널티';
 
-const APPROACH_MISS_SUB = ['오버', '숏', '벙커', 'OB', '해저드'] as const;
-type ApproachMissSub = typeof APPROACH_MISS_SUB[number];
-const APPROACH_PENALTY_MAP: Record<string, number> = { 'OB': 2, '해저드': 1 };
+const APPROACH_DISTANCES = [
+  { label: '30m 이내 시도', value: '30m이내' },
+  { label: '30m 이상 시도', value: '30m이상' },
+] as const;
+const APPROACH_NEAR_RESULTS = [
+  { label: '5m 이내 안착', value: '5m이내안착' },
+  { label: '실패', value: '실패' },
+] as const;
+const APPROACH_FAR_RESULTS = [
+  { label: '5m 이내 안착', value: '5m이내안착' },
+  { label: '그린온', value: '그린온' },
+  { label: '그린미스', value: '그린미스' },
+] as const;
+const APPROACH_FAIL_SUB = ['벙커', 'OB', '해저드'] as const;
+const APPROACH_PENALTY_MAP: Record<string, number> = { OB: 2, 해저드: 1 };
 
 // par4/5 tee sub-miss options for fairway miss
 const TEE_FAIRWAY_MISS_SUB = ['러프', '벙커', 'OB', '해저드'] as const;
@@ -57,7 +72,7 @@ type TeeFairwayMissSub = typeof TEE_FAIRWAY_MISS_SUB[number];
 const TEE_MISS_PAR45 = ['풀', '훅', '푸쉬', '슬라이스', '뒤땅', '탑볼', '뽕샷', '기타'];
 const TEE_MISS_PAR3  = ['풀', '훅', '푸쉬', '슬라이스', '뒤땅', '탑볼', '기타'];
 const SECOND_MISS = ['풀', '훅', '푸쉬', '슬라이스', '뒤땅', '탑볼', '생크', '벙커 실패', '기타'];
-const APPROACH_MISS = ['오버', '숏', '뒤땅', '탑볼', '생크', '벙커 실패', '기타'];
+const APPROACH_MISS = ['오버', '숏', '닫힘', '열림', '뒤땅', '탑볼', '생크', '벙커 실패', '기타'];
 const PUTT_MISS = ['숏퍼팅 미스', '거리감 미스'];
 
 const FAIRWAY_MISS_PENALTY: Record<string, number> = { 'OB': 2, '해저드': 1 };
@@ -191,7 +206,7 @@ function TeeShotBlock({ par, topResult, subResult, miss, memo, onTopChange, onSu
 }) {
   const isPar3 = par === 3;
   const topOptions = isPar3
-    ? ['그린 온', '그린 미스']
+    ? ['그린 온(GIR)', '그린 미스']
     : ['페어웨이', '페어웨이 미스'];
   const missLabel = isPar3 ? '그린 미스' : '페어웨이 미스';
   const showSub = topResult === missLabel;
@@ -283,7 +298,6 @@ function MissChips({ value, options, onChange, hint = true }: {
   const maxReached = selected.length >= 2;
   return (
     <div className="space-y-1.5">
-      {hint && <p className="text-[11px] text-gray-500">ex) 풀훅일 경우 풀과 훅 모두 선택</p>}
       <div className="flex flex-wrap gap-2">
       {options.map(m => {
         const isSelected = selected.includes(m);
@@ -333,7 +347,7 @@ function SecondShotBlock({ result, penaltyType, missDetail, miss, memo, isExtra,
   onMissChange: (v: string) => void;
   onMemoChange: (v: string) => void;
 }) {
-  const greenOnLabel = isExtra ? '그린 온' : '그린 온';
+  const greenOnLabel = isExtra ? '그린 온' : '그린 온(GIR)';
   const showSub = result === '그린 미스';
   const details = parseDetail(missDetail);
 
@@ -404,68 +418,67 @@ function SecondShotBlock({ result, penaltyType, missDetail, miss, memo, isExtra,
   );
 }
 
-function parseApproachDetail(raw: string): ApproachMissSub[] {
-  if (!raw) return [];
-  return raw.split(',').filter(Boolean) as ApproachMissSub[];
-}
-
-function serializeApproachDetail(items: ApproachMissSub[]): string {
-  return items.join(',');
-}
-
-function ApproachBlock({ result, missDetail, miss, memo,
-  onResultChange, onMissDetailChange, onMissChange, onMemoChange }: {
+function ApproachBlock({ distance, result, missDetail, miss, memo,
+  onDistanceChange, onResultChange, onMissDetailChange, onMissChange, onMemoChange }: {
+  distance: string;
   result: string;
   missDetail: string;
   miss: string;
   memo: string;
+  onDistanceChange: (v: string) => void;
   onResultChange: (v: string) => void;
   onMissDetailChange: (v: string) => void;
   onMissChange: (v: string) => void;
   onMemoChange: (v: string) => void;
 }) {
-  const showSub = result === '그린 미스';
-  const details = parseApproachDetail(missDetail);
-  const penaltyTotal = details.reduce((s, d) => s + (APPROACH_PENALTY_MAP[d] ?? 0), 0);
+  const isNear = distance === '30m이내';
+  const isFar = distance === '30m이상';
+  const resultOptions = isNear ? APPROACH_NEAR_RESULTS : isFar ? APPROACH_FAR_RESULTS : [];
+  const showSub = result === '실패' || result === '그린미스';
+  const penaltyTotal = APPROACH_PENALTY_MAP[missDetail] ?? 0;
 
-  function toggleDetail(item: ApproachMissSub) {
-    const isPenalty = APPROACH_PENALTY_MAP[item] !== undefined;
-    let next: ApproachMissSub[];
-    if (isPenalty) {
-      // OB/해저드: mutually exclusive
-      if (details.includes(item)) {
-        next = details.filter(d => d !== item);
-      } else {
-        next = [...details.filter(d => APPROACH_PENALTY_MAP[d] === undefined), item];
-      }
+  function handleDistance(value: string) {
+    if (distance === value) {
+      onDistanceChange('');
+      onResultChange('');
+      onMissDetailChange('');
     } else {
-      next = details.includes(item) ? details.filter(d => d !== item) : [...details, item];
+      onDistanceChange(value);
+      onResultChange('');
+      onMissDetailChange('');
     }
-    onMissDetailChange(serializeApproachDetail(next));
+  }
+
+  function handleResult(value: string) {
+    onResultChange(result === value ? '' : value);
+    if (value !== '실패' && value !== '그린미스') onMissDetailChange('');
+  }
+
+  function handleSubClick(s: string) {
+    onMissDetailChange(missDetail === s ? '' : s);
   }
 
   return (
     <div className="space-y-3">
-      <div>
-        <p className="text-xs text-gray-500 mb-1.5">결과</p>
-        <div className="flex flex-wrap gap-2">
-          {APPROACH_RESULTS.map(r => (
-            <Chip key={r} label={r} selected={result === r}
-              onClick={() => { onResultChange(result === r ? '' : r); if (r !== '그린 미스') onMissDetailChange(''); }} />
-          ))}
-        </div>
-      </div>
-
+<select
+        value={distance}
+        onChange={e => handleDistance(e.target.value)}
+        className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332] text-gray-700"
+      >
+        <option value="">시도 거리 선택</option>
+        <option value="30m이내">30m 이내 시도</option>
+        <option value="30m이상">30m 이상 시도</option>
+      </select>
       {showSub && (
         <div className="pl-3 border-l-2 border-gray-200 space-y-2">
-          <p className="text-xs text-gray-500">세부 위치 (복수 선택 가능)</p>
+          <p className="text-xs text-gray-500">세부 위치</p>
           <div className="flex flex-wrap gap-2">
-            {APPROACH_MISS_SUB.map(s => {
+            {APPROACH_FAIL_SUB.map(s => {
               const isPenalty = APPROACH_PENALTY_MAP[s] !== undefined;
               return (
-                <button key={s} onClick={() => toggleDetail(s)}
+                <button key={s} onClick={() => handleSubClick(s)}
                   className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all active:scale-95 cursor-pointer select-none ${
-                    details.includes(s)
+                    missDetail === s
                       ? isPenalty ? 'bg-orange-500 border-orange-500 text-white' : 'bg-[#1B4332] border-[#1B4332] text-white'
                       : isPenalty ? 'bg-orange-50 border-orange-300 text-orange-600' : 'bg-white border-gray-200 text-gray-700'
                   }`}>
@@ -483,7 +496,6 @@ function ApproachBlock({ result, missDetail, miss, memo,
       <div className="border-t border-gray-100 pt-3">
         <p className="text-xs text-gray-500 mb-1.5">미스 유형 (해당 시)</p>
         <MissChips value={miss} options={APPROACH_MISS} onChange={onMissChange} />
-        <p className="text-[10px] text-gray-500 mt-2 leading-relaxed">오버/숏: 20m 이내 어프로치에서 핀을 5m 이상 지나치거나 못 미친 경우</p>
       </div>
       <input type="text" placeholder="메모" value={memo} onChange={e => onMemoChange(e.target.value)}
         className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]" />
@@ -602,43 +614,30 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
     setCurrentHoleIndex(goNext ? currentHoleIndex + 1 : currentHoleIndex - 1);
   }
 
-  // Header stats: savedHoles holds previously saved holes (excluding current)
-  // current hole is always included live in calculations
   const overPar = hole.over_par;
 
-  // All holes to consider for total: saved previous holes + current hole
-  const savedList = Object.values(savedHoles).filter(h => h.hole_number !== holeNumber);
-  const allLive = [...savedList, hole];
+  const savedExcludingCurrent = Object.values(savedHoles).filter(h => h.hole_number !== holeNumber);
+  const totalScore =
+    savedExcludingCurrent.reduce((s, h) => s + h.total_strokes, 0) + hole.total_strokes;
 
-  const totalScore = allLive.reduce((s, h) => s + h.total_strokes, 0);
-  const totalPar = allLive.reduce((s, h) => s + h.par, 0);
-  const totalOver = totalScore - totalPar;
+  const front9Holes = [
+    ...savedExcludingCurrent.filter(h => h.hole_number <= 9),
+    ...(holeNumber <= 9 ? [hole] : []),
+  ];
+  const front9Over = front9Holes.reduce((s, h) => s + (h.total_strokes - h.par), 0);
 
-  const isBackNine = holeNumber >= 10;
+  const back9Started = holeNumber >= 10;
+  const back9Holes = [
+    ...savedExcludingCurrent.filter(h => h.hole_number >= 10),
+    ...(holeNumber >= 10 ? [hole] : []),
+  ];
+  const back9Over = back9Holes.reduce((s, h) => s + (h.total_strokes - h.par), 0);
 
-  // Front9: if currently in front9, show live (saved front9 + current); if in back9, show fixed final
-  const front9Saved = savedList.filter(h => h.hole_number <= 9);
-  const front9Score = isBackNine
-    ? front9Saved.reduce((s, h) => s + h.total_strokes, 0)
-    : [...front9Saved, hole].reduce((s, h) => s + h.total_strokes, 0);
-  const front9Par = isBackNine
-    ? front9Saved.reduce((s, h) => s + h.par, 0)
-    : [...front9Saved, hole].reduce((s, h) => s + h.par, 0);
-  const front9Over = front9Score - front9Par;
-  const front9Done = isBackNine;
-
-  // Back9: live only when in back9
-  const back9Saved = savedList.filter(h => h.hole_number >= 10);
-  const back9Score = isBackNine
-    ? [...back9Saved, hole].reduce((s, h) => s + h.total_strokes, 0)
-    : back9Saved.reduce((s, h) => s + h.total_strokes, 0);
-  const back9Par = isBackNine
-    ? [...back9Saved, hole].reduce((s, h) => s + h.par, 0)
-    : back9Saved.reduce((s, h) => s + h.par, 0);
-  const back9Over = back9Score - back9Par;
-  const back9Started = isBackNine;
-
-  const progressFraction = currentHoleIndex / 18;
+  const headerBg = holeNumber % 2 !== 0 ? '#1B4332' : '#2d5a3d';
+  const companions = [round.companion1, round.companion2, round.companion3].filter(Boolean).join(' · ');
+  const progressPct = (currentHoleIndex / 18) * 100;
+  const frontLabel = round.course_front ? `전반 (${round.course_front})` : '전반 (1-9홀)';
+  const backLabel = round.course_back ? `후반 (${round.course_back})` : '후반 (10-18홀)';
 
   const scoreName = getScoreName(hole.par, hole.total_strokes, overPar);
   const isMaxScore = isYangpa(hole.par, hole.total_strokes);
@@ -648,72 +647,79 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
 
   return (
     <div className="min-h-screen bg-[#f9f9f7] flex flex-col">
-      {/* Header - Slim version */}
-      <div className="bg-[#1B4332] text-white px-4 pb-3" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 0.75rem)' }}>
-        {/* Top row: X button | hole number | cumulative score */}
-        <div className="flex items-center justify-between mb-2">
-  {onExit ? (
-    <button
-      onClick={onExit}
-      className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center active:bg-white/20 transition-colors flex-shrink-0"
-    >
-      <X size={18} className="text-white/80" />
-    </button>
-  ) : <div className="w-8" />}
-  <div className="text-center flex-1">
-    <p className="text-green-300 text-[10px]">{round.course_name}</p>
-    <h2 className="text-lg font-bold leading-tight">{holeNumber}번 홀</h2>
-  </div>
-  <div className="text-right flex-shrink-0">
-    <p className={`text-2xl font-extrabold leading-none ${totalOver > 0 ? 'text-yellow-300' : totalOver < 0 ? 'text-blue-200' : 'text-white'}`}>
-      {totalOver === 0 ? '파' : totalOver > 0 ? `+${totalOver}` : totalOver}
-    </p>
-    <p className="text-green-300 text-xs font-medium">{totalScore}타</p>
-</div>
-</div>  
+      <div
+        className="text-white px-4 pb-3"
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 50,
+          backgroundColor: headerBg,
+          paddingTop: 'calc(env(safe-area-inset-top) + 0.75rem)',
+        }}
+      >
+        <div className="flex items-center mb-2">
+          {onExit ? (
+            <button
+              onClick={onExit}
+              className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center active:bg-white/30 transition-colors flex-shrink-0"
+            >
+              <X size={18} className="text-white/90" />
+            </button>
+          ) : (
+            <div className="w-8 flex-shrink-0" />
+          )}
+          <div className="flex-1 text-center min-w-0 px-2">
+            {companions ? (
+              <p className="text-[10px] text-white/70 truncate leading-tight">{companions}</p>
+            ) : null}
+            <h2 className="text-xl font-bold leading-tight">{holeNumber}번 홀</h2>
+          </div>
+          <div className="flex-shrink-0 text-right">
+            <span className="text-2xl font-extrabold leading-none" style={{ color: '#ffd700' }}>
+              {totalScore}타
+            </span>
+          </div>
+        </div>
 
-        {/* Progress bar - Compact */}
-        <div>
-          <div className="relative h-1.5 bg-green-800/50 rounded-full overflow-hidden">
-            <div
-              className="absolute left-0 top-0 h-full bg-white rounded-full transition-all duration-300"
-              style={{ width: `${progressFraction * 100}%` }}
-            />
+        <div className="flex items-end gap-2 mb-3">
+          <div className="flex-shrink-0 w-[4.5rem]">
+            <p className="text-[10px] text-white/75 leading-tight truncate">{frontLabel}</p>
+            <p className="text-sm font-bold mt-0.5">{formatOverPar(front9Over)}</p>
           </div>
-          <div className="flex justify-between mt-1">
-            <span className={`text-[10px] font-medium transition-opacity ${front9Done ? 'opacity-50' : 'opacity-100'} text-white`}>
-              전반 {front9Over === 0 ? '파' : front9Over > 0 ? `+${front9Over}` : front9Over}
-              <span className="text-green-300 ml-0.5">({front9Score})</span>
-            </span>
-            <span className={`text-[10px] font-medium transition-opacity ${back9Started ? 'opacity-100' : 'opacity-50'} text-white`}>
-              후반 {back9Started
-                ? <>{back9Over === 0 ? '파' : back9Over > 0 ? `+${back9Over}` : back9Over}<span className="text-green-300 ml-0.5">({back9Score})</span></>
-                : <span className="text-green-300">-</span>
-              }
-            </span>
+          <div className="flex-1 min-w-0 pb-0.5">
+            <div className="h-1.5 bg-black/20 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-white rounded-full transition-all duration-300"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
           </div>
+          <div className="flex-shrink-0 w-[4.5rem] text-right">
+            <p className="text-[10px] text-white/75 leading-tight truncate">{backLabel}</p>
+            <p className={`text-sm font-bold mt-0.5 ${back9Started ? '' : 'text-white/40'}`}>
+              {back9Started ? formatOverPar(back9Over) : '-'}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex gap-2">
+          {[3, 4, 5].map(p => (
+            <button
+              key={p}
+              onClick={() => handleParChange(p)}
+              className={`flex-1 py-2 rounded-xl font-bold text-sm transition-all active:scale-95 ${
+                hole.par === p ? 'bg-white' : 'bg-white/20 text-white'
+              }`}
+              style={hole.par === p ? { color: headerBg } : undefined}
+            >
+              파{p}
+            </button>
+          ))}
         </div>
       </div>
 
       <div className="flex-1 px-4 py-4 space-y-4 pb-28">
-        {/* Combined: Par + On-Green + Putting + Score */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          {/* Par Selection */}
-          <div className="p-4 pb-3">
-            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">파 선택</div>
-            <div className="flex gap-2">
-              {[3, 4, 5].map(p => (
-                <button key={p} onClick={() => handleParChange(p)}
-                  className={`flex-1 py-2.5 rounded-xl font-bold text-sm border-2 transition-all active:scale-95 ${hole.par === p ? 'bg-[#1B4332] border-[#1B4332] text-white' : 'bg-white border-gray-200 text-gray-700'}`}>
-                  파{p}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Divider */}
-          <div className="h-px bg-gray-100 mx-4" />
-
           {/* Counters side by side */}
           <div className="grid grid-cols-2 divide-x divide-gray-100">
             {/* Green shots */}
@@ -862,16 +868,13 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
               <div key={i} className={`${i > 1 ? 'pt-3 border-t border-gray-100' : ''}`}>
                 {approachCount > 1 && <p className="text-xs font-semibold text-gray-500 mb-2">{i}번째 어프로치</p>}
                 <div className="space-y-3">
-                  <ClubSelect
-                    value={hole[`approach${i}_club` as keyof Hole] as string}
-                    onChange={v => updateField({ [`approach${i}_club`]: v })}
-                    options={APPROACH_CLUBS}
-                  />
                   <ApproachBlock
+                    distance={hole[`approach${i}_club` as keyof Hole] as string}
                     result={hole[`approach${i}_result` as keyof Hole] as string}
                     missDetail={hole[`approach${i}_miss_detail` as keyof Hole] as string}
                     miss={hole[`approach${i}_miss` as keyof Hole] as string}
                     memo={hole[`approach${i}_memo` as keyof Hole] as string}
+                    onDistanceChange={v => updateField({ [`approach${i}_club`]: v })}
                     onResultChange={v => updateField({ [`approach${i}_result`]: v })}
                     onMissDetailChange={v => updateField({ [`approach${i}_miss_detail`]: v })}
                     onMissChange={v => updateField({ [`approach${i}_miss`]: v })}
@@ -889,20 +892,39 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
           </div>
         </div>
 
-        {/* Putting Miss Types */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-          <SectionHeader title="퍼팅 미스" />
-          <div className="space-y-3">
-            <MissChips value={hole.putt_miss} options={PUTT_MISS} onChange={v => updateField({ putt_miss: v })} hint={false} />
-            <p className="text-[10px] text-gray-400">숏퍼팅 미스: 2m 이내 실패 · 거리감 미스: 3m 이상 남김</p>
-            <input type="text" placeholder="메모" value={hole.putt_memo}
+{/* Putting */}
+<div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+          <SectionHeader title="퍼팅" />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <div className="flex flex-wrap gap-2">
+                {['숏퍼팅 성공', '숏퍼팅 실패'].map(v => (
+                  <Chip key={v} label={v} selected={hole.putt_miss === v} onClick={() => updateField({ putt_miss: hole.putt_miss === v ? '' : v })} />
+                ))}
+              </div>
+              <p className="text-[10px] text-gray-400">숏퍼팅 2m 이내 홀인 성공 또는 실패</p>
+            </div>
+            <div className="space-y-2">
+              <div className="flex flex-wrap gap-2">
+                {['롱퍼팅 성공', '롱퍼팅 실패'].map(v => (
+                  <Chip key={v} label={v} selected={hole.putt_memo === v} onClick={() => updateField({ putt_memo: hole.putt_memo === v ? '' : v })} />
+                ))}
+              </div>
+              <p className="text-[10px] text-gray-400">7m~15m에서 3m 이내로 남기기 성공 또는 실패</p>
+            </div>
+            <input type="text" placeholder="메모"
+              value={['롱퍼팅 성공', '롱퍼팅 실패'].includes(hole.putt_memo) ? '' : hole.putt_memo}
               onChange={e => updateField({ putt_memo: e.target.value })}
               className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]"
             />
-          </div>
+            <button
+              onClick={() => setApproachCount(c => Math.min(c + 1, 2))}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-gray-200 text-gray-500 text-sm active:bg-gray-50 transition-colors"
+            >
+              <Plus size={15} /> 퍼팅 추가
+            </button>          </div>
         </div>
       </div>
-
       {/* Bottom buttons */}
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[390px] bg-white border-t border-gray-100 px-4 pt-3 pb-6 shadow-lg">
         <div className="flex gap-3">

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ChevronLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { collectMissPatterns } from '../lib/missPattern';
 import type { Hole } from '../types';
 
 interface Props {
@@ -14,21 +13,52 @@ interface MissEntry {
   count: number;
 }
 
-function toMissEntries(counts: Record<string, number>): MissEntry[] {
+const DIRECTION = new Set(['풀', '훅', '푸쉬', '슬라이스']);
+const CONTACT = new Set(['뒤땅', '탑볼', '뽕샷', '생크', '벙커 실패']);
+const APPROACH_MISS = new Set(['오버', '숏', '닫힘', '열림', '뒤땅', '탑볼', '생크', '벙커 실패', '기타']);
+
+function parseMissRaw(raw: string): string[] {
+  if (!raw || !raw.trim()) return [];
+  return raw.split(',').map(s => s.trim()).filter(Boolean);
+}
+
+function collectDirectionMisses(raws: string[]): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const raw of raws) {
+    const parts = parseMissRaw(raw).filter(p => DIRECTION.has(p));
+    if (parts.length === 0) continue;
+    const key = parts.sort().join('+');
+    counts[key] = (counts[key] ?? 0) + 1;
+  }
+  return counts;
+}
+
+function collectContactMisses(raws: string[]): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const raw of raws) {
+    const parts = parseMissRaw(raw).filter(p => CONTACT.has(p));
+    for (const p of parts) {
+      counts[p] = (counts[p] ?? 0) + 1;
+    }
+  }
+  return counts;
+}
+
+function collectGenericMisses(raws: string[], validSet: Set<string>): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const raw of raws) {
+    const parts = parseMissRaw(raw).filter(p => validSet.has(p));
+    for (const p of parts) {
+      counts[p] = (counts[p] ?? 0) + 1;
+    }
+  }
+  return counts;
+}
+
+function toEntries(counts: Record<string, number>): MissEntry[] {
   return Object.entries(counts)
     .map(([label, count]) => ({ label, count }))
     .sort((a, b) => b.count - a.count);
-}
-
-const TEE_DIRECTION = ['풀', '훅', '푸쉬', '슬라이스'];
-const TEE_CONTACT = ['뒤땅', '탑볼', '뽕샷', '기타'];
-const SECOND_DIRECTION = ['풀', '훅', '푸쉬', '슬라이스'];
-const SECOND_CONTACT = ['뒤땅', '탑볼', '생크', '벙커 실패', '기타'];
-function filterEntries(entries: MissEntry[], canonicalItems: string[]): MissEntry[] {
-  return entries.filter(e => {
-    const parts = e.label.split('+');
-    return parts.every(p => canonicalItems.includes(p));
-  });
 }
 
 function MissBar({ entry, max }: { entry: MissEntry; max: number }) {
@@ -44,13 +74,14 @@ function MissBar({ entry, max }: { entry: MissEntry; max: number }) {
   );
 }
 
-function CategorySection({ title, entries }: { title: string; entries: MissEntry[] }) {
+function CategorySection({ title, sub, entries }: { title: string; sub: string; entries: MissEntry[] }) {
   const max = entries[0]?.count ?? 1;
   return (
-    <div className="bg-card rounded-2xl border border-gray-100 shadow-sm p-4">
-      <h3 className="text-sm font-bold text-gray-600 mb-3">{title}</h3>
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+      <h3 className="text-sm font-bold text-[#1B4332] mb-0.5">{title}</h3>
+      <p className="text-[11px] text-gray-500 mb-3">{sub}</p>
       {entries.length === 0 ? (
-        <p className="text-sm text-gray-500">기록 없음</p>
+        <p className="text-sm text-gray-400">미스 없음</p>
       ) : (
         <div className="space-y-3">
           {entries.map(e => <MissBar key={e.label} entry={e} max={max} />)}
@@ -80,7 +111,7 @@ export default function MissBreakdown({ roundId, onBack }: Props) {
   if (loading) {
     return (
       <div className="min-h-screen bg-surface flex items-center justify-center">
-        <p className="text-gray-500 text-sm">불러오는 중...</p>
+        <p className="text-gray-500 text-sm">불러오는 중..</p>
       </div>
     );
   }
@@ -95,38 +126,23 @@ export default function MissBreakdown({ roundId, onBack }: Props) {
     ...holes.map(h => h.approach1_miss),
     ...holes.map(h => h.approach2_miss),
   ];
-  const puttMisses = holes.map(h => h.putt_miss);
 
-  const teeAll = toMissEntries(collectMissPatterns(teeMisses));
-  const secondAll = toMissEntries(collectMissPatterns(secondMisses));
-  const approachAll = toMissEntries(collectMissPatterns(approachMisses));
-  const puttAll = toMissEntries(collectMissPatterns(puttMisses));
+  const teeDirection = toEntries(collectDirectionMisses(teeMisses));
+  const teeContact = toEntries(collectContactMisses(teeMisses));
+  const secondDirection = toEntries(collectDirectionMisses(secondMisses));
+  const secondContact = toEntries(collectContactMisses(secondMisses));
+  const approachAll = toEntries(collectGenericMisses(approachMisses, APPROACH_MISS));
 
-  const teeDirection = filterEntries(teeAll, TEE_DIRECTION);
-  const teeContact = filterEntries(teeAll, TEE_CONTACT);
-  const teeDirectionFull = [
-    ...teeDirection,
-    ...teeAll.filter(e => {
-      const parts = e.label.split('+');
-      return parts.some(p => TEE_DIRECTION.includes(p)) && parts.some(p => TEE_CONTACT.includes(p));
-    }),
-  ].sort((a, b) => b.count - a.count);
-
-  const secondDirection = filterEntries(secondAll, SECOND_DIRECTION);
-  const secondContact = filterEntries(secondAll, SECOND_CONTACT);
-  const secondDirectionFull = [
-    ...secondDirection,
-    ...secondAll.filter(e => {
-      const parts = e.label.split('+');
-      return parts.some(p => SECOND_DIRECTION.includes(p)) && parts.some(p => SECOND_CONTACT.includes(p));
-    }),
-  ].sort((a, b) => b.count - a.count);
+  const shortPuttFail = holes.filter(h => h.putt_miss === '숏퍼팅 실패').length;
+  const longPuttFail = holes.filter(h => h.putt_memo === '롱퍼팅 미스').length;
 
   const totalMisses =
-    teeAll.reduce((s, e) => s + e.count, 0) +
-    secondAll.reduce((s, e) => s + e.count, 0) +
+    teeDirection.reduce((s, e) => s + e.count, 0) +
+    teeContact.reduce((s, e) => s + e.count, 0) +
+    secondDirection.reduce((s, e) => s + e.count, 0) +
+    secondContact.reduce((s, e) => s + e.count, 0) +
     approachAll.reduce((s, e) => s + e.count, 0) +
-    puttAll.reduce((s, e) => s + e.count, 0);
+    shortPuttFail + longPuttFail;
 
   return (
     <div className="min-h-screen bg-surface flex flex-col">
@@ -141,67 +157,52 @@ export default function MissBreakdown({ roundId, onBack }: Props) {
 
       <div className="px-4 py-5 space-y-4 pb-28">
         {totalMisses === 0 ? (
-          <div className="bg-card rounded-2xl border border-gray-100 p-8 text-center text-gray-500">
-            기록된 미스가 없습니다
+          <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center text-gray-500">
+            기록된 미스가 없어요
           </div>
         ) : (
           <>
-            <div className="bg-card rounded-2xl border border-gray-100 shadow-sm p-4">
-              <h3 className="text-sm font-bold text-[#1B4332] mb-1">방향 미스</h3>
-              <p className="text-[11px] text-gray-500 mb-3">티샷 · 세컨샷 방향 미스 합산</p>
-              {(teeDirectionFull.length === 0 && secondDirectionFull.length === 0) ? (
-                <p className="text-sm text-gray-500">기록 없음</p>
+            <CategorySection
+              title="티샷 방향 미스"
+              sub="풀 · 훅 · 푸쉬 · 슬라이스 (복수 선택 시 조합으로 집계)"
+              entries={teeDirection}
+            />
+            <CategorySection
+              title="티샷 컨택 미스"
+              sub="뒤땅 · 탑볼 · 뽕샷 (각각 집계)"
+              entries={teeContact}
+            />
+            <CategorySection
+              title="세컨샷 방향 미스"
+              sub="풀 · 훅 · 푸쉬 · 슬라이스 (복수 선택 시 조합으로 집계)"
+              entries={secondDirection}
+            />
+            <CategorySection
+              title="세컨샷 컨택 미스"
+              sub="뒤땅 · 탑볼 · 생크 · 벙커 실패 (각각 집계)"
+              entries={secondContact}
+            />
+            <CategorySection
+              title="어프로치 미스"
+              sub="오버 · 숏 · 닫힘 · 열림 · 뒤땅 · 탑볼 · 생크"
+              entries={approachAll}
+            />
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+              <h3 className="text-sm font-bold text-[#1B4332] mb-0.5">퍼팅 미스</h3>
+              <p className="text-[11px] text-gray-500 mb-3">숏퍼팅 · 롱퍼팅 실패 집계</p>
+              {shortPuttFail === 0 && longPuttFail === 0 ? (
+                <p className="text-sm text-gray-400">미스 없음</p>
               ) : (
-                <div className="space-y-4">
-                  {teeDirectionFull.length > 0 && (
-                    <div>
-                      <p className="text-xs font-semibold text-gray-500 mb-2">티샷</p>
-                      <div className="space-y-3">
-                        {teeDirectionFull.map(e => <MissBar key={e.label} entry={e} max={teeDirectionFull[0].count} />)}
-                      </div>
-                    </div>
-                  )}
-                  {secondDirectionFull.length > 0 && (
-                    <div>
-                      <p className="text-xs font-semibold text-gray-500 mb-2">세컨샷</p>
-                      <div className="space-y-3">
-                        {secondDirectionFull.map(e => <MissBar key={e.label} entry={e} max={secondDirectionFull[0].count} />)}
-                      </div>
-                    </div>
-                  )}
+                <div className="space-y-3">
+                  {[
+                    { label: '숏퍼팅 실패', count: shortPuttFail },
+                    { label: '롱퍼팅 미스', count: longPuttFail },
+                  ].map(e => (
+                    <MissBar key={e.label} entry={e} max={Math.max(shortPuttFail, longPuttFail, 1)} />
+                  ))}
                 </div>
               )}
             </div>
-
-            <div className="bg-card rounded-2xl border border-gray-100 shadow-sm p-4">
-              <h3 className="text-sm font-bold text-[#1B4332] mb-1">컨택 미스</h3>
-              <p className="text-[11px] text-gray-500 mb-3">티샷 · 세컨샷 컨택 미스 합산</p>
-              {(teeContact.length === 0 && secondContact.length === 0) ? (
-                <p className="text-sm text-gray-500">기록 없음</p>
-              ) : (
-                <div className="space-y-4">
-                  {teeContact.length > 0 && (
-                    <div>
-                      <p className="text-xs font-semibold text-gray-500 mb-2">티샷</p>
-                      <div className="space-y-3">
-                        {teeContact.map(e => <MissBar key={e.label} entry={e} max={teeContact[0].count} />)}
-                      </div>
-                    </div>
-                  )}
-                  {secondContact.length > 0 && (
-                    <div>
-                      <p className="text-xs font-semibold text-gray-500 mb-2">세컨샷</p>
-                      <div className="space-y-3">
-                        {secondContact.map(e => <MissBar key={e.label} entry={e} max={secondContact[0].count} />)}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <CategorySection title="어프로치 미스" entries={approachAll} />
-            <CategorySection title="퍼팅 미스" entries={puttAll} />
           </>
         )}
 
