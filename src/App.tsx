@@ -77,8 +77,7 @@ export default function App() {
 
   return (
     <div className="flex justify-center bg-gray-200 min-h-screen">
-      <div className="w-full max-w-[390px] relative bg-surface shadow-xl min-h-screen overflow-x-hidden flex flex-col">
-        <div className="flex-1">
+<div className="w-full max-w-[390px] relative bg-surface shadow-xl min-h-screen flex flex-col">        <div className="flex-1">
           {screen === 'new-round' && (
             <NewRound onStart={handleRoundStart} />
           )}
