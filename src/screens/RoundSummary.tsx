@@ -215,15 +215,14 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
                 <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">홀별 결과 분포</h3>
                 <div className="grid grid-cols-5 gap-1">
                   {[
-                    { label: '버디↓', count: scoreDist.birdie, color: 'bg-blue-500', text: 'text-blue-600' },
-                    { label: '파', count: scoreDist.par, color: 'bg-[#1B4332]', text: 'text-[#1B4332]' },
-                    { label: '보기', count: scoreDist.bogey, color: 'bg-yellow-400', text: 'text-yellow-600' },
-                    { label: '더블', count: scoreDist.double, color: 'bg-orange-400', text: 'text-orange-600' },
-                    { label: '트리플↑', count: scoreDist.triple, color: 'bg-red-500', text: 'text-red-600' },
+{ label: '버디↓', count: scoreDist.birdie, color: 'bg-blue-100', text: 'text-blue-600' },
+{ label: '파', count: scoreDist.par, color: 'bg-green-100', text: 'text-green-800' },
+{ label: '보기', count: scoreDist.bogey, color: 'bg-amber-100', text: 'text-amber-600' },
+{ label: '더블', count: scoreDist.double, color: 'bg-orange-100', text: 'text-orange-600' },
+{ label: '트리플↑', count: scoreDist.triple, color: 'bg-red-100', text: 'text-red-500' },
                   ].map(({ label, count, color, text }) => (
                     <div key={label} className="flex flex-col items-center gap-1">
-                      <div className={`w-full rounded-xl py-2.5 text-white text-center font-extrabold text-xl ${color}`}>{count}</div>
-                      <span className={`text-xs font-medium ${text}`}>{label}</span>
+                      <div className={`w-full rounded-xl py-2.5 text-center font-extrabold text-xl ${color} ${text}`}>{count}</div>                      <span className={`text-xs font-medium ${text}`}>{label}</span>
                     </div>
                   ))}
                 </div>
