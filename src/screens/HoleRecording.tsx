@@ -40,9 +40,12 @@ function getScoreStyle(par: number, total: number, overPar: number): { text: str
 interface Props {
   round: Round;
   initialHoleIndex?: number;
-  onFinish: () => void;
-  onDeleteRound: () => void;
+  initialHole?: Hole;
+  isEditMode?: boolean;
+  onFinish?: () => void;
+  onDeleteRound?: () => void;
   onExit?: () => void;
+  onBack?: () => void;
 }
 
 const TEE_CLUBS = ['드라이버', '우드', '유틸', '아이언', '웨지'];
@@ -50,20 +53,14 @@ const SHOT_CLUBS = ['우드', '유틸', '아이언', '웨지'];
 const PENALTY_TRIGGER = '패널티';
 
 const APPROACH_DISTANCES = [
-  { label: '30m 이내 시도', value: '30m이내' },
-  { label: '30m 이상 시도', value: '30m이상' },
+  { label: '20m이내 시도', value: '20m이내' },
+  { label: '20~40m 시도', value: '20~40m' },
+  { label: '40m이상 시도', value: '40m이상' },
 ] as const;
-const APPROACH_NEAR_RESULTS = [
-  { label: '5m 이내 안착', value: '5m이내안착' },
+const APPROACH_OUTCOMES = [
+  { label: '성공', value: '성공' },
   { label: '실패', value: '실패' },
 ] as const;
-const APPROACH_FAR_RESULTS = [
-  { label: '5m 이내 안착', value: '5m이내안착' },
-  { label: '그린온', value: '그린온' },
-  { label: '그린미스', value: '그린미스' },
-] as const;
-const APPROACH_FAIL_SUB = ['벙커', 'OB', '해저드'] as const;
-const APPROACH_PENALTY_MAP: Record<string, number> = { OB: 2, 해저드: 1 };
 
 // par4/5 tee sub-miss options for fairway miss
 const TEE_FAIRWAY_MISS_SUB = ['러프', '벙커', 'OB', '해저드'] as const;
@@ -418,78 +415,52 @@ function SecondShotBlock({ result, penaltyType, missDetail, miss, memo, isExtra,
   );
 }
 
-function ApproachBlock({ distance, result, missDetail, miss, memo,
-  onDistanceChange, onResultChange, onMissDetailChange, onMissChange, onMemoChange }: {
+function ApproachBlock({ distance, result, miss, memo,
+  onDistanceChange, onResultChange, onMissChange, onMemoChange }: {
   distance: string;
   result: string;
-  missDetail: string;
   miss: string;
   memo: string;
   onDistanceChange: (v: string) => void;
   onResultChange: (v: string) => void;
-  onMissDetailChange: (v: string) => void;
   onMissChange: (v: string) => void;
   onMemoChange: (v: string) => void;
 }) {
-  const isNear = distance === '30m이내';
-  const isFar = distance === '30m이상';
-  const resultOptions = isNear ? APPROACH_NEAR_RESULTS : isFar ? APPROACH_FAR_RESULTS : [];
-  const showSub = result === '실패' || result === '그린미스';
-  const penaltyTotal = APPROACH_PENALTY_MAP[missDetail] ?? 0;
-
   function handleDistance(value: string) {
     if (distance === value) {
       onDistanceChange('');
       onResultChange('');
-      onMissDetailChange('');
     } else {
       onDistanceChange(value);
       onResultChange('');
-      onMissDetailChange('');
     }
   }
 
-  function handleResult(value: string) {
+  function handleOutcome(value: string) {
     onResultChange(result === value ? '' : value);
-    if (value !== '실패' && value !== '그린미스') onMissDetailChange('');
-  }
-
-  function handleSubClick(s: string) {
-    onMissDetailChange(missDetail === s ? '' : s);
   }
 
   return (
     <div className="space-y-3">
-<select
+      <select
         value={distance}
         onChange={e => handleDistance(e.target.value)}
         className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332] text-gray-700"
       >
         <option value="">시도 거리 선택</option>
-        <option value="30m이내">30m 이내 시도</option>
-        <option value="30m이상">30m 이상 시도</option>
+        {APPROACH_DISTANCES.map(({ label, value }) => (
+          <option key={value} value={value}>{label}</option>
+        ))}
       </select>
-      {showSub && (
-        <div className="pl-3 border-l-2 border-gray-200 space-y-2">
-          <p className="text-xs text-gray-500">세부 위치</p>
+
+      {distance && (
+        <div>
+          <p className="text-xs text-gray-500 mb-1.5">결과</p>
           <div className="flex flex-wrap gap-2">
-            {APPROACH_FAIL_SUB.map(s => {
-              const isPenalty = APPROACH_PENALTY_MAP[s] !== undefined;
-              return (
-                <button key={s} onClick={() => handleSubClick(s)}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all active:scale-95 cursor-pointer select-none ${
-                    missDetail === s
-                      ? isPenalty ? 'bg-orange-500 border-orange-500 text-white' : 'bg-[#1B4332] border-[#1B4332] text-white'
-                      : isPenalty ? 'bg-orange-50 border-orange-300 text-orange-600' : 'bg-white border-gray-200 text-gray-700'
-                  }`}>
-                  {s}
-                </button>
-              );
-            })}
+            {APPROACH_OUTCOMES.map(({ label, value }) => (
+              <Chip key={value} label={label} selected={result === value} onClick={() => handleOutcome(value)} />
+            ))}
           </div>
-          {penaltyTotal > 0 && (
-            <p className="text-xs text-orange-500 font-medium">벌타 +{penaltyTotal}타 (스코어 미반영)</p>
-          )}
         </div>
       )}
 
@@ -508,18 +479,46 @@ function makeDefaultHole(roundId: string, holeNumber: number): Hole {
   return { ...emptyHole(roundId, holeNumber), ...defaults, total_strokes: defaults.green_shots + defaults.putts, over_par: 1 };
 }
 
-export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, onDeleteRound, onExit }: Props) {
+export default function HoleRecording({
+  round,
+  initialHoleIndex = 0,
+  initialHole,
+  isEditMode = false,
+  onFinish,
+  onExit,
+  onBack,
+}: Props) {
   const [currentHoleIndex, setCurrentHoleIndex] = useState(initialHoleIndex);
   const holeNumber = currentHoleIndex + 1;
 
-  const [hole, setHole] = useState<Hole>(() => makeDefaultHole(round.id, 1));
-  const [isManual, setIsManual] = useState(false);
+  const [hole, setHole] = useState<Hole>(() => {
+    if (initialHole && initialHole.hole_number === initialHoleIndex + 1) return initialHole;
+    return makeDefaultHole(round.id, initialHoleIndex + 1);
+  });
+  const [isManual, setIsManual] = useState(() => Boolean(initialHole?.is_manual));
   const [saving, setSaving] = useState(false);
-  const [secondShotsCount, setSecondShotsCount] = useState(1);
-  const [approachCount, setApproachCount] = useState(1);
+  const [secondShotsCount, setSecondShotsCount] = useState(() => {
+    if (!initialHole) return 1;
+    if (initialHole.second3_club || initialHole.second3_result || initialHole.second3_miss) return 3;
+    if (initialHole.second2_club || initialHole.second2_result || initialHole.second2_miss) return 2;
+    return 1;
+  });
+  const [approachCount, setApproachCount] = useState(() =>
+    initialHole?.approach2_club || initialHole?.approach2_miss ? 2 : 1,
+  );
 
   // savedHoles: keyed by hole_number for header stats
   const [savedHoles, setSavedHoles] = useState<Record<number, Hole>>({});
+
+  function applyHoleState(h: Hole) {
+    setHole(h);
+    setIsManual(Boolean(h.is_manual));
+    let sc = 1;
+    if (h.second3_club || h.second3_result || h.second3_miss) sc = 3;
+    else if (h.second2_club || h.second2_result || h.second2_miss) sc = 2;
+    setSecondShotsCount(sc);
+    setApproachCount(h.approach2_club || h.approach2_miss ? 2 : 1);
+  }
 
   const loadHole = useCallback(async (holeNum: number) => {
     const { data } = await supabase
@@ -530,14 +529,8 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
       .maybeSingle();
     if (data) {
       const h = data as Hole;
-      setHole(h);
-      setIsManual(false);
+      applyHoleState(h);
       setSavedHoles(prev => ({ ...prev, [h.hole_number]: h }));
-      let sc = 1;
-      if (h.second3_club || h.second3_result || h.second3_miss) sc = 3;
-      else if (h.second2_club || h.second2_result || h.second2_miss) sc = 2;
-      setSecondShotsCount(sc);
-      setApproachCount((h.approach2_club || h.approach2_miss) ? 2 : 1);
     } else {
       setHole(makeDefaultHole(round.id, holeNum));
       setIsManual(false);
@@ -547,8 +540,27 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
   }, [round.id]);
 
   useEffect(() => {
+    if (isEditMode) {
+      async function loadAllSaved() {
+        const { data } = await supabase.from('holes').select('*').eq('round_id', round.id);
+        if (data) {
+          const map: Record<number, Hole> = {};
+          for (const h of data as Hole[]) map[h.hole_number] = h;
+          setSavedHoles(map);
+        }
+      }
+      loadAllSaved();
+    }
+  }, [round.id, isEditMode]);
+
+  useEffect(() => {
+    if (initialHole && initialHole.hole_number === holeNumber) {
+      applyHoleState(initialHole);
+      setSavedHoles(prev => ({ ...prev, [initialHole.hole_number]: initialHole }));
+      return;
+    }
     loadHole(holeNumber);
-  }, [holeNumber, loadHole]);
+  }, [holeNumber, loadHole, initialHole]);
 
   function updateAuto(updates: Partial<Hole>) {
     setIsManual(false);
@@ -602,13 +614,20 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
   if (error) console.error('[upsert 오류]', error.message);
 }
 
+  async function handleEditSave() {
+    setSaving(true);
+    await upsertHole(hole);
+    setSaving(false);
+    onBack?.();
+  }
+
   async function handleSave(goNext: boolean) {
     setSaving(true);
     await upsertHole(hole);
     setSavedHoles(prev => ({ ...prev, [holeNumber]: hole }));
     setSaving(false);
     if (goNext && holeNumber === 18) {
-      onFinish();
+      onFinish?.();
       return;
     }
     setCurrentHoleIndex(goNext ? currentHoleIndex + 1 : currentHoleIndex - 1);
@@ -658,7 +677,14 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
         }}
       >
         <div className="flex items-center mb-2">
-          {onExit ? (
+          {isEditMode && onBack ? (
+            <button
+              onClick={onBack}
+              className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center active:bg-white/30 transition-colors flex-shrink-0"
+            >
+              <ChevronLeft size={18} className="text-white/90" />
+            </button>
+          ) : onExit ? (
             <button
               onClick={onExit}
               className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center active:bg-white/30 transition-colors flex-shrink-0"
@@ -871,12 +897,10 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
                   <ApproachBlock
                     distance={hole[`approach${i}_club` as keyof Hole] as string}
                     result={hole[`approach${i}_result` as keyof Hole] as string}
-                    missDetail={hole[`approach${i}_miss_detail` as keyof Hole] as string}
                     miss={hole[`approach${i}_miss` as keyof Hole] as string}
                     memo={hole[`approach${i}_memo` as keyof Hole] as string}
                     onDistanceChange={v => updateField({ [`approach${i}_club`]: v })}
                     onResultChange={v => updateField({ [`approach${i}_result`]: v })}
-                    onMissDetailChange={v => updateField({ [`approach${i}_miss_detail`]: v })}
                     onMissChange={v => updateField({ [`approach${i}_miss`]: v })}
                     onMemoChange={v => updateField({ [`approach${i}_memo`]: v })}
                   />
@@ -927,19 +951,29 @@ export default function HoleRecording({ round, initialHoleIndex = 0, onFinish, o
       </div>
       {/* Bottom buttons */}
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[390px] bg-white border-t border-gray-100 px-4 pt-3 pb-6 shadow-lg">
-        <div className="flex gap-3">
-          {holeNumber > 1 && (
-            <button onClick={() => handleSave(false)} disabled={saving}
-              className="flex-shrink-0 flex items-center justify-center gap-1 px-4 py-3.5 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold text-sm active:scale-95 transition-transform disabled:opacity-60">
-              <ChevronLeft size={16} /> 이전 홀
-            </button>
-          )}
-          <button onClick={() => handleSave(true)} disabled={saving}
-            className="flex-1 flex items-center justify-center gap-1.5 bg-[#1B4332] text-white py-3.5 rounded-xl font-bold text-sm active:scale-95 transition-transform shadow-lg shadow-green-900/20 disabled:opacity-60">
-            {saving ? '저장 중...' : holeNumber === 18 ? '라운드 완료' : '저장 · 다음 홀'}
-            {!saving && holeNumber < 18 && <ChevronRight size={16} />}
+        {isEditMode ? (
+          <button
+            onClick={handleEditSave}
+            disabled={saving}
+            className="w-full flex items-center justify-center bg-[#1B4332] text-white py-3.5 rounded-xl font-bold text-sm active:scale-95 transition-transform shadow-lg shadow-green-900/20 disabled:opacity-60"
+          >
+            {saving ? '저장 중...' : '저장'}
           </button>
-        </div>
+        ) : (
+          <div className="flex gap-3">
+            {holeNumber > 1 && (
+              <button onClick={() => handleSave(false)} disabled={saving}
+                className="flex-shrink-0 flex items-center justify-center gap-1 px-4 py-3.5 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold text-sm active:scale-95 transition-transform disabled:opacity-60">
+                <ChevronLeft size={16} /> 이전 홀
+              </button>
+            )}
+            <button onClick={() => handleSave(true)} disabled={saving}
+              className="flex-1 flex items-center justify-center gap-1.5 bg-[#1B4332] text-white py-3.5 rounded-xl font-bold text-sm active:scale-95 transition-transform shadow-lg shadow-green-900/20 disabled:opacity-60">
+              {saving ? '저장 중...' : holeNumber === 18 ? '라운드 완료' : '저장 · 다음 홀'}
+              {!saving && holeNumber < 18 && <ChevronRight size={16} />}
+            </button>
+          </div>
+        )}
       </div>
 
     </div>

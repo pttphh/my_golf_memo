@@ -120,12 +120,15 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
   const girPct = Math.round((girCount / 18) * 100);
 
   const approachSuccess = holes.filter(
-    h => h.approach1_result === '5m이내안착' || h.approach2_result === '5m이내안착',
+    h => h.approach1_result === '성공' || h.approach2_result === '성공',
   ).length;
   const approachAttempts = holes.filter(
-    h => h.approach1_result !== '' || h.approach2_result !== '',
+    h => ['20m이내', '20~40m', '40m이상'].includes(h.approach1_club ?? '') ||
+         ['20m이내', '20~40m', '40m이상'].includes(h.approach2_club ?? ''),
   ).length;
-
+  const approachPct = approachAttempts > 0
+    ? Math.round((approachSuccess / approachAttempts) * 100)
+    : 0;
   const penaltyTypes = (h: Hole) => [
     h.tee_penalty_type,
     h.second1_penalty_type,
@@ -172,8 +175,7 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
       )}
 
       <div className="min-h-screen bg-surface flex flex-col">
-        <div className="bg-[#1B4332] text-white px-4 pt-4 pb-4">
-          <p className="text-green-200 text-xs mb-1">{round.date}  . {round.time}</p>
+      <div className="bg-[#1B4332] text-white px-4 pb-4" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1rem)' }}>          <p className="text-green-200 text-xs mb-1">{round.date}  . {round.time}</p>
           <h2 className="text-xl font-bold">{round.course_name}</h2>
           {(round.companion1 || round.companion2 || round.companion3) && (
   <div className="flex gap-1.5 mt-1.5 flex-wrap">
@@ -230,8 +232,7 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
               <div className="grid grid-cols-2 gap-3">
                 <StatCard icon={<Flag size={16} />} label="페어웨이 안착률" value={`${fairwayPct}%`} sub={`${fairwayHits} / ${fairwayDenom}`} />
                 <StatCard icon={<Trophy size={16} />} label="GIR" value={`${girPct}%`} sub={`${girCount} / 18`} />
-                <StatCard icon={<Target size={16} />} label="어프로치 성공" value={`${approachSuccess} / ${approachAttempts}`} sub="5m 이내 안착홀" />
-                <StatCard icon={<Target size={16} />} label="퍼팅" value={`총 ${totalPutts}개`} sub={`3퍼팅 이상 ${threePuttPlus}홀`} />
+                <StatCard icon={<Target size={16} />} label="어프로치 성공률" value={`${approachPct}%`} sub={`${approachSuccess} / ${approachAttempts}홀 성공`} />                <StatCard icon={<Target size={16} />} label="퍼팅" value={`총 ${totalPutts}개`} sub={`3퍼팅 이상 ${threePuttPlus}홀`} />
                 <StatCard icon={<TrendingDown size={16} />} label="더블보기 이상" value={`${doubleOrWorse} / 18`} sub={`양파 ${yangpaCount}홀`} />
                 <StatCard icon={<AlertTriangle size={16} />} label="손실 타수" value={`${penalties}타`} sub={`OB ${obHoles}홀 · 해저드 ${hazardHoles}홀`} />
               </div>

@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { supabase } from './lib/supabase';
-import type { Round, Screen } from './types';
+import type { Round, Screen, Hole } from './types';
 
 import BottomNav, { type NavTab } from './components/BottomNav';
 import NewRound from './screens/NewRound';
 import HoleRecording from './screens/HoleRecording';
-import HoleEdit from './screens/HoleEdit';
 import RoundSummary from './screens/RoundSummary';
 import MissBreakdown from './screens/MissBreakdown';
 import RoundList from './screens/RoundList';
@@ -26,6 +25,8 @@ export default function App() {
   const [currentRound, setCurrentRound] = useState<Round | null>(null);
   const [selectedHoleIndices, setSelectedHoleIndices] = useState<number[]>([]);
   const [editHoleNumber, setEditHoleNumber] = useState<number>(1);
+  const [editInitialHole, setEditInitialHole] = useState<Hole | undefined>();
+  const [isRecordingEditMode, setIsRecordingEditMode] = useState(false);
   const [continueFromHole, setContinueFromHole] = useState<number>(1);
   const [summaryViewMode, setSummaryViewMode] = useState<'recording' | 'view'>('recording');
 
@@ -41,6 +42,8 @@ export default function App() {
   function handleRoundStart(round: Round) {
     setCurrentRound(round);
     setContinueFromHole(1);
+    setIsRecordingEditMode(false);
+    setEditInitialHole(undefined);
     setScreen('hole-recording');
   }
 
@@ -73,7 +76,7 @@ export default function App() {
     setScreen('round-list');
   }
 
-  const showNav = screen !== 'hole-recording' && screen !== 'hole-edit';
+  const showNav = screen !== 'hole-recording';
 
   return (
     <div className="flex justify-center bg-gray-200 min-h-screen">
@@ -85,18 +88,13 @@ export default function App() {
           {screen === 'hole-recording' && currentRound && (
             <HoleRecording
               round={currentRound}
-              initialHoleIndex={continueFromHole - 1}
-              onFinish={handleFinish}
+              initialHoleIndex={(isRecordingEditMode ? editHoleNumber : continueFromHole) - 1}
+              initialHole={isRecordingEditMode ? editInitialHole : undefined}
+              isEditMode={isRecordingEditMode}
+              onFinish={isRecordingEditMode ? undefined : handleFinish}
               onDeleteRound={handleDeleteRound}
-              onExit={() => setScreen('round-list')}
-            />
-          )}
-
-          {screen === 'hole-edit' && currentRound && (
-            <HoleEdit
-              round={currentRound}
-              holeNumber={editHoleNumber}
-              onBack={() => setScreen('hole-select')}
+              onExit={isRecordingEditMode ? undefined : () => setScreen('round-list')}
+              onBack={isRecordingEditMode ? () => setScreen('hole-select') : undefined}
             />
           )}
 
@@ -131,12 +129,16 @@ export default function App() {
             roundId={currentRound.id}
             onBack={() => setScreen('round-summary')}
             onConfirm={() => {}}
-            onEditHole={holeNumber => {
+            onEditHole={(holeNumber, existingHole) => {
               setEditHoleNumber(holeNumber);
-              setScreen('hole-edit');
+              setEditInitialHole(existingHole);
+              setIsRecordingEditMode(true);
+              setScreen('hole-recording');
             }}
             onContinue={holeNumber => {
               setContinueFromHole(holeNumber);
+              setIsRecordingEditMode(false);
+              setEditInitialHole(undefined);
               setScreen('hole-recording');
             }}
             onDelete={handleDeleteRound}

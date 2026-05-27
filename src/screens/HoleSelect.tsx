@@ -16,7 +16,7 @@ interface Props {
 
   onConfirm: (selectedIndices: number[]) => void;
 
-  onEditHole: (holeNumber: number) => void;
+  onEditHole: (holeNumber: number, existingHole?: Hole) => void;
 
   onContinue: (holeNumber: number) => void;
 
@@ -246,7 +246,7 @@ export default function HoleSelect({ roundId, onBack, onConfirm: _onConfirm, onE
 
               key={num}
 
-              onClick={() => onEditHole(num)}
+              onClick={() => onEditHole(num, hole)}
 
               className={`w-full rounded-2xl border-2 p-3 text-center transition-all active:scale-95 ${scoreBg(overPar)}`}
 
