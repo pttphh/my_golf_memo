@@ -133,8 +133,7 @@ export default function MissBreakdown({ roundId, onBack }: Props) {
   const secondContact = toEntries(collectContactMisses(secondMisses));
   const approachAll = toEntries(collectGenericMisses(approachMisses, APPROACH_MISS));
 
-  const shortPuttFail = holes.filter(h => h.putt_miss === '숏퍼팅 실패').length;
-  const longPuttFail = holes.filter(h => h.putt_memo === '롱퍼팅 미스').length;
+  const shortPuttFail = holes.filter(h => h.putt_miss === '숏퍼팅 실패' || h.putt2_miss === '숏퍼팅 실패').length;
 
   const totalMisses =
     teeDirection.reduce((s, e) => s + e.count, 0) +
@@ -142,7 +141,7 @@ export default function MissBreakdown({ roundId, onBack }: Props) {
     secondDirection.reduce((s, e) => s + e.count, 0) +
     secondContact.reduce((s, e) => s + e.count, 0) +
     approachAll.reduce((s, e) => s + e.count, 0) +
-    shortPuttFail + longPuttFail;
+    shortPuttFail;
 
   return (
     <div className="min-h-screen bg-surface flex flex-col">
@@ -189,17 +188,12 @@ export default function MissBreakdown({ roundId, onBack }: Props) {
             />
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
               <h3 className="text-sm font-bold text-[#1B4332] mb-0.5">퍼팅 미스</h3>
-              <p className="text-[11px] text-gray-500 mb-3">숏퍼팅 · 롱퍼팅 실패 집계</p>
-              {shortPuttFail === 0 && longPuttFail === 0 ? (
+              <p className="text-[11px] text-gray-500 mb-3">숏퍼팅 실패 집계</p>
+              {shortPuttFail === 0 ? (
                 <p className="text-sm text-gray-400">미스 없음</p>
               ) : (
                 <div className="space-y-3">
-                  {[
-                    { label: '숏퍼팅 실패', count: shortPuttFail },
-                    { label: '롱퍼팅 미스', count: longPuttFail },
-                  ].map(e => (
-                    <MissBar key={e.label} entry={e} max={Math.max(shortPuttFail, longPuttFail, 1)} />
-                  ))}
+                  <MissBar entry={{ label: '숏퍼팅 실패', count: shortPuttFail }} max={shortPuttFail} />
                 </div>
               )}
             </div>

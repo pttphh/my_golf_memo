@@ -53,14 +53,14 @@ const SHOT_CLUBS = ['우드', '유틸', '아이언', '웨지'];
 const PENALTY_TRIGGER = '패널티';
 
 const APPROACH_DISTANCES = [
-  { label: '20m이내 시도', value: '20m이내' },
-  { label: '20~40m 시도', value: '20~40m' },
-  { label: '40m이상 시도', value: '40m이상' },
+  { label: '20m이내 · 3m 안착', value: '20m이내' },
+  { label: '20~40m · 5m 안착', value: '20~40m' },
 ] as const;
 const APPROACH_OUTCOMES = [
   { label: '성공', value: '성공' },
   { label: '실패', value: '실패' },
 ] as const;
+const APPROACH_FAIL_DETAIL = ['그린', '러프', '벙커'] as const;
 
 // par4/5 tee sub-miss options for fairway miss
 const TEE_FAIRWAY_MISS_SUB = ['러프', '벙커', 'OB', '해저드'] as const;
@@ -84,11 +84,28 @@ const PAR_DEFAULTS: Record<number, { green_shots: number; putts: number }> = {
 function getPenaltyStrokes(h: Hole): number {
   let pen = 0;
   pen += FAIRWAY_MISS_PENALTY[h.tee_penalty_type] ?? 0;
-  // second shots: penalty encoded in second_penalty_type as 'OB' | '해저드'
+  pen += FAIRWAY_MISS_PENALTY[h.tee2_penalty_type] ?? 0;
   for (const p of [h.second1_penalty_type, h.second2_penalty_type, h.second3_penalty_type]) {
     pen += FAIRWAY_MISS_PENALTY[p] ?? 0;
   }
   return pen;
+}
+
+function clearTee2(): Partial<Hole> {
+  return {
+    tee2_club: '',
+    tee2_result: '',
+    tee2_penalty_type: '',
+    tee2_miss: '',
+    tee2_memo: '',
+  };
+}
+
+function clearPutt2(): Partial<Hole> {
+  return {
+    putt2_miss: '',
+    putt2_memo: '',
+  };
 }
 
 function clearSecondShot(hole: Hole, i: 2 | 3): Partial<Hole> {
@@ -316,53 +333,47 @@ function MissChips({ value, options, onChange, hint = true }: {
   );
 }
 
-const SECOND_GREEN_MISS_SUB = ['우측 미스', '좌측 미스', '오버', '숏', '벙커'] as const;
-const SECOND_PENALTY_SUB = ['OB', '해저드'] as const;
-type SecondMissDetail = typeof SECOND_GREEN_MISS_SUB[number] | typeof SECOND_PENALTY_SUB[number];
-
-function parseDetail(raw: string): SecondMissDetail[] {
-  if (!raw) return [];
-  return raw.split(',').filter(Boolean) as SecondMissDetail[];
-}
-
-function serializeDetail(items: SecondMissDetail[]): string {
-  return items.join(',');
-}
+const SECOND1_GREEN_MISS_SUB = ['어프로치 가능', '어프로치 불가', 'OB', '해저드'] as const;
+type SecondGreenMissSub = typeof SECOND1_GREEN_MISS_SUB[number];
 
 // SecondShotBlock: 2-step result UI for second/additional shots
-function SecondShotBlock({ result, penaltyType, missDetail, miss, memo, isExtra,
+function SecondShotBlock({ result, penaltyType, missDetail, miss, memo, isFirst,
   onResultChange, onPenaltyChange, onMissDetailChange, onMissChange, onMemoChange }: {
   result: string;
   penaltyType: string;
   missDetail: string;
   miss: string;
   memo: string;
-  isExtra?: boolean; // true for 2nd/3rd second shots: use '그린 온' instead of '그린 온 (GIR)'
+  isFirst?: boolean;
   onResultChange: (v: string) => void;
   onPenaltyChange: (v: string) => void;
   onMissDetailChange: (v: string) => void;
   onMissChange: (v: string) => void;
   onMemoChange: (v: string) => void;
 }) {
-  const greenOnLabel = isExtra ? '그린 온' : '그린 온(GIR)';
+  const greenOnLabel = isFirst ? '그린 온(GIR)' : '그린 온';
   const showSub = result === '그린 미스';
-  const details = parseDetail(missDetail);
 
-  function toggleDetail(item: SecondMissDetail) {
-    let next: SecondMissDetail[];
-    if (SECOND_PENALTY_SUB.includes(item as typeof SECOND_PENALTY_SUB[number])) {
-      // OB/해저드: mutually exclusive, also stored in penaltyType
-      if (penaltyType === item) {
-        onPenaltyChange('');
-        next = details.filter(d => !SECOND_PENALTY_SUB.includes(d as typeof SECOND_PENALTY_SUB[number]));
-      } else {
-        onPenaltyChange(item);
-        next = [...details.filter(d => !SECOND_PENALTY_SUB.includes(d as typeof SECOND_PENALTY_SUB[number])), item];
-      }
-    } else {
-      next = details.includes(item) ? details.filter(d => d !== item) : [...details, item];
+  function getApproachSubSelection(): string {
+    if (['어프로치 불가', 'OB', '해저드'].includes(penaltyType)) return penaltyType;
+    if (missDetail === '어프로치 가능') return '어프로치 가능';
+    return '';
+  }
+
+  function handleApproachSub(v: SecondGreenMissSub) {
+    const next = getApproachSubSelection() === v ? '' : v;
+    if (!next) {
+      onPenaltyChange('');
+      onMissDetailChange('');
+      return;
     }
-    onMissDetailChange(serializeDetail(next));
+    if (next === '어프로치 가능') {
+      onPenaltyChange('');
+      onMissDetailChange('어프로치 가능');
+    } else {
+      onPenaltyChange(next);
+      onMissDetailChange('');
+    }
   }
 
   function handleTopClick(v: string) {
@@ -386,21 +397,25 @@ function SecondShotBlock({ result, penaltyType, missDetail, miss, memo, isExtra,
 
       {showSub && (
         <div className="pl-3 border-l-2 border-gray-200 space-y-2">
-          <p className="text-xs text-gray-500">세부 위치 (복수 선택 가능)</p>
+          <p className="text-xs text-gray-500">세부 위치</p>
           <div className="flex flex-wrap gap-2">
-            {SECOND_GREEN_MISS_SUB.map(s => (
-              <Chip key={s} label={s} selected={details.includes(s)} onClick={() => toggleDetail(s)} />
-            ))}
-            {SECOND_PENALTY_SUB.map(s => (
-              <button key={s} onClick={() => toggleDetail(s)}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all active:scale-95 cursor-pointer select-none ${
-                  penaltyType === s
-                    ? 'bg-orange-500 border-orange-500 text-white'
-                    : 'bg-orange-50 border-orange-300 text-orange-600'
-                }`}>
-                {s}
-              </button>
-            ))}
+            {SECOND1_GREEN_MISS_SUB.map(s => {
+              const isPenalty = s === 'OB' || s === '해저드';
+              const selected = getApproachSubSelection() === s;
+              return (
+                <button
+                  key={s}
+                  onClick={() => handleApproachSub(s)}
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all active:scale-95 cursor-pointer select-none ${
+                    selected
+                      ? isPenalty ? 'bg-orange-500 border-orange-500 text-white' : 'bg-[#1B4332] border-[#1B4332] text-white'
+                      : isPenalty ? 'bg-orange-50 border-orange-300 text-orange-600' : 'bg-white border-gray-200 text-gray-700'
+                  }`}
+                >
+                  {s}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -415,14 +430,16 @@ function SecondShotBlock({ result, penaltyType, missDetail, miss, memo, isExtra,
   );
 }
 
-function ApproachBlock({ distance, result, miss, memo,
-  onDistanceChange, onResultChange, onMissChange, onMemoChange }: {
+function ApproachBlock({ distance, result, missDetail, miss, memo,
+  onDistanceChange, onResultChange, onMissDetailChange, onMissChange, onMemoChange }: {
   distance: string;
   result: string;
+  missDetail: string;
   miss: string;
   memo: string;
   onDistanceChange: (v: string) => void;
   onResultChange: (v: string) => void;
+  onMissDetailChange: (v: string) => void;
   onMissChange: (v: string) => void;
   onMemoChange: (v: string) => void;
 }) {
@@ -430,14 +447,22 @@ function ApproachBlock({ distance, result, miss, memo,
     if (distance === value) {
       onDistanceChange('');
       onResultChange('');
+      onMissDetailChange('');
     } else {
       onDistanceChange(value);
       onResultChange('');
+      onMissDetailChange('');
     }
   }
 
   function handleOutcome(value: string) {
-    onResultChange(result === value ? '' : value);
+    if (result === value) {
+      onResultChange('');
+      onMissDetailChange('');
+    } else {
+      onResultChange(value);
+      if (value !== '실패') onMissDetailChange('');
+    }
   }
 
   return (
@@ -464,9 +489,47 @@ function ApproachBlock({ distance, result, miss, memo,
         </div>
       )}
 
+      {result === '실패' && (
+        <div className="pl-3 border-l-2 border-gray-200 space-y-2">
+          <p className="text-xs text-gray-500">세부 위치</p>
+          <div className="flex flex-wrap gap-2">
+            {APPROACH_FAIL_DETAIL.map(s => (
+              <Chip
+                key={s}
+                label={s}
+                selected={missDetail === s}
+                onClick={() => onMissDetailChange(missDetail === s ? '' : s)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="border-t border-gray-100 pt-3">
         <p className="text-xs text-gray-500 mb-1.5">미스 유형 (해당 시)</p>
         <MissChips value={miss} options={APPROACH_MISS} onChange={onMissChange} />
+      </div>
+      <input type="text" placeholder="메모" value={memo} onChange={e => onMemoChange(e.target.value)}
+        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]" />
+    </div>
+  );
+}
+
+function PuttBlock({ miss, memo, onMissChange, onMemoChange }: {
+  miss: string;
+  memo: string;
+  onMissChange: (v: string) => void;
+  onMemoChange: (v: string) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <div className="space-y-2">
+        <div className="flex flex-wrap gap-2">
+          {['숏퍼팅 성공', '숏퍼팅 실패'].map(v => (
+            <Chip key={v} label={v} selected={miss === v} onClick={() => onMissChange(miss === v ? '' : v)} />
+          ))}
+        </div>
+        <p className="text-[10px] text-gray-400">숏퍼팅 2m 이내 홀인 성공 또는 실패</p>
       </div>
       <input type="text" placeholder="메모" value={memo} onChange={e => onMemoChange(e.target.value)}
         className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]" />
@@ -506,6 +569,14 @@ export default function HoleRecording({
   const [approachCount, setApproachCount] = useState(() =>
     initialHole?.approach2_club || initialHole?.approach2_miss ? 2 : 1,
   );
+  const [teeShotsCount, setTeeShotsCount] = useState(() => {
+    if (!initialHole) return 1;
+    return initialHole.tee2_club || initialHole.tee2_result || initialHole.tee2_miss ? 2 : 1;
+  });
+  const [puttCount, setPuttCount] = useState(() => {
+    if (!initialHole) return 1;
+    return initialHole.putt2_miss || initialHole.putt2_memo ? 2 : 1;
+  });
 
   // savedHoles: keyed by hole_number for header stats
   const [savedHoles, setSavedHoles] = useState<Record<number, Hole>>({});
@@ -518,6 +589,8 @@ export default function HoleRecording({
     else if (h.second2_club || h.second2_result || h.second2_miss) sc = 2;
     setSecondShotsCount(sc);
     setApproachCount(h.approach2_club || h.approach2_miss ? 2 : 1);
+    setTeeShotsCount(h.tee2_club || h.tee2_result || h.tee2_miss ? 2 : 1);
+    setPuttCount(h.putt2_miss || h.putt2_memo ? 2 : 1);
   }
 
   const loadHole = useCallback(async (holeNum: number) => {
@@ -530,33 +603,31 @@ export default function HoleRecording({
     if (data) {
       const h = data as Hole;
       applyHoleState(h);
-      setSavedHoles(prev => ({ ...prev, [h.hole_number]: h }));
     } else {
       setHole(makeDefaultHole(round.id, holeNum));
       setIsManual(false);
       setSecondShotsCount(1);
       setApproachCount(1);
+      setTeeShotsCount(1);
+      setPuttCount(1);
     }
   }, [round.id]);
 
   useEffect(() => {
-    if (isEditMode) {
-      async function loadAllSaved() {
-        const { data } = await supabase.from('holes').select('*').eq('round_id', round.id);
-        if (data) {
-          const map: Record<number, Hole> = {};
-          for (const h of data as Hole[]) map[h.hole_number] = h;
-          setSavedHoles(map);
-        }
+    async function loadAllSaved() {
+      const { data } = await supabase.from('holes').select('*').eq('round_id', round.id);
+      if (data) {
+        const map: Record<number, Hole> = {};
+        for (const h of data as Hole[]) map[h.hole_number] = h;
+        setSavedHoles(map);
       }
-      loadAllSaved();
     }
-  }, [round.id, isEditMode]);
+    loadAllSaved();
+  }, [round.id]);
 
   useEffect(() => {
     if (initialHole && initialHole.hole_number === holeNumber) {
       applyHoleState(initialHole);
-      setSavedHoles(prev => ({ ...prev, [initialHole.hole_number]: initialHole }));
       return;
     }
     loadHole(holeNumber);
@@ -605,6 +676,16 @@ export default function HoleRecording({
     setSecondShotsCount(i - 1);
   }
 
+  function removeTee2() {
+    updateField(clearTee2());
+    setTeeShotsCount(1);
+  }
+
+  function removePutt2() {
+    updateField(clearPutt2());
+    setPuttCount(1);
+  }
+
  async function upsertHole(h: Hole): Promise<void> {
   const { id, ...fields } = { ...h, is_manual: isManual };
   console.log('[upsert round_id]', fields.round_id);
@@ -617,6 +698,7 @@ export default function HoleRecording({
   async function handleEditSave() {
     setSaving(true);
     await upsertHole(hole);
+    setSavedHoles(prev => ({ ...prev, [holeNumber]: hole }));
     setSaving(false);
     onBack?.();
   }
@@ -635,26 +717,14 @@ export default function HoleRecording({
 
   const overPar = hole.over_par;
 
-  const savedExcludingCurrent = Object.values(savedHoles).filter(h => h.hole_number !== holeNumber);
-  const totalScore =
-    savedExcludingCurrent.reduce((s, h) => s + h.total_strokes, 0) + hole.total_strokes;
-
-  const front9Holes = [
-    ...savedExcludingCurrent.filter(h => h.hole_number <= 9),
-    ...(holeNumber <= 9 ? [hole] : []),
-  ];
-  const front9Over = front9Holes.reduce((s, h) => s + (h.total_strokes - h.par), 0);
-
-  const back9Started = holeNumber >= 10;
-  const back9Holes = [
-    ...savedExcludingCurrent.filter(h => h.hole_number >= 10),
-    ...(holeNumber >= 10 ? [hole] : []),
-  ];
-  const back9Over = back9Holes.reduce((s, h) => s + (h.total_strokes - h.par), 0);
-
+  const savedOnly = Object.values(savedHoles).filter(h => h.hole_number !== holeNumber);
+  const totalScore = savedOnly.reduce((s, h) => s + h.total_strokes, 0);
+  const front9Strokes = savedOnly.filter(h => h.hole_number <= 9).reduce((s, h) => s + h.total_strokes, 0);
+  const back9Strokes = savedOnly.filter(h => h.hole_number >= 10).reduce((s, h) => s + h.total_strokes, 0);
+  const back9Started = savedOnly.some(h => h.hole_number >= 10);
+  const progressPct = (savedOnly.length / 18) * 100;
   const headerBg = holeNumber % 2 !== 0 ? '#1B4332' : '#2d5a3d';
   const companions = [round.companion1, round.companion2, round.companion3].filter(Boolean).join(' · ');
-  const progressPct = (currentHoleIndex / 18) * 100;
   const frontLabel = round.course_front ? `전반 (${round.course_front})` : '전반 (1-9홀)';
   const backLabel = round.course_back ? `후반 (${round.course_back})` : '후반 (10-18홀)';
 
@@ -710,7 +780,7 @@ export default function HoleRecording({
         <div className="flex items-end gap-2 mb-3">
           <div className="flex-shrink-0 w-[4.5rem]">
             <p className="text-[10px] text-white/75 leading-tight truncate">{frontLabel}</p>
-            <p className="text-sm font-bold mt-0.5">{formatOverPar(front9Over)}</p>
+            <p className="text-sm font-bold mt-0.5">{front9Strokes > 0 ? `${front9Strokes}타` : '-'}</p>
           </div>
           <div className="flex-1 min-w-0 pb-0.5">
             <div className="h-1.5 bg-black/20 rounded-full overflow-hidden">
@@ -723,7 +793,7 @@ export default function HoleRecording({
           <div className="flex-shrink-0 w-[4.5rem] text-right">
             <p className="text-[10px] text-white/75 leading-tight truncate">{backLabel}</p>
             <p className={`text-sm font-bold mt-0.5 ${back9Started ? '' : 'text-white/40'}`}>
-              {back9Started ? formatOverPar(back9Over) : '-'}
+              {back9Started ? `${back9Strokes}타` : '-'}
             </p>
           </div>
         </div>
@@ -822,19 +892,46 @@ export default function HoleRecording({
         {/* Tee Shot */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
           <SectionHeader title="티샷" />
-          <div className="space-y-3">
-            <ClubSelect value={hole.tee_club} onChange={v => updateField({ tee_club: v })} options={TEE_CLUBS} />
-            <TeeShotBlock
-              par={hole.par}
-              topResult={hole.tee_result}
-              subResult={hole.tee_penalty_type}
-              miss={hole.tee_miss}
-              memo={hole.tee_memo}
-              onTopChange={v => updateField({ tee_result: v })}
-              onSubChange={v => updateField({ tee_penalty_type: v })}
-              onMissChange={v => updateField({ tee_miss: v })}
-              onMemoChange={v => updateField({ tee_memo: v })}
-            />
+          <div className="space-y-4">
+            {([1, 2] as const).slice(0, teeShotsCount).map(i => (
+              <div key={i} className={`${i > 1 ? 'pt-3 border-t border-gray-100' : ''}`}>
+                {teeShotsCount > 1 && (
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-semibold text-gray-500">{i === 1 ? '드라이버' : '추가 드라이버'}</p>
+                    {i === 2 && (
+                      <button onClick={removeTee2}
+                        className="w-6 h-6 rounded-full bg-red-50 border border-red-200 text-red-500 flex items-center justify-center active:scale-90 transition-transform">
+                        <X size={12} />
+                      </button>
+                    )}
+                  </div>
+                )}
+                <div className="space-y-3">
+                  <ClubSelect
+                    value={hole[`tee${i === 1 ? '' : i}_club` as keyof Hole] as string}
+                    onChange={v => updateField({ [`tee${i === 1 ? '' : i}_club`]: v })}
+                    options={TEE_CLUBS}
+                  />
+                  <TeeShotBlock
+                    par={hole.par}
+                    topResult={hole[`tee${i === 1 ? '' : i}_result` as keyof Hole] as string}
+                    subResult={hole[`tee${i === 1 ? '' : i}_penalty_type` as keyof Hole] as string}
+                    miss={hole[`tee${i === 1 ? '' : i}_miss` as keyof Hole] as string}
+                    memo={hole[`tee${i === 1 ? '' : i}_memo` as keyof Hole] as string}
+                    onTopChange={v => updateField({ [`tee${i === 1 ? '' : i}_result`]: v })}
+                    onSubChange={v => updateField({ [`tee${i === 1 ? '' : i}_penalty_type`]: v })}
+                    onMissChange={v => updateField({ [`tee${i === 1 ? '' : i}_miss`]: v })}
+                    onMemoChange={v => updateField({ [`tee${i === 1 ? '' : i}_memo`]: v })}
+                  />
+                </div>
+              </div>
+            ))}
+            {teeShotsCount < 2 && (
+              <button onClick={() => setTeeShotsCount(2)}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-gray-200 text-gray-500 text-sm active:bg-gray-50 transition-colors">
+                <Plus size={15} /> 드라이버 추가
+              </button>
+            )}
           </div>
         </div>
 
@@ -867,7 +964,7 @@ export default function HoleRecording({
                     missDetail={hole[`second${i}_miss_detail` as keyof Hole] as string}
                     miss={hole[`second${i}_miss` as keyof Hole] as string}
                     memo={hole[`second${i}_memo` as keyof Hole] as string}
-                    isExtra={i > 1}
+                    isFirst={i === 1}
                     onResultChange={v => updateField({ [`second${i}_result`]: v })}
                     onPenaltyChange={v => updateField({ [`second${i}_penalty_type`]: v })}
                     onMissDetailChange={v => updateField({ [`second${i}_miss_detail`]: v })}
@@ -897,10 +994,12 @@ export default function HoleRecording({
                   <ApproachBlock
                     distance={hole[`approach${i}_club` as keyof Hole] as string}
                     result={hole[`approach${i}_result` as keyof Hole] as string}
+                    missDetail={hole[`approach${i}_miss_detail` as keyof Hole] as string}
                     miss={hole[`approach${i}_miss` as keyof Hole] as string}
                     memo={hole[`approach${i}_memo` as keyof Hole] as string}
                     onDistanceChange={v => updateField({ [`approach${i}_club`]: v })}
                     onResultChange={v => updateField({ [`approach${i}_result`]: v })}
+                    onMissDetailChange={v => updateField({ [`approach${i}_miss_detail`]: v })}
                     onMissChange={v => updateField({ [`approach${i}_miss`]: v })}
                     onMemoChange={v => updateField({ [`approach${i}_memo`]: v })}
                   />
@@ -917,36 +1016,37 @@ export default function HoleRecording({
         </div>
 
 {/* Putting */}
-<div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
           <SectionHeader title="퍼팅" />
           <div className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex flex-wrap gap-2">
-                {['숏퍼팅 성공', '숏퍼팅 실패'].map(v => (
-                  <Chip key={v} label={v} selected={hole.putt_miss === v} onClick={() => updateField({ putt_miss: hole.putt_miss === v ? '' : v })} />
-                ))}
+            {([1, 2] as const).slice(0, puttCount).map(i => (
+              <div key={i} className={`${i > 1 ? 'pt-3 border-t border-gray-100' : ''}`}>
+                {puttCount > 1 && (
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-semibold text-gray-500">{i}번째 퍼팅</p>
+                    {i === 2 && (
+                      <button onClick={removePutt2}
+                        className="w-6 h-6 rounded-full bg-red-50 border border-red-200 text-red-500 flex items-center justify-center active:scale-90 transition-transform">
+                        <X size={12} />
+                      </button>
+                    )}
+                  </div>
+                )}
+                <PuttBlock
+                  miss={hole[`putt${i === 1 ? '' : i}_miss` as keyof Hole] as string}
+                  memo={hole[`putt${i === 1 ? '' : i}_memo` as keyof Hole] as string}
+                  onMissChange={v => updateField({ [`putt${i === 1 ? '' : i}_miss`]: v })}
+                  onMemoChange={v => updateField({ [`putt${i === 1 ? '' : i}_memo`]: v })}
+                />
               </div>
-              <p className="text-[10px] text-gray-400">숏퍼팅 2m 이내 홀인 성공 또는 실패</p>
-            </div>
-            <div className="space-y-2">
-              <div className="flex flex-wrap gap-2">
-                {['롱퍼팅 성공', '롱퍼팅 실패'].map(v => (
-                  <Chip key={v} label={v} selected={hole.putt_memo === v} onClick={() => updateField({ putt_memo: hole.putt_memo === v ? '' : v })} />
-                ))}
-              </div>
-              <p className="text-[10px] text-gray-400">7m~15m에서 3m 이내로 남기기 성공 또는 실패</p>
-            </div>
-            <input type="text" placeholder="메모"
-              value={['롱퍼팅 성공', '롱퍼팅 실패'].includes(hole.putt_memo) ? '' : hole.putt_memo}
-              onChange={e => updateField({ putt_memo: e.target.value })}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]"
-            />
-            <button
-              onClick={() => setApproachCount(c => Math.min(c + 1, 2))}
-              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-gray-200 text-gray-500 text-sm active:bg-gray-50 transition-colors"
-            >
-              <Plus size={15} /> 퍼팅 추가
-            </button>          </div>
+            ))}
+            {puttCount < 2 && (
+              <button onClick={() => setPuttCount(2)}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-gray-200 text-gray-500 text-sm active:bg-gray-50 transition-colors">
+                <Plus size={15} /> 퍼팅 추가
+              </button>
+            )}
+          </div>
         </div>
       </div>
       {/* Bottom buttons */}

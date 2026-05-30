@@ -40,8 +40,10 @@ const SEGMENTS: { id: SegmentType; label: string }[] = [
   { id: 'putt', label: '퍼팅' },
 ];
 
-const APPROACH_CLUBS = ['20m이내', '20~40m', '40m이상'] as const;
+const APPROACH_CLUBS = ['20m이내', '20~40m'] as const;
 type ApproachClub = typeof APPROACH_CLUBS[number];
+
+const CRITICAL_MISS_PENALTIES = ['어프로치 불가', 'OB', '해저드'] as const;
 
 const MISS_BAR_COLORS = ['#E24B4A', '#E24B4A', '#EF9F27', '#EF9F27', '#B4B2A9'];
 
@@ -54,7 +56,7 @@ function computeHoleStats(holes: Hole[]): Omit<RoundWithHoles, 'round' | 'holes'
   const doubleOrWorse = holes.filter(h => h.over_par >= 2).length;
   const penalties = holes.reduce((s, h) => {
     let pen = 0;
-    for (const p of [h.tee_penalty_type, h.second1_penalty_type, h.second2_penalty_type, h.second3_penalty_type]) {
+    for (const p of [h.tee_penalty_type, h.tee2_penalty_type, h.second1_penalty_type, h.second2_penalty_type, h.second3_penalty_type]) {
       pen += PENALTY_MAP[p] ?? 0;
     }
     return s + pen;
@@ -92,9 +94,6 @@ function avgPerRound(filteredData: RoundWithHoles[], countFn: (holes: Hole[]) =>
   return Math.round((total / filteredData.length) * 10) / 10;
 }
 
-function hasPenaltyType(v: string | null | undefined): boolean {
-  return !!v && v.trim() !== '';
-}
 
 function roundFairwayPct(holes: Hole[]): number | null {
   const par45WithTee = holes.filter(h => h.par !== 3 && h.tee_result);
@@ -103,22 +102,25 @@ function roundFairwayPct(holes: Hole[]): number | null {
   return Math.round((hits / par45WithTee.length) * 100);
 }
 
-function roundPar3GirPct(holes: Hole[]): number | null {
-  const par3WithTee = holes.filter(h => h.par === 3 && h.tee_result);
-  if (par3WithTee.length === 0) return null;
-  return Math.round((par3WithTee.filter(h => h.tee_result === '그린 온(GIR)').length / par3WithTee.length) * 100);
-}
-
 function roundApproachClubRate(holes: Hole[], club: ApproachClub): number | null {
   const attempts = holes.filter(h => h.approach1_club === club);
   if (attempts.length === 0) return null;
   return Math.round((attempts.filter(h => h.approach1_result === '성공').length / attempts.length) * 100);
 }
 
-function roundApproachOverallRate(holes: Hole[]): number | null {
-  const attempts = holes.filter(h => APPROACH_CLUBS.includes(h.approach1_club as ApproachClub));
-  if (attempts.length === 0) return null;
-  return Math.round((attempts.filter(h => h.approach1_result === '성공').length / attempts.length) * 100);
+function roundApproachFailCount(holes: Hole[]): number {
+  return holes.filter(h => h.approach1_result === '실패').length;
+}
+
+function roundCriticalMissCount(holes: Hole[]): number {
+  return holes.filter(h =>
+    h.second1_result === '그린 미스' &&
+    CRITICAL_MISS_PENALTIES.includes(h.second1_penalty_type as typeof CRITICAL_MISS_PENALTIES[number]),
+  ).length;
+}
+
+function isStrokePenalty(v: string): boolean {
+  return v === 'OB' || v === '해저드';
 }
 
 function avgFromValidRounds(rounds: RoundWithHoles[], valueFn: (holes: Hole[]) => number | null): number {
@@ -130,9 +132,9 @@ function avgFromValidRounds(rounds: RoundWithHoles[], valueFn: (holes: Hole[]) =
 function roundSecondPenaltyRate(holes: Hole[]): number {
   if (holes.length === 0) return 0;
   const count = holes.filter(h =>
-    hasPenaltyType(h.second1_penalty_type) ||
-    hasPenaltyType(h.second2_penalty_type) ||
-    hasPenaltyType(h.second3_penalty_type),
+    isStrokePenalty(h.second1_penalty_type) ||
+    isStrokePenalty(h.second2_penalty_type) ||
+    isStrokePenalty(h.second3_penalty_type),
   ).length;
   return Math.round((count / holes.length) * 100);
 }
@@ -355,9 +357,6 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
   const fairwayValidRounds = filteredData.filter(d =>
     d.holes.filter(h => h.par !== 3 && h.tee_result).length > 0,
   );
-  const par3GirValidRounds = filteredData.filter(d =>
-    d.holes.filter(h => h.par === 3 && h.tee_result).length > 0,
-  );
   const girValidRounds = filteredData.filter(d =>
     d.holes.filter(h => h.second1_result).length > 0,
   );
@@ -367,18 +366,12 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
   const approach2040ValidRounds = filteredData.filter(d =>
     d.holes.filter(h => h.approach1_club === '20~40m').length > 0,
   );
-  const approach40ValidRounds = filteredData.filter(d =>
-    d.holes.filter(h => h.approach1_club === '40m이상').length > 0,
-  );
-  const approachOverallValidRounds = filteredData.filter(d =>
-    d.holes.filter(h => APPROACH_CLUBS.includes(h.approach1_club as ApproachClub)).length > 0,
-  );
 
   const avgFairway = avgFromValidRounds(fairwayValidRounds, roundFairwayPct);
-  const avgPar3GIR = avgFromValidRounds(par3GirValidRounds, roundPar3GirPct);
   const avgGir = girValidRounds.length > 0 ? avg(girValidRounds.map(d => d.gir)) : 0;
-  const avgGIRpct = Math.round((avgGir / 18) * 100);
   const avg3PuttPlus = avg(filteredData.map(d => d.threePuttPlus));
+
+  const avgCriticalMiss = avgPerRound(filteredData, roundCriticalMissCount);
 
   const avgSecondPenaltyRate =
     filteredData.length > 0
@@ -387,8 +380,7 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
 
   const approach20Rate = avgFromValidRounds(approach20ValidRounds, h => roundApproachClubRate(h, '20m이내'));
   const approach2040Rate = avgFromValidRounds(approach2040ValidRounds, h => roundApproachClubRate(h, '20~40m'));
-  const approach40Rate = avgFromValidRounds(approach40ValidRounds, h => roundApproachClubRate(h, '40m이상'));
-  const approachOverallRate = avgFromValidRounds(approachOverallValidRounds, roundApproachOverallRate);
+  const avgApproachFail = avgPerRound(filteredData, roundApproachFailCount);
 
   const avgShortPuttMiss = avgPerRound(filteredData, holes =>
     holes.filter(h => h.putt_miss === '숏퍼팅 실패').length,
@@ -409,8 +401,8 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
   );
 
   const chart6Fairway = chart6.map(d => ({ value: roundFairwayPct(d.holes) ?? 0, date: d.round.date }));
-  const chart6GIR = chart6.map(d => ({ value: d.gir, date: d.round.date }));
-  const chart6Approach = chart6.map(d => ({ value: roundApproachOverallRate(d.holes) ?? 0, date: d.round.date }));
+  const chart6CriticalMiss = chart6.map(d => ({ value: roundCriticalMissCount(d.holes), date: d.round.date }));
+  const chart6ApproachFail = chart6.map(d => ({ value: roundApproachFailCount(d.holes), date: d.round.date }));
   const chart6Putts = chart6.map(d => ({ value: roundAvgPutts(d), date: d.round.date }));
   const avgChartPutts =
     chart6Putts.length > 0
@@ -556,9 +548,8 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
             {activeSegment === 'tee' && (
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
                 <h3 className="text-sm font-semibold text-gray-800 mb-3">티샷</h3>
-                <div className="grid grid-cols-3 gap-2 mb-4">
+                <div className="grid grid-cols-2 gap-2 mb-4">
                   <MetricCell label="페어웨이 안착률" value={`${avgFairway}%`} valueClass="text-amber-600" />
-                  <MetricCell label="파3 GIR" value={`${avgPar3GIR}%`} valueClass="text-teal-600" />
                   <MetricCell label="평균 벌타" value={`${avgPenalty}타`} valueClass="text-red-500" />
                 </div>
                 <p className="text-xs font-semibold text-gray-500 mb-2">페어웨이 안착률 추이</p>
@@ -580,19 +571,18 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
                 <h3 className="text-sm font-semibold text-gray-800 mb-3">세컨샷</h3>
                 <div className="grid grid-cols-3 gap-2 mb-4">
-                  <MetricCell label="GIR" value={`${avgGIRpct}%`} valueClass="text-blue-500" />
-                  <MetricCell label="세컨 페널티율" value={`${avgSecondPenaltyRate}%`} valueClass="text-red-500" />
+                  <MetricCell label="치명미스" value={`${avgCriticalMiss}`} valueClass="text-red-500" />
                   <MetricCell label="평균 GIR" value={`${avgGir}홀`} valueClass="text-amber-600" />
+                  <MetricCell label="세컨 페널티율" value={`${avgSecondPenaltyRate}%`} valueClass="text-red-500" />
                 </div>
-                <p className="text-xs font-semibold text-gray-500 mb-2">GIR 홀수 추이</p>
+                <p className="text-xs font-semibold text-gray-500 mb-2">치명미스 추이</p>
                 <SegmentLineChart
-                  points={chart6GIR}
-                  lineColor="#378ADD"
-                  avgValue={avgGir}
-                  caption="GIR 홀수 추이 · 최근 6라운드 (높을수록 좋음)"
+                  points={chart6CriticalMiss}
+                  lineColor="#E24B4A"
+                  avgValue={avgCriticalMiss}
+                  caption="치명미스 추이 · 최근 6라운드 (낮을수록 좋음)"
                   formatValue={v => `${v}`}
                   yMin={0}
-                  yMax={18}
                 />
                 <p className="text-xs font-semibold text-gray-500 mb-2 mt-4">미스 TOP5</p>
                 <RankedMissBarChart items={secondMissBars} />
@@ -602,20 +592,18 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
             {activeSegment === 'approach' && (
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
                 <h3 className="text-sm font-semibold text-gray-800 mb-3">어프로치</h3>
-                <div className="grid grid-cols-3 gap-2 mb-4">
+                <div className="grid grid-cols-2 gap-2 mb-4">
                   <MetricCell label="20m이내 3m안착" value={`${approach20Rate}%`} valueClass="text-teal-600" />
                   <MetricCell label="20~40m 5m안착" value={`${approach2040Rate}%`} valueClass="text-amber-600" />
-                  <MetricCell label="40m이상 온그린" value={`${approach40Rate}%`} valueClass="text-blue-500" />
                 </div>
-                <p className="text-xs font-semibold text-gray-500 mb-2">성공률 추이</p>
+                <p className="text-xs font-semibold text-gray-500 mb-2">실패 추이</p>
                 <SegmentLineChart
-                  points={chart6Approach}
-                  lineColor="#1D9E75"
-                  avgValue={approachOverallRate}
-                  caption="전체 어프로치 성공률 추이 · 최근 6라운드"
-                  formatValue={v => `${v}%`}
+                  points={chart6ApproachFail}
+                  lineColor="#E24B4A"
+                  avgValue={avgApproachFail}
+                  caption="어프로치 실패 추이 · 최근 6라운드 (낮을수록 좋음)"
+                  formatValue={v => `${v}`}
                   yMin={0}
-                  yMax={100}
                 />
                 <p className="text-xs font-semibold text-gray-500 mb-2 mt-4">미스 TOP5</p>
                 <RankedMissBarChart items={approachMissBars} />

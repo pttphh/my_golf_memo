@@ -27,6 +27,12 @@ export interface Hole {
   tee_miss: string;
   tee_memo: string;
 
+  tee2_club: string;
+  tee2_result: string;
+  tee2_penalty_type: string;
+  tee2_miss: string;
+  tee2_memo: string;
+
   second1_club: string;
   second1_result: string;
   second1_penalty_type: string;
@@ -62,6 +68,8 @@ export interface Hole {
 
   putt_miss: string;
   putt_memo: string;
+  putt2_miss: string;
+  putt2_memo: string;
 }
 
 export type Screen = 'new-round' | 'hole-recording' | 'round-summary' | 'miss-breakdown' | 'all-rounds' | 'round-list' | 'hole-select' | 'hole-detail' | 'profile' | 'settings';
@@ -86,6 +94,11 @@ export const emptyHole = (roundId: string, holeNumber: number): Hole => ({
   tee_penalty_type: '',
   tee_miss: '',
   tee_memo: '',
+  tee2_club: '',
+  tee2_result: '',
+  tee2_penalty_type: '',
+  tee2_miss: '',
+  tee2_memo: '',
   second1_club: '',
   second1_result: '',
   second1_penalty_type: '',
@@ -116,6 +129,8 @@ export const emptyHole = (roundId: string, holeNumber: number): Hole => ({
   approach2_memo: '',
   putt_miss: '',
   putt_memo: '',
+  putt2_miss: '',
+  putt2_memo: '',
 });
 
 export function getScoreLabel(overPar: number): string {

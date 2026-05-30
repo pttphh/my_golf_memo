@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Plus, Search, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Round } from '../types';
 
@@ -19,9 +19,27 @@ interface RoundSummary {
   holeCount: number;
 }
 
+function formatCompanions(round: Round): string {
+  return [round.companion1, round.companion2, round.companion3].filter(Boolean).join(' · ');
+}
+
+function matchesSearch(round: Round, query: string): boolean {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  const fields = [
+    round.course_name,
+    round.companion1,
+    round.companion2,
+    round.companion3,
+  ];
+  return fields.some(f => f?.toLowerCase().includes(q));
+}
+
 export default function RoundList({ onRoundSelect, onIncompleteRoundSelect, onAddRound }: Props) {
   const [rounds, setRounds] = useState<RoundSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     async function load() {
@@ -36,7 +54,7 @@ export default function RoundList({ onRoundSelect, onIncompleteRoundSelect, onAd
 
       const { data: allHoles } = await supabase
         .from('holes')
-        .select('round_id, par, total_strokes, over_par, putts, tee_penalty_type, second1_penalty_type, second2_penalty_type, second3_penalty_type')
+        .select('round_id, par, total_strokes, over_par, putts, tee_penalty_type, tee2_penalty_type, second1_penalty_type, second2_penalty_type, second3_penalty_type')
         .in('round_id', roundRows.map(r => r.id));
 
       type HoleRow = typeof allHoles extends (infer T)[] | null ? T : never;
@@ -54,7 +72,7 @@ export default function RoundList({ onRoundSelect, onIncompleteRoundSelect, onAd
         const doubleOrWorse = hs.filter(h => h.over_par >= 2).length;
         const penalties = hs.reduce((s, h) => {
           let pen = 0;
-          for (const p of [h.tee_penalty_type, h.second1_penalty_type, h.second2_penalty_type, h.second3_penalty_type]) {
+          for (const p of [h.tee_penalty_type, h.tee2_penalty_type, h.second1_penalty_type, h.second2_penalty_type, h.second3_penalty_type]) {
             if (p === 'OB') pen += 2;
             else if (p === '해저드') pen += 1;
           }
@@ -66,6 +84,11 @@ export default function RoundList({ onRoundSelect, onIncompleteRoundSelect, onAd
     }
     load();
   }, []);
+
+  const filteredRounds = useMemo(
+    () => rounds.filter(s => matchesSearch(s.round, searchQuery)),
+    [rounds, searchQuery],
+  );
 
   if (loading) {
     return (
@@ -81,11 +104,40 @@ export default function RoundList({ onRoundSelect, onIncompleteRoundSelect, onAd
       style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1.25rem)' }}
     >
       {/* Header */}
-      <div className="flex items-center gap-2 mb-2">
-        <div className="w-7 h-7 rounded-full bg-[#1B4332] flex items-center justify-center">
-          <div className="w-3.5 h-3.5 rounded-full border-2 border-white" />
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-7 h-7 rounded-full bg-[#1B4332] flex items-center justify-center flex-shrink-0">
+            <div className="w-3.5 h-3.5 rounded-full border-2 border-white" />
+          </div>
+          <span className="text-base font-bold text-gray-800 tracking-tight">Golf Memo</span>
         </div>
-        <span className="text-base font-bold text-gray-800 tracking-tight">Golf Memo</span>
+        <button
+          onClick={() => {
+            setSearchOpen(o => {
+              if (o) setSearchQuery('');
+              return !o;
+            });
+          }}
+          className="w-9 h-9 rounded-full border border-gray-200 bg-white flex items-center justify-center text-gray-500 active:scale-95 transition-transform flex-shrink-0"
+          aria-label="검색"
+        >
+          {searchOpen ? <X size={18} /> : <Search size={18} />}
+        </button>
+      </div>
+
+      <div
+        className={`overflow-hidden transition-all duration-300 ease-out ${
+          searchOpen ? 'max-h-14 opacity-100 mb-1' : 'max-h-0 opacity-0'
+        }`}
+      >
+        <input
+          type="search"
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          placeholder="코스명 · 동반자 검색"
+          className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]"
+          autoFocus={searchOpen}
+        />
       </div>
 
       {/* Add Round Button */}
@@ -102,19 +154,23 @@ export default function RoundList({ onRoundSelect, onIncompleteRoundSelect, onAd
           <p className="text-gray-500 text-sm">저장된 라운드가 없어요</p>
           <p className="text-gray-500 text-xs mt-1">라운드를 추가해보세요</p>
         </div>
+      ) : filteredRounds.length === 0 ? (
+        <div className="bg-card rounded-2xl border border-gray-100 p-10 text-center mt-4">
+          <p className="text-gray-500 text-sm">검색 결과가 없어요</p>
+        </div>
       ) : (
-        rounds.map(s => {
+        filteredRounds.map(s => {
           const over = s.overPar;
           const overStr = over > 0 ? `+${over}` : over === 0 ? 'E' : `${over}`;
           const hasData = s.totalStrokes > 0;
           const isComplete = s.holeCount >= 18;
+          const companions = formatCompanions(s.round);
           return (
             <button
               key={s.round.id}
               onClick={() => isComplete ? onRoundSelect(s.round) : onIncompleteRoundSelect(s.round)}
               className="w-full rounded-2xl border border-gray-200 shadow-sm overflow-hidden text-left active:scale-[0.98] transition-transform"
             >
-              {/* Top Section - Light Green */}
               <div className="bg-[#f0f4f0] px-4 py-3.5">
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
@@ -127,6 +183,9 @@ export default function RoundList({ onRoundSelect, onIncompleteRoundSelect, onAd
                       )}
                     </div>
                     <p className="text-xs text-gray-500 mt-0.5">{s.round.date} · {s.round.time}</p>
+                    {companions && (
+                      <p className="text-xs text-gray-400 mt-0.5 truncate">{companions}</p>
+                    )}
                   </div>
                   <div className="ml-4 text-right flex-shrink-0">
                     <p className="text-2xl font-extrabold text-gray-900 leading-none">
@@ -138,7 +197,6 @@ export default function RoundList({ onRoundSelect, onIncompleteRoundSelect, onAd
                   </div>
                 </div>
               </div>
-              {/* Bottom Section - White */}
               <div className="bg-white px-4 py-3">
                 <div className="grid grid-cols-3 gap-0">
                   <div className="text-center">
