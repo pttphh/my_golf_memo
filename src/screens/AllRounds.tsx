@@ -43,8 +43,6 @@ const SEGMENTS: { id: SegmentType; label: string }[] = [
 const APPROACH_CLUBS = ['20m이내', '20~40m'] as const;
 type ApproachClub = typeof APPROACH_CLUBS[number];
 
-const CRITICAL_MISS_PENALTIES = ['어프로치 불가', 'OB', '해저드'] as const;
-
 const MISS_BAR_COLORS = ['#E24B4A', '#E24B4A', '#EF9F27', '#EF9F27', '#B4B2A9'];
 
 function computeHoleStats(holes: Hole[]): Omit<RoundWithHoles, 'round' | 'holes'> {
@@ -62,7 +60,7 @@ function computeHoleStats(holes: Hole[]): Omit<RoundWithHoles, 'round' | 'holes'
     return s + pen;
   }, 0);
   const gir = holes.filter(h => h.green_shots <= h.par - 2 && h.green_shots > 0).length;
-  const fairwayDenom = holes.filter(h => h.par !== 3).length;
+  const fairwayDenom = 14;
   const fairwayHits = holes.filter(h => h.par !== 3 && h.tee_result === '페어웨이').length;
   const birdie = holes.filter(h => h.over_par <= -1).length;
   const parHoles = holes.filter(h => h.over_par === 0).length;
@@ -99,7 +97,7 @@ function roundFairwayPct(holes: Hole[]): number | null {
   const par45WithTee = holes.filter(h => h.par !== 3 && h.tee_result);
   if (par45WithTee.length === 0) return null;
   const hits = par45WithTee.filter(h => h.tee_result === '페어웨이').length;
-  return Math.round((hits / par45WithTee.length) * 100);
+  return Math.round((hits / 14) * 100);
 }
 
 function roundApproachClubRate(holes: Hole[], club: ApproachClub): number | null {
@@ -112,31 +110,32 @@ function roundApproachFailCount(holes: Hole[]): number {
   return holes.filter(h => h.approach1_result === '실패').length;
 }
 
-function roundCriticalMissCount(holes: Hole[]): number {
-  return holes.filter(h =>
-    h.second1_result === '그린 미스' &&
-    CRITICAL_MISS_PENALTIES.includes(h.second1_penalty_type as typeof CRITICAL_MISS_PENALTIES[number]),
-  ).length;
+function roundFatalMissCount(holes: Hole[]): number {
+  return holes.reduce((sum, h) => {
+    let count = 0;
+    for (const p of [h.second1_penalty_type, h.second2_penalty_type, h.second3_penalty_type]) {
+      if (p === '어프로치 불가' || p === 'OB' || p === '해저드') count++;
+    }
+    return sum + count;
+  }, 0);
 }
 
-function isStrokePenalty(v: string): boolean {
-  return v === 'OB' || v === '해저드';
+function roundWedgeMissCount(holes: Hole[]): number {
+  return holes.reduce((sum, h) => {
+    let count = 0;
+    const clubs = [h.second1_club, h.second2_club, h.second3_club];
+    const results = [h.second1_result, h.second2_result, h.second3_result];
+    for (let i = 0; i < 3; i++) {
+      if (clubs[i]?.includes('웨지') && results[i] === '그린 미스') count++;
+    }
+    return sum + count;
+  }, 0);
 }
 
 function avgFromValidRounds(rounds: RoundWithHoles[], valueFn: (holes: Hole[]) => number | null): number {
   const values = rounds.map(d => valueFn(d.holes)).filter((v): v is number => v !== null);
   if (values.length === 0) return 0;
   return Math.round(values.reduce((a, b) => a + b, 0) / values.length);
-}
-
-function roundSecondPenaltyRate(holes: Hole[]): number {
-  if (holes.length === 0) return 0;
-  const count = holes.filter(h =>
-    isStrokePenalty(h.second1_penalty_type) ||
-    isStrokePenalty(h.second2_penalty_type) ||
-    isStrokePenalty(h.second3_penalty_type),
-  ).length;
-  return Math.round((count / holes.length) * 100);
 }
 
 function roundAvgPutts(d: RoundWithHoles): number {
@@ -371,12 +370,8 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
   const avgGir = girValidRounds.length > 0 ? avg(girValidRounds.map(d => d.gir)) : 0;
   const avg3PuttPlus = avg(filteredData.map(d => d.threePuttPlus));
 
-  const avgCriticalMiss = avgPerRound(filteredData, roundCriticalMissCount);
-
-  const avgSecondPenaltyRate =
-    filteredData.length > 0
-      ? Math.round(filteredData.reduce((s, d) => s + roundSecondPenaltyRate(d.holes), 0) / filteredData.length)
-      : 0;
+  const avgCriticalMiss = avgPerRound(filteredData, roundFatalMissCount);
+  const avgWedgeMiss = avgPerRound(filteredData, roundWedgeMissCount);
 
   const approach20Rate = avgFromValidRounds(approach20ValidRounds, h => roundApproachClubRate(h, '20m이내'));
   const approach2040Rate = avgFromValidRounds(approach2040ValidRounds, h => roundApproachClubRate(h, '20~40m'));
@@ -401,7 +396,7 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
   );
 
   const chart6Fairway = chart6.map(d => ({ value: roundFairwayPct(d.holes) ?? 0, date: d.round.date }));
-  const chart6CriticalMiss = chart6.map(d => ({ value: roundCriticalMissCount(d.holes), date: d.round.date }));
+  const chart6CriticalMiss = chart6.map(d => ({ value: roundFatalMissCount(d.holes), date: d.round.date }));
   const chart6ApproachFail = chart6.map(d => ({ value: roundApproachFailCount(d.holes), date: d.round.date }));
   const chart6Putts = chart6.map(d => ({ value: roundAvgPutts(d), date: d.round.date }));
   const avgChartPutts =
@@ -571,9 +566,9 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
                 <h3 className="text-sm font-semibold text-gray-800 mb-3">세컨샷</h3>
                 <div className="grid grid-cols-3 gap-2 mb-4">
-                  <MetricCell label="치명미스" value={`${avgCriticalMiss}`} valueClass="text-red-500" />
-                  <MetricCell label="평균 GIR" value={`${avgGir}홀`} valueClass="text-amber-600" />
-                  <MetricCell label="세컨 페널티율" value={`${avgSecondPenaltyRate}%`} valueClass="text-red-500" />
+                  <MetricCell label="평균 GIR" value={`${avgGir}홀`} valueClass="text-blue-500" />
+                  <MetricCell label="평균 치명미스" value={`${avgCriticalMiss}`} valueClass="text-red-500" />
+                  <MetricCell label="평균 웨지 미스" value={`${avgWedgeMiss}`} valueClass="text-amber-600" />
                 </div>
                 <p className="text-xs font-semibold text-gray-500 mb-2">치명미스 추이</p>
                 <SegmentLineChart

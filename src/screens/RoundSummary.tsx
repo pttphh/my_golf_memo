@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Trophy, Target, AlertTriangle, BarChart2, ChevronRight, List, Trash2, TrendingDown, Flag, Pencil } from 'lucide-react';
+import { Trophy, Target, AlertTriangle, BarChart2, ChevronRight, List, Trash2, Flag, Pencil, Crosshair, Disc, CheckCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Round, Hole } from '../types';
 import { collectMissPatterns } from '../lib/missPattern';
@@ -22,7 +22,6 @@ const SEGMENTS: { id: SegmentType; label: string }[] = [
   { id: 'putt', label: '퍼팅' },
 ];
 
-const CRITICAL_MISS = ['어프로치 불가', 'OB', '해저드'] as const;
 const MISS_BAR_COLORS = ['#E24B4A', '#E24B4A', '#EF9F27', '#EF9F27', '#B4B2A9'];
 const PENALTY_MAP: Record<string, number> = { OB: 2, '해저드': 1 };
 
@@ -32,12 +31,6 @@ function secondPenaltyFields(h: Hole): string[] {
 
 function allPenaltyFields(h: Hole): string[] {
   return [h.tee_penalty_type, h.tee2_penalty_type, ...secondPenaltyFields(h)];
-}
-
-function holeHasCriticalMiss(h: Hole): boolean {
-  return secondPenaltyFields(h).some(p =>
-    CRITICAL_MISS.includes(p as typeof CRITICAL_MISS[number]),
-  );
 }
 
 function countHolesWithPenalty(holes: Hole[], type: string): number {
@@ -101,7 +94,9 @@ function ColoredBarChart({ items }: { items: { label: string; avg: number; color
   );
 }
 
-function StatCard({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: string | number; sub?: string }) {
+function StatCard({ icon, label, value, sub, sub2 }: {
+  icon: React.ReactNode; label: string; value: string | number; sub?: string; sub2?: string;
+}) {
   return (
     <div className="bg-card rounded-2xl p-3.5 border border-gray-100 shadow-sm flex flex-col gap-2">
       <div className="flex items-center gap-2">
@@ -112,6 +107,7 @@ function StatCard({ icon, label, value, sub }: { icon: React.ReactNode; label: s
       </div>
       <p className="text-xl font-bold text-gray-800 leading-none">{value}</p>
       {sub && <p className="text-[11px] text-gray-500">{sub}</p>}
+      {sub2 && <p className="text-[11px] text-gray-500">{sub2}</p>}
     </div>
   );
 }
@@ -290,16 +286,14 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
     return s + pen;
   }, 0);
 
-  const doubleOrWorse = holes.filter(h => h.over_par >= 2).length;
-  const yangpaCount = holes.filter(h => h.total_strokes >= h.par * 2).length;
-  const par45WithTee = holes.filter(h => h.par !== 3 && h.tee_result);
-  const fairwayHits = par45WithTee.filter(h => h.tee_result === '페어웨이').length;
-  const fairwayPct = par45WithTee.length > 0 ? Math.round((fairwayHits / par45WithTee.length) * 100) : 0;
+  const fairwayDenom = 14;
+  const fairwayHits = holes.filter(h => h.par !== 3 && h.tee_result === '페어웨이').length;
+  const fairwayPct = Math.round((fairwayHits / fairwayDenom) * 100);
 
   const girCount = holes.filter(
     h => h.tee_result === '그린 온(GIR)' || h.second1_result === '그린 온(GIR)',
   ).length;
-  const girPct = holes.length > 0 ? Math.round((girCount / holes.length) * 100) : 0;
+  const girPct = Math.round((girCount / 18) * 100);
 
   const approachSuccess = holes.filter(
     h => h.approach1_result === '성공' || h.approach2_result === '성공',
@@ -312,10 +306,42 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
     ? Math.round((approachSuccess / approachAttempts) * 100)
     : 0;
 
-  const criticalMissHoles = holes.filter(holeHasCriticalMiss).length;
-  const criticalOb = holes.filter(h => secondPenaltyFields(h).includes('OB')).length;
-  const criticalHazard = holes.filter(h => secondPenaltyFields(h).includes('해저드')).length;
-  const criticalNoApproach = holes.filter(h => secondPenaltyFields(h).includes('어프로치 불가')).length;
+  const fatalMissCount = holes.reduce((sum, h) => {
+    let count = 0;
+    for (const p of [h.second1_penalty_type, h.second2_penalty_type, h.second3_penalty_type]) {
+      if (p === '어프로치 불가' || p === 'OB' || p === '해저드') count++;
+    }
+    return sum + count;
+  }, 0);
+
+  const fatalOB = holes.reduce((sum, h) => {
+    let count = 0;
+    for (const p of [h.second1_penalty_type, h.second2_penalty_type, h.second3_penalty_type]) {
+      if (p === 'OB') count++;
+    }
+    return sum + count;
+  }, 0);
+
+  const fatalHazard = holes.reduce((sum, h) => {
+    let count = 0;
+    for (const p of [h.second1_penalty_type, h.second2_penalty_type, h.second3_penalty_type]) {
+      if (p === '해저드') count++;
+    }
+    return sum + count;
+  }, 0);
+
+  const fatalApproachNG = fatalMissCount - fatalOB - fatalHazard;
+
+  const wedgeTotal = holes.filter(h =>
+    [h.second1_club, h.second2_club, h.second3_club].some(c => c?.includes('웨지')),
+  ).length;
+
+  const wedgeMiss = holes.filter(h =>
+    [h.second1_club, h.second2_club, h.second3_club].some((c, i) => {
+      const results = [h.second1_result, h.second2_result, h.second3_result];
+      return c?.includes('웨지') && results[i] === '그린 미스';
+    }),
+  ).length;
 
   const puttMissHoles = holes.filter(h => h.putt_miss);
   const shortPuttSuccess = puttMissHoles.filter(h => h.putt_miss === '숏퍼팅 성공').length;
@@ -327,15 +353,7 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
   const hazardHoles = countHolesWithPenalty(holes, '해저드');
 
   const segFairwayPct = fairwayPct;
-  const segCriticalMiss = criticalMissHoles;
-  const segGir = girCount;
-  const segSecondPenaltyRate = holes.length > 0
-    ? Math.round((holes.filter(h =>
-        h.second1_penalty_type === 'OB' || h.second1_penalty_type === '해저드' ||
-        h.second2_penalty_type === 'OB' || h.second2_penalty_type === '해저드' ||
-        h.second3_penalty_type === 'OB' || h.second3_penalty_type === '해저드',
-      ).length / holes.length) * 100)
-    : 0;
+  const segSecondGir = holes.filter(h => h.second1_result === '그린 온(GIR)').length;
   const approach20Rate = (() => {
     const attempts = holes.filter(h => h.approach1_club === '20m이내');
     if (!attempts.length) return 0;
@@ -503,14 +521,14 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <StatCard icon={<TrendingDown size={16} />} label="더블보기 이상" value={`${doubleOrWorse} / 18`} sub={`양파 ${yangpaCount}홀`} />
                 <StatCard icon={<AlertTriangle size={16} />} label="손실 타수" value={`${penalties}타`} sub={`OB ${obHoles}홀 · 해저드 ${hazardHoles}홀`} />
-                <StatCard icon={<Flag size={16} />} label="페어웨이 안착률" value={`${fairwayPct}%`} sub={`${fairwayHits} / ${par45WithTee.length}`} />
-                <StatCard icon={<Trophy size={16} />} label="GIR" value={`${girPct}%`} sub={`${girCount} / ${holes.length}`} />
-                <StatCard icon={<AlertTriangle size={16} />} label="세컨샷 치명미스" value={`${criticalMissHoles}홀`} sub={`OB ${criticalOb} · 해저드 ${criticalHazard} · 어프로치불가 ${criticalNoApproach}`} />
+                <StatCard icon={<Flag size={16} />} label="페어웨이 안착률" value={`${fairwayPct}%`} sub={`${fairwayHits} / ${fairwayDenom}`} />
+                <StatCard icon={<Trophy size={16} />} label="GIR" value={`${girPct}%`} sub={`${girCount} / 18`} />
+                <StatCard icon={<AlertTriangle size={16} />} label="세컨샷 치명미스" value={`${fatalMissCount}회`} sub={`OB ${fatalOB} · 해저드 ${fatalHazard}`} sub2={`어프로치불가 ${fatalApproachNG}`} />
+                <StatCard icon={<Crosshair size={16} />} label="웨지 미스" value={`${wedgeMiss}회`} sub={`시도 ${wedgeTotal}홀 중`} />
                 <StatCard icon={<Target size={16} />} label="어프로치 성공률" value={`${approachPct}%`} sub={`${approachSuccess} / ${approachAttempts}홀 성공`} />
-                <StatCard icon={<Target size={16} />} label="퍼팅" value={`총 ${totalPutts}개`} sub={`3퍼팅 이상 ${threePuttPlus}홀`} />
-                <StatCard icon={<Target size={16} />} label="숏퍼팅 성공률" value={`${shortPuttPct}%`} sub={`성공 ${shortPuttSuccess} / 전체 ${puttMissHoles.length}`} />
+                <StatCard icon={<Disc size={16} />} label="퍼팅" value={`총 ${totalPutts}개`} sub={`3퍼팅 이상 ${threePuttPlus}홀`} />
+                <StatCard icon={<CheckCircle size={16} />} label="숏퍼팅 성공률" value={`${shortPuttPct}%`} sub={`성공 ${shortPuttSuccess} / 전체 ${puttMissHoles.length}`} />
               </div>
 
               <div className="space-y-3">
@@ -550,9 +568,9 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
                   <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
                     <h3 className="text-sm font-semibold text-gray-800 mb-3">세컨샷</h3>
                     <div className="grid grid-cols-3 gap-2 mb-4">
-                      <MetricCell label="치명미스" value={`${segCriticalMiss}`} valueClass="text-red-500" />
-                      <MetricCell label="GIR" value={`${segGir}홀`} valueClass="text-amber-600" />
-                      <MetricCell label="세컨 페널티율" value={`${segSecondPenaltyRate}%`} valueClass="text-red-500" />
+                      <MetricCell label="GIR" value={`${segSecondGir}홀`} valueClass="text-blue-500" />
+                      <MetricCell label="치명미스" value={`${fatalMissCount}`} valueClass="text-red-500" />
+                      <MetricCell label="웨지 미스" value={`${wedgeMiss}`} valueClass="text-amber-600" />
                     </div>
                     <p className="text-xs font-semibold text-gray-500 mb-2">미스 TOP5</p>
                     <RankedMissBarChart items={secondMissBars} />
