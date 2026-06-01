@@ -3,6 +3,15 @@ import { Trophy, Target, AlertTriangle, BarChart2, ChevronRight, List, Trash2, F
 import { supabase } from '../lib/supabase';
 import type { Round, Hole } from '../types';
 import { collectMissPatterns } from '../lib/missPattern';
+import {
+  SegmentLineChart,
+  SegmentCardFootnote,
+  computeRoundPenaltyStrokes,
+  computeRoundFatalMissCount,
+  computeRoundApproachTrendPct,
+  computeRoundShortPuttMissCount,
+  chartPointsAvg,
+} from '../components/SegmentChart';
 
 interface Props {
   round: Round;
@@ -94,9 +103,11 @@ function ColoredBarChart({ items }: { items: { label: string; avg: number; color
   );
 }
 
-function StatCard({ icon, label, value, sub, sub2 }: {
-  icon: React.ReactNode; label: string; value: string | number; sub?: string; sub2?: string;
+function StatCard({ icon, label, value, sub, sub2, unrecorded }: {
+  icon: React.ReactNode; label: string; value: string | number; sub?: string; sub2?: string; unrecorded?: boolean;
 }) {
+  const valueCls = unrecorded ? 'text-gray-300' : 'text-gray-800';
+  const subCls = unrecorded ? 'text-gray-300' : 'text-gray-500';
   return (
     <div className="bg-card rounded-2xl p-3.5 border border-gray-100 shadow-sm flex flex-col gap-2">
       <div className="flex items-center gap-2">
@@ -105,9 +116,9 @@ function StatCard({ icon, label, value, sub, sub2 }: {
         </div>
         <p className="text-xs text-gray-500 leading-tight">{label}</p>
       </div>
-      <p className="text-xl font-bold text-gray-800 leading-none">{value}</p>
-      {sub && <p className="text-[11px] text-gray-500">{sub}</p>}
-      {sub2 && <p className="text-[11px] text-gray-500">{sub2}</p>}
+      <p className={`text-xl font-bold leading-none ${valueCls}`}>{value}</p>
+      {sub && <p className={`text-[11px] ${subCls}`}>{sub}</p>}
+      {sub2 && !unrecorded && <p className={`text-[11px] ${subCls}`}>{sub2}</p>}
     </div>
   );
 }
@@ -235,10 +246,46 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
   const [editSaving, setEditSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [activeSegment, setActiveSegment] = useState<SegmentType>('tee');
+  const [chartRounds, setChartRounds] = useState<{ round: Round; holes: Hole[] }[]>([]);
 
   useEffect(() => {
     setRoundData(round);
   }, [round]);
+
+  useEffect(() => {
+    async function fetchChartRounds() {
+      const { data: rounds } = await supabase
+        .from('rounds')
+        .select('*')
+        .order('date', { ascending: false })
+        .limit(6);
+
+      if (!rounds?.length) {
+        setChartRounds([]);
+        return;
+      }
+
+      const { data: allHoles } = await supabase
+        .from('holes')
+        .select('*')
+        .in('round_id', rounds.map(r => r.id));
+
+      const holesMap: Record<string, Hole[]> = {};
+      for (const h of allHoles ?? []) {
+        const hole = h as Hole;
+        if (!holesMap[hole.round_id]) holesMap[hole.round_id] = [];
+        holesMap[hole.round_id].push(hole);
+      }
+
+      const combined = rounds.map(r => ({
+        round: r as Round,
+        holes: (holesMap[r.id] ?? []).sort((a, b) => a.hole_number - b.hole_number),
+      }));
+
+      setChartRounds([...combined].reverse());
+    }
+    fetchChartRounds();
+  }, []);
 
   useEffect(() => {
     async function fetchHoles() {
@@ -352,6 +399,15 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
   const obHoles = countHolesWithPenalty(holes, 'OB');
   const hazardHoles = countHolesWithPenalty(holes, '해저드');
 
+  const fairwayRecorded = holes.filter(h => h.par !== 3 && h.tee_result).length;
+  const girRecorded = holes.filter(h => h.second1_result).length;
+  const fatalRecorded = girRecorded;
+  const wedgeRecorded = holes.filter(h =>
+    [h.second1_club, h.second2_club, h.second3_club].some(c => c?.includes('웨지')),
+  ).length;
+  const approachRecorded = holes.filter(h => h.approach1_club).length;
+  const shortPuttRecorded = holes.filter(h => h.putt_miss).length;
+
   const segFairwayPct = fairwayPct;
   const segSecondGir = holes.filter(h => h.second1_result === '그린 온(GIR)').length;
   const approach20Rate = (() => {
@@ -380,6 +436,27 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
   const approachMissBars = topMissBars(
     holes.flatMap(h => [h.approach1_miss, h.approach2_miss].filter(Boolean)),
   );
+
+  const chart6Penalty = chartRounds.map(d => ({
+    value: computeRoundPenaltyStrokes(d.holes),
+    date: d.round.date,
+  }));
+  const chart6CriticalMiss = chartRounds.map(d => ({
+    value: computeRoundFatalMissCount(d.holes),
+    date: d.round.date,
+  }));
+  const chart6ApproachSuccess = chartRounds.map(d => ({
+    value: computeRoundApproachTrendPct(d.holes),
+    date: d.round.date,
+  }));
+  const chart6ShortPuttMiss = chartRounds.map(d => ({
+    value: computeRoundShortPuttMissCount(d.holes),
+    date: d.round.date,
+  }));
+  const avgChartPenalty = chartPointsAvg(chart6Penalty);
+  const avgChartCriticalMiss = chartPointsAvg(chart6CriticalMiss);
+  const avgChartApproachSuccess = chartPointsAvg(chart6ApproachSuccess);
+  const avgChartShortPuttMiss = chartPointsAvg(chart6ShortPuttMiss);
 
   async function handleSave() {
     setSaving(true);
@@ -522,13 +599,50 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
 
               <div className="grid grid-cols-2 gap-3">
                 <StatCard icon={<AlertTriangle size={16} />} label="손실 타수" value={`${penalties}타`} sub={`OB ${obHoles}홀 · 해저드 ${hazardHoles}홀`} />
-                <StatCard icon={<Flag size={16} />} label="페어웨이 안착률" value={`${fairwayPct}%`} sub={`${fairwayHits} / ${fairwayDenom}`} />
-                <StatCard icon={<Trophy size={16} />} label="GIR" value={`${girPct}%`} sub={`${girCount} / 18`} />
-                <StatCard icon={<AlertTriangle size={16} />} label="세컨샷 치명미스" value={`${fatalMissCount}회`} sub={`OB ${fatalOB} · 해저드 ${fatalHazard}`} sub2={`어프로치불가 ${fatalApproachNG}`} />
-                <StatCard icon={<Crosshair size={16} />} label="웨지 미스" value={`${wedgeMiss}회`} sub={`시도 ${wedgeTotal}홀 중`} />
-                <StatCard icon={<Target size={16} />} label="어프로치 성공률" value={`${approachPct}%`} sub={`${approachSuccess} / ${approachAttempts}홀 성공`} />
+                <StatCard
+                  icon={<Flag size={16} />}
+                  label="페어웨이 안착률"
+                  unrecorded={fairwayRecorded === 0}
+                  value={fairwayRecorded === 0 ? '–' : `${fairwayPct}%`}
+                  sub={fairwayRecorded === 0 ? '미기록' : `${fairwayHits} / ${fairwayDenom}`}
+                />
+                <StatCard
+                  icon={<Trophy size={16} />}
+                  label="GIR"
+                  unrecorded={girRecorded === 0}
+                  value={girRecorded === 0 ? '–' : `${girPct}%`}
+                  sub={girRecorded === 0 ? '미기록' : `${girCount} / 18`}
+                />
+                <StatCard
+                  icon={<AlertTriangle size={16} />}
+                  label="세컨샷 치명미스"
+                  unrecorded={fatalRecorded === 0}
+                  value={fatalRecorded === 0 ? '–' : `${fatalMissCount}회`}
+                  sub={fatalRecorded === 0 ? '미기록' : `OB ${fatalOB} · 해저드 ${fatalHazard}`}
+                  sub2={fatalRecorded === 0 ? undefined : `어프로치불가 ${fatalApproachNG}`}
+                />
+                <StatCard
+                  icon={<Crosshair size={16} />}
+                  label="웨지 미스"
+                  unrecorded={wedgeRecorded === 0}
+                  value={wedgeRecorded === 0 ? '–' : `${wedgeMiss}회`}
+                  sub={wedgeRecorded === 0 ? '미기록' : `시도 ${wedgeTotal}홀 중`}
+                />
+                <StatCard
+                  icon={<Target size={16} />}
+                  label="어프로치 성공률"
+                  unrecorded={approachRecorded === 0}
+                  value={approachRecorded === 0 ? '–' : `${approachPct}%`}
+                  sub={approachRecorded === 0 ? '미기록' : `${approachSuccess} / ${approachAttempts}홀 성공`}
+                />
                 <StatCard icon={<Disc size={16} />} label="퍼팅" value={`총 ${totalPutts}개`} sub={`3퍼팅 이상 ${threePuttPlus}홀`} />
-                <StatCard icon={<CheckCircle size={16} />} label="숏퍼팅 성공률" value={`${shortPuttPct}%`} sub={`성공 ${shortPuttSuccess} / 전체 ${puttMissHoles.length}`} />
+                <StatCard
+                  icon={<CheckCircle size={16} />}
+                  label="숏퍼팅 성공률"
+                  unrecorded={shortPuttRecorded === 0}
+                  value={shortPuttRecorded === 0 ? '–' : `${shortPuttPct}%`}
+                  sub={shortPuttRecorded === 0 ? '미기록' : `성공 ${shortPuttSuccess} / 전체 ${puttMissHoles.length}`}
+                />
               </div>
 
               <div className="space-y-3">
@@ -559,8 +673,20 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
                       <MetricCell label="페어웨이 안착률" value={`${segFairwayPct}%`} valueClass="text-amber-600" />
                       <MetricCell label="평균 벌타" value={`${penalties}타`} valueClass="text-red-500" />
                     </div>
-                    <p className="text-xs font-semibold text-gray-500 mb-2">미스 TOP5</p>
+                    <p className="text-xs font-semibold text-gray-500 mb-2">벌타 추이</p>
+                    <SegmentLineChart
+                      points={chart6Penalty}
+                      lineColor="#E24B4A"
+                      avgValue={avgChartPenalty}
+                      caption="벌타 추이 · 최근 6라운드 (낮을수록 좋음)"
+                      formatValue={v => `${v}`}
+                      yMin={0}
+                    />
+                    <p className="text-xs font-semibold text-gray-500 mb-2 mt-4">미스 TOP5</p>
                     <RankedMissBarChart items={teeMissBars} />
+                    <SegmentCardFootnote>
+                      * 평균 벌타는 OB 1회 = 2타, 해저드 1회 = 1타로 계산합니다
+                    </SegmentCardFootnote>
                   </div>
                 )}
 
@@ -572,8 +698,20 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
                       <MetricCell label="치명미스" value={`${fatalMissCount}`} valueClass="text-red-500" />
                       <MetricCell label="웨지 미스" value={`${wedgeMiss}`} valueClass="text-amber-600" />
                     </div>
-                    <p className="text-xs font-semibold text-gray-500 mb-2">미스 TOP5</p>
+                    <p className="text-xs font-semibold text-gray-500 mb-2">치명미스 추이</p>
+                    <SegmentLineChart
+                      points={chart6CriticalMiss}
+                      lineColor="#E24B4A"
+                      avgValue={avgChartCriticalMiss}
+                      caption="치명미스 추이 · 최근 6라운드 (낮을수록 좋음)"
+                      formatValue={v => `${v}`}
+                      yMin={0}
+                    />
+                    <p className="text-xs font-semibold text-gray-500 mb-2 mt-4">미스 TOP5</p>
                     <RankedMissBarChart items={secondMissBars} />
+                    <SegmentCardFootnote>
+                      * 치명미스: 세컨샷 후 40m 이내의 어프로치 불가 또는 OB, 해저드로 이어진 경우
+                    </SegmentCardFootnote>
                   </div>
                 )}
 
@@ -584,8 +722,21 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
                       <MetricCell label="20m이내 3m안착" value={`${approach20Rate}%`} valueClass="text-teal-600" />
                       <MetricCell label="20~40m 5m안착" value={`${approach2040Rate}%`} valueClass="text-amber-600" />
                     </div>
-                    <p className="text-xs font-semibold text-gray-500 mb-2">미스 TOP5</p>
+                    <p className="text-xs font-semibold text-gray-500 mb-2">어프로치 성공률 추이</p>
+                    <SegmentLineChart
+                      points={chart6ApproachSuccess}
+                      lineColor="#1D9E75"
+                      avgValue={avgChartApproachSuccess}
+                      caption="어프로치 성공률 추이 · 최근 6라운드 (높을수록 좋음)"
+                      formatValue={v => `${v}%`}
+                      yMin={0}
+                      yMax={100}
+                    />
+                    <p className="text-xs font-semibold text-gray-500 mb-2 mt-4">미스 TOP5</p>
                     <RankedMissBarChart items={approachMissBars} />
+                    <SegmentCardFootnote>
+                      * 어프로치 성공률: 20m이내 3m안착 + 20~40m 5m안착 합산 기준
+                    </SegmentCardFootnote>
                   </div>
                 )}
 
@@ -597,7 +748,16 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
                       <MetricCell label="3퍼팅 이상" value={`${threePuttPlus}홀`} valueClass="text-red-500" />
                       <MetricCell label="숏퍼팅 미스" value={`${shortPuttMissCount}`} valueClass="text-amber-600" />
                     </div>
-                    <p className="text-xs font-semibold text-gray-500 mb-2">홀별 퍼팅 분포</p>
+                    <p className="text-xs font-semibold text-gray-500 mb-2">숏퍼팅 미스 추이</p>
+                    <SegmentLineChart
+                      points={chart6ShortPuttMiss}
+                      lineColor="#E24B4A"
+                      avgValue={avgChartShortPuttMiss}
+                      caption="숏퍼팅 미스 추이 · 최근 6라운드 (낮을수록 좋음)"
+                      formatValue={v => `${v}`}
+                      yMin={0}
+                    />
+                    <p className="text-xs font-semibold text-gray-500 mb-2 mt-4">홀별 퍼팅 분포</p>
                     <ColoredBarChart
                       items={[
                         { label: '1퍼팅', avg: putt1, color: '#1D9E75' },
@@ -606,6 +766,7 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
                         { label: '4퍼팅+', avg: putt4plus, color: '#E24B4A' },
                       ]}
                     />
+                    <SegmentCardFootnote>* 숏퍼팅: 2m 이내 홀인 퍼팅</SegmentCardFootnote>
                   </div>
                 )}
 
