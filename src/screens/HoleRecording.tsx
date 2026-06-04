@@ -719,9 +719,11 @@ export default function HoleRecording({
 
   const savedOnly = Object.values(savedHoles).filter(h => h.hole_number !== holeNumber);
   const totalScore = savedOnly.reduce((s, h) => s + h.total_strokes, 0);
-  const front9Strokes = savedOnly.filter(h => h.hole_number <= 9).reduce((s, h) => s + h.total_strokes, 0);
-  const back9Strokes = savedOnly.filter(h => h.hole_number >= 10).reduce((s, h) => s + h.total_strokes, 0);
-  const back9Started = savedOnly.some(h => h.hole_number >= 10);
+const front9Strokes = savedOnly.filter(h => h.hole_number <= 9).reduce((s, h) => s + h.total_strokes, 0);
+const back9Strokes = savedOnly.filter(h => h.hole_number >= 10).reduce((s, h) => s + h.total_strokes, 0);
+const back9Started = savedOnly.some(h => h.hole_number >= 10);
+const front9Over = savedOnly.filter(h => h.hole_number <= 9).reduce((s, h) => s + h.over_par, 0);
+const back9Over = savedOnly.filter(h => h.hole_number >= 10).reduce((s, h) => s + h.over_par, 0);
   const progressPct = (savedOnly.length / 18) * 100;
   const headerBg = holeNumber % 2 !== 0 ? '#1B4332' : '#2d5a3d';
   const companions = [round.companion1, round.companion2, round.companion3].filter(Boolean).join(' · ');
@@ -768,7 +770,9 @@ export default function HoleRecording({
             {companions ? (
               <p className="text-[10px] text-white/70 truncate leading-tight">{companions}</p>
             ) : null}
-            <h2 className="text-xl font-bold leading-tight">{holeNumber}번 홀</h2>
+<h2 className="text-xl font-bold leading-tight">
+  {holeNumber <= 9 ? `전반 ${holeNumber}번홀` : `후반 ${holeNumber - 9}번홀`}
+</h2>
           </div>
           <div className="flex-shrink-0 text-right">
             <span className="text-2xl font-extrabold leading-none" style={{ color: '#ffd700' }}>
@@ -778,24 +782,30 @@ export default function HoleRecording({
         </div>
 
         <div className="flex items-end gap-2 mb-3">
-          <div className="flex-shrink-0 w-[4.5rem]">
-            <p className="text-[10px] text-white/75 leading-tight truncate">{frontLabel}</p>
-            <p className="text-sm font-bold mt-0.5">{front9Strokes > 0 ? `${front9Strokes}타` : '-'}</p>
-          </div>
-          <div className="flex-1 min-w-0 pb-0.5">
-            <div className="h-1.5 bg-black/20 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-white rounded-full transition-all duration-300"
-                style={{ width: `${progressPct}%` }}
-              />
-            </div>
-          </div>
-          <div className="flex-shrink-0 w-[4.5rem] text-right">
-            <p className="text-[10px] text-white/75 leading-tight truncate">{backLabel}</p>
-            <p className={`text-sm font-bold mt-0.5 ${back9Started ? '' : 'text-white/40'}`}>
-              {back9Started ? `${back9Strokes}타` : '-'}
-            </p>
-          </div>
+<div className="flex-shrink-0 w-[4.5rem]">
+  <p className="text-[10px] text-white/75 leading-tight truncate">{frontLabel}</p>
+  <p className="text-sm font-bold mt-0.5">
+    {front9Strokes > 0
+      ? front9Over === 0 ? 'E' : front9Over > 0 ? `+${front9Over}` : `${front9Over}`
+      : '-'}
+  </p>
+</div>
+<div className="flex-1 min-w-0 pb-0.5">
+  <div className="h-1.5 bg-black/20 rounded-full overflow-hidden">
+    <div
+      className="h-full bg-white rounded-full transition-all duration-300"
+      style={{ width: `${progressPct}%` }}
+    />
+  </div>
+</div>
+<div className="flex-shrink-0 w-[4.5rem] text-right">
+  <p className="text-[10px] text-white/75 leading-tight truncate">{backLabel}</p>
+  <p className={`text-sm font-bold mt-0.5 ${back9Started ? '' : 'text-white/40'}`}>
+    {back9Started
+      ? back9Over === 0 ? 'E' : back9Over > 0 ? `+${back9Over}` : `${back9Over}`
+      : '-'}
+  </p>
+</div>
         </div>
 
         <div className="flex gap-2">
