@@ -564,8 +564,8 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
                     const d = metricDisplay(avgApproachSuccess, v => `${v}%`, 'text-[#1B4332]');
                     return <MetricCell label="어프로치 성공률" value={d.value} sub={d.sub} valueClass={d.valueClass} />;
                   })()}
-                  <MetricCell label="20m이내 3m안착" value={approach20Total === 0 ? '–' : `${approach20Success} / ${approach20Total}`} valueClass="text-teal-600" />
-                  <MetricCell label="20~40m 5m안착" value={approach2040Total === 0 ? '–' : `${approach2040Success} / ${approach2040Total}`} valueClass="text-amber-600" />
+                  <MetricCell label="20m이내 3m안착" value={approach20Total === 0 ? '–' : `${Math.round((approach20Success / approach20Total) * 100)}%`} valueClass="text-teal-600" />
+                  <MetricCell label="20~40m 5m안착" value={approach2040Total === 0 ? '–' : `${Math.round((approach2040Success / approach2040Total) * 100)}%`} valueClass="text-amber-600" />
                 </div>
                 <p className="text-xs font-semibold text-gray-500 mb-2">어프로치 성공률 추이</p>
                 <SegmentLineChart
