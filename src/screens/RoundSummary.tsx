@@ -46,19 +46,11 @@ function countHolesWithPenalty(holes: Hole[], type: string): number {
   return holes.filter(h => allPenaltyFields(h).includes(type)).length;
 }
 
-function isFairwayHit(h: Hole): boolean {
-  if (h.par === 3) return false;
-  if (h.tee_result === '페어웨이') return true;
-  if (h.par === 5 && h.second1_result === '페어웨이') return true;
-  return false;
-}
-
 function isGirHole(h: Hole): boolean {
-  if (h.tee_result === '그린 온(GIR)') return true;
-  if (h.par === 5) {
-    return h.second2_result === '그린 온(GIR)' || h.second3_result === '그린 온';
-  }
-  return h.second1_result === '그린 온(GIR)';
+  if (h.par === 3) return h.tee_result === '그린 온(GIR)';
+  if (h.par === 4) return h.second1_result === '그린 온(GIR)';
+  if (h.par === 5) return h.second2_result === '그린 온(GIR)';
+  return false;
 }
 
 function hasGirRecorded(h: Hole): boolean {
@@ -354,7 +346,7 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
   }, 0);
 
   const fairwayDenom = 14;
-  const fairwayHits = holes.filter(isFairwayHit).length;
+  const fairwayHits = holes.filter(h => h.par !== 3 && h.tee_result === '페어웨이').length;
   const fairwayPct = Math.round((fairwayHits / fairwayDenom) * 100);
 
   const girCount = holes.filter(isGirHole).length;
@@ -417,10 +409,7 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
   const obHoles = countHolesWithPenalty(holes, 'OB');
   const hazardHoles = countHolesWithPenalty(holes, '해저드');
 
-  const fairwayRecorded = holes.filter(h => {
-    if (h.par === 3) return false;
-    return !!(h.tee_result || (h.par === 5 && h.second1_result));
-  }).length;
+  const fairwayRecorded = holes.filter(h => h.par !== 3 && h.tee_result).length;
   const girRecorded = holes.filter(hasGirRecorded).length;
   const fatalRecorded = holes.filter(h =>
     !!(h.second1_result || h.second2_result || h.second3_result),
@@ -433,16 +422,10 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
 
   const segFairwayPct = fairwayPct;
   const segSecondGir = holes.filter(isGirHole).length;
-  const approach20Rate = (() => {
-    const attempts = holes.filter(h => h.approach1_club === '20m이내');
-    if (!attempts.length) return 0;
-    return Math.round((attempts.filter(h => h.approach1_result === '성공').length / attempts.length) * 100);
-  })();
-  const approach2040Rate = (() => {
-    const attempts = holes.filter(h => h.approach1_club === '20~40m');
-    if (!attempts.length) return 0;
-    return Math.round((attempts.filter(h => h.approach1_result === '성공').length / attempts.length) * 100);
-  })();
+  const approach20Success = holes.filter(h => h.approach1_club === '20m이내' && h.approach1_result === '성공').length;
+  const approach20Total = holes.filter(h => h.approach1_club === '20m이내').length;
+  const approach2040Success = holes.filter(h => h.approach1_club === '20~40m' && h.approach1_result === '성공').length;
+  const approach2040Total = holes.filter(h => h.approach1_club === '20~40m').length;
   const avgPuttsPerHole = holes.length > 0
     ? Math.round((totalPutts / holes.length) * 10) / 10
     : 0;
@@ -742,8 +725,8 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
                   <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
                     <h3 className="text-sm font-semibold text-gray-800 mb-3">어프로치</h3>
                     <div className="grid grid-cols-2 gap-2 mb-4">
-                      <MetricCell label="20m이내 3m안착" value={`${approach20Rate}%`} valueClass="text-teal-600" />
-                      <MetricCell label="20~40m 5m안착" value={`${approach2040Rate}%`} valueClass="text-amber-600" />
+                      <MetricCell label="20m이내 3m안착" value={approach20Total === 0 ? '–' : `${approach20Success} / ${approach20Total}`} valueClass="text-teal-600" />
+                      <MetricCell label="20~40m 5m안착" value={approach2040Total === 0 ? '–' : `${approach2040Success} / ${approach2040Total}`} valueClass="text-amber-600" />
                     </div>
                     <p className="text-xs font-semibold text-gray-500 mb-2">어프로치 성공률 추이</p>
                     <SegmentLineChart

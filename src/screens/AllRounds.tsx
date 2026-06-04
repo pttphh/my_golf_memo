@@ -48,9 +48,6 @@ const SEGMENTS: { id: SegmentType; label: string }[] = [
   { id: 'putt', label: '퍼팅' },
 ];
 
-const APPROACH_CLUBS = ['20m이내', '20~40m'] as const;
-type ApproachClub = typeof APPROACH_CLUBS[number];
-
 const MISS_BAR_COLORS = ['#E24B4A', '#E24B4A', '#EF9F27', '#EF9F27', '#B4B2A9'];
 
 function computeHoleStats(holes: Hole[]): Omit<RoundWithHoles, 'round' | 'holes'> {
@@ -102,12 +99,6 @@ function roundFairwayPct(holes: Hole[]): number | null {
   return Math.round((hits / 14) * 100);
 }
 
-function roundApproachClubRate(holes: Hole[], club: ApproachClub): number | null {
-  const attempts = holes.filter(h => h.approach1_club === club);
-  if (attempts.length === 0) return null;
-  return Math.round((attempts.filter(h => h.approach1_result === '성공').length / attempts.length) * 100);
-}
-
 function roundApproachFailCount(holes: Hole[]): number {
   return holes.filter(h => h.approach1_result === '실패').length;
 }
@@ -134,34 +125,15 @@ function roundWedgeMissCount(holes: Hole[]): number {
   }, 0);
 }
 
-function avgFromValidRounds(rounds: RoundWithHoles[], valueFn: (holes: Hole[]) => number | null): number | null {
-  if (rounds.length === 0) return null;
-  const values = rounds.map(d => valueFn(d.holes)).filter((v): v is number => v !== null);
-  if (values.length === 0) return null;
-  return Math.round(values.reduce((a, b) => a + b, 0) / values.length);
+function pctFromTotals(numerator: number, denominator: number): number | null {
+  if (denominator === 0) return null;
+  return Math.round((numerator / denominator) * 100);
 }
 
 function avgPerRoundNullable(rounds: RoundWithHoles[], countFn: (holes: Hole[]) => number): number | null {
   if (rounds.length === 0) return null;
   const total = rounds.reduce((s, d) => s + countFn(d.holes), 0);
   return Math.round((total / rounds.length) * 10) / 10;
-}
-
-function roundShortPuttSuccessRate(holes: Hole[]): number | null {
-  const attempts = holes.filter(h => h.putt_miss);
-  if (attempts.length === 0) return null;
-  return Math.round((attempts.filter(h => h.putt_miss === '숏퍼팅 성공').length / attempts.length) * 100);
-}
-
-function roundApproachSuccessRate(holes: Hole[]): number | null {
-  if (!holes.some(h => h.approach1_club)) return null;
-  const attempts = holes.filter(
-    h => ['20m이내', '20~40m'].includes(h.approach1_club ?? '') ||
-         ['20m이내', '20~40m'].includes(h.approach2_club ?? ''),
-  );
-  if (attempts.length === 0) return 0;
-  const success = holes.filter(h => h.approach1_result === '성공' || h.approach2_result === '성공').length;
-  return Math.round((success / attempts.length) * 100);
 }
 
 function roundAvgPutts(d: RoundWithHoles): number {
@@ -316,9 +288,6 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
   const avgTriple = avg(filteredData.map(d => d.triple));
   const distMax = Math.max(avgBirdie, avgPar, avgBogey, avgDouble, avgTriple, 1);
 
-  const validFairwayRounds = filteredData.filter(d =>
-    d.holes.filter(h => h.par !== 3 && h.tee_result).length > 0,
-  );
   const validGIRRounds = filteredData.filter(d =>
     d.holes.filter(h => h.second1_result).length > 0,
   );
@@ -328,20 +297,13 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
       [h.second1_club, h.second2_club, h.second3_club].some(c => c?.includes('웨지')),
     ).length > 0,
   );
-  const validApproachRounds = filteredData.filter(d =>
-    d.holes.filter(h => h.approach1_club).length > 0,
-  );
-  const validShortPuttRounds = filteredData.filter(d =>
-    d.holes.filter(h => h.putt_miss).length > 0,
-  );
-  const approach20ValidRounds = filteredData.filter(d =>
-    d.holes.filter(h => h.approach1_club === '20m이내').length > 0,
-  );
-  const approach2040ValidRounds = filteredData.filter(d =>
-    d.holes.filter(h => h.approach1_club === '20~40m').length > 0,
-  );
 
-  const avgFairway = avgFromValidRounds(validFairwayRounds, roundFairwayPct);
+  const periodHoles = filteredData.flatMap(d => d.holes);
+
+  const avgFairway = pctFromTotals(
+    periodHoles.filter(h => h.par !== 3 && h.tee_result === '페어웨이').length,
+    periodHoles.filter(h => h.par !== 3 && h.tee_result).length,
+  );
   const avgGir = validGIRRounds.length > 0
     ? Math.round((validGIRRounds.reduce((s, d) => s + d.gir, 0) / validGIRRounds.length) * 10) / 10
     : null;
@@ -349,11 +311,19 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
 
   const avgCriticalMiss = avgPerRoundNullable(validFatalRounds, roundFatalMissCount);
   const avgWedgeMiss = avgPerRoundNullable(validWedgeRounds, roundWedgeMissCount);
-  const avgApproachSuccess = avgFromValidRounds(validApproachRounds, roundApproachSuccessRate);
-  const avgShortPuttSuccess = avgFromValidRounds(validShortPuttRounds, roundShortPuttSuccessRate);
+  const avgApproachSuccess = pctFromTotals(
+    periodHoles.filter(h => h.approach1_result === '성공' || h.approach2_result === '성공').length,
+    periodHoles.filter(h => h.approach1_club === '20m이내' || h.approach1_club === '20~40m').length,
+  );
+  const avgShortPuttSuccess = pctFromTotals(
+    periodHoles.filter(h => h.putt_miss === '숏퍼팅 성공').length,
+    periodHoles.filter(h => h.putt_miss).length,
+  );
 
-  const approach20Rate = avgFromValidRounds(approach20ValidRounds, h => roundApproachClubRate(h, '20m이내'));
-  const approach2040Rate = avgFromValidRounds(approach2040ValidRounds, h => roundApproachClubRate(h, '20~40m'));
+  const approach20Success = periodHoles.filter(h => h.approach1_club === '20m이내' && h.approach1_result === '성공').length;
+  const approach20Total = periodHoles.filter(h => h.approach1_club === '20m이내').length;
+  const approach2040Success = periodHoles.filter(h => h.approach1_club === '20~40m' && h.approach1_result === '성공').length;
+  const approach2040Total = periodHoles.filter(h => h.approach1_club === '20~40m').length;
   const avgApproachFail = avgPerRound(filteredData, roundApproachFailCount);
 
   const avg1Putt = avgPerRound(filteredData, holes => holes.filter(h => h.putts === 1).length);
@@ -594,14 +564,8 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
                     const d = metricDisplay(avgApproachSuccess, v => `${v}%`, 'text-[#1B4332]');
                     return <MetricCell label="어프로치 성공률" value={d.value} sub={d.sub} valueClass={d.valueClass} />;
                   })()}
-                  {(() => {
-                    const d = metricDisplay(approach20Rate, v => `${v}%`, 'text-teal-600');
-                    return <MetricCell label="20m이내 3m안착" value={d.value} sub={d.sub} valueClass={d.valueClass} />;
-                  })()}
-                  {(() => {
-                    const d = metricDisplay(approach2040Rate, v => `${v}%`, 'text-amber-600');
-                    return <MetricCell label="20~40m 5m안착" value={d.value} sub={d.sub} valueClass={d.valueClass} />;
-                  })()}
+                  <MetricCell label="20m이내 3m안착" value={approach20Total === 0 ? '–' : `${approach20Success} / ${approach20Total}`} valueClass="text-teal-600" />
+                  <MetricCell label="20~40m 5m안착" value={approach2040Total === 0 ? '–' : `${approach2040Success} / ${approach2040Total}`} valueClass="text-amber-600" />
                 </div>
                 <p className="text-xs font-semibold text-gray-500 mb-2">어프로치 성공률 추이</p>
                 <SegmentLineChart
