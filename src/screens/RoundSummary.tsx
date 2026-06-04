@@ -46,6 +46,26 @@ function countHolesWithPenalty(holes: Hole[], type: string): number {
   return holes.filter(h => allPenaltyFields(h).includes(type)).length;
 }
 
+function isFairwayHit(h: Hole): boolean {
+  if (h.par === 3) return false;
+  if (h.tee_result === '페어웨이') return true;
+  if (h.par === 5 && h.second1_result === '페어웨이') return true;
+  return false;
+}
+
+function isGirHole(h: Hole): boolean {
+  if (h.tee_result === '그린 온(GIR)') return true;
+  if (h.par === 5) {
+    return h.second2_result === '그린 온(GIR)' || h.second3_result === '그린 온';
+  }
+  return h.second1_result === '그린 온(GIR)';
+}
+
+function hasGirRecorded(h: Hole): boolean {
+  if (h.par === 5) return !!(h.second2_result || h.second3_result);
+  return !!h.second1_result;
+}
+
 function topMissBars(raws: string[], limit = 5) {
   const counts = collectMissPatterns(raws);
   return Object.entries(counts)
@@ -334,12 +354,10 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
   }, 0);
 
   const fairwayDenom = 14;
-  const fairwayHits = holes.filter(h => h.par !== 3 && h.tee_result === '페어웨이').length;
+  const fairwayHits = holes.filter(isFairwayHit).length;
   const fairwayPct = Math.round((fairwayHits / fairwayDenom) * 100);
 
-  const girCount = holes.filter(
-    h => h.tee_result === '그린 온(GIR)' || h.second1_result === '그린 온(GIR)',
-  ).length;
+  const girCount = holes.filter(isGirHole).length;
   const girPct = Math.round((girCount / 18) * 100);
 
   const approachSuccess = holes.filter(
@@ -399,9 +417,14 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
   const obHoles = countHolesWithPenalty(holes, 'OB');
   const hazardHoles = countHolesWithPenalty(holes, '해저드');
 
-  const fairwayRecorded = holes.filter(h => h.par !== 3 && h.tee_result).length;
-  const girRecorded = holes.filter(h => h.second1_result).length;
-  const fatalRecorded = girRecorded;
+  const fairwayRecorded = holes.filter(h => {
+    if (h.par === 3) return false;
+    return !!(h.tee_result || (h.par === 5 && h.second1_result));
+  }).length;
+  const girRecorded = holes.filter(hasGirRecorded).length;
+  const fatalRecorded = holes.filter(h =>
+    !!(h.second1_result || h.second2_result || h.second3_result),
+  ).length;
   const wedgeRecorded = holes.filter(h =>
     [h.second1_club, h.second2_club, h.second3_club].some(c => c?.includes('웨지')),
   ).length;
@@ -409,7 +432,7 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
   const shortPuttRecorded = holes.filter(h => h.putt_miss).length;
 
   const segFairwayPct = fairwayPct;
-  const segSecondGir = holes.filter(h => h.second1_result === '그린 온(GIR)').length;
+  const segSecondGir = holes.filter(isGirHole).length;
   const approach20Rate = (() => {
     const attempts = holes.filter(h => h.approach1_club === '20m이내');
     if (!attempts.length) return 0;

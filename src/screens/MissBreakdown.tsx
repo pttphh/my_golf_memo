@@ -116,9 +116,12 @@ export default function MissBreakdown({ roundId, onBack }: Props) {
     );
   }
 
-  const teeMisses = holes.map(h => h.tee_miss);
+  const teeMisses = [
+    ...holes.map(h => h.tee_miss),
+    ...holes.filter(h => h.par === 5).map(h => h.second1_miss),
+  ];
   const secondMisses = [
-    ...holes.map(h => h.second1_miss),
+    ...holes.filter(h => h.par !== 5).map(h => h.second1_miss),
     ...holes.map(h => h.second2_miss),
     ...holes.map(h => h.second3_miss),
   ];

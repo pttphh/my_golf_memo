@@ -336,22 +336,40 @@ function MissChips({ value, options, onChange, hint = true }: {
 const SECOND1_GREEN_MISS_SUB = ['어프로치 가능', '어프로치 불가', 'OB', '해저드'] as const;
 type SecondGreenMissSub = typeof SECOND1_GREEN_MISS_SUB[number];
 
-// SecondShotBlock: 2-step result UI for second/additional shots
-function SecondShotBlock({ result, penaltyType, missDetail, miss, memo, isFirst,
+// SecondShotBlock: par-aware second shot UI (par5 1st shot = fairway layup, then green approach)
+function SecondShotBlock({ par, shotIndex, result, penaltyType, missDetail, miss, memo,
   onResultChange, onPenaltyChange, onMissDetailChange, onMissChange, onMemoChange }: {
+  par: number;
+  shotIndex: 1 | 2 | 3;
   result: string;
   penaltyType: string;
   missDetail: string;
   miss: string;
   memo: string;
-  isFirst?: boolean;
   onResultChange: (v: string) => void;
   onPenaltyChange: (v: string) => void;
   onMissDetailChange: (v: string) => void;
   onMissChange: (v: string) => void;
   onMemoChange: (v: string) => void;
 }) {
-  const greenOnLabel = isFirst ? '그린 온(GIR)' : '그린 온';
+  if (par === 5 && shotIndex === 1) {
+    return (
+      <TeeShotBlock
+        par={5}
+        topResult={result}
+        subResult={penaltyType}
+        miss={miss}
+        memo={memo}
+        onTopChange={onResultChange}
+        onSubChange={onPenaltyChange}
+        onMissChange={onMissChange}
+        onMemoChange={onMemoChange}
+      />
+    );
+  }
+
+  const isGirLabelFirst = (par === 5 && shotIndex === 2) || (par !== 5 && shotIndex === 1);
+  const greenOnLabel = isGirLabelFirst ? '그린 온(GIR)' : '그린 온';
   const showSub = result === '그린 미스';
 
   function getApproachSubSelection(): string {
@@ -969,12 +987,13 @@ const back9Over = savedOnly.filter(h => h.hole_number >= 10).reduce((s, h) => s 
                     options={SHOT_CLUBS}
                   />
                   <SecondShotBlock
+                    par={hole.par}
+                    shotIndex={i}
                     result={hole[`second${i}_result` as keyof Hole] as string}
                     penaltyType={hole[`second${i}_penalty_type` as keyof Hole] as string}
                     missDetail={hole[`second${i}_miss_detail` as keyof Hole] as string}
                     miss={hole[`second${i}_miss` as keyof Hole] as string}
                     memo={hole[`second${i}_memo` as keyof Hole] as string}
-                    isFirst={i === 1}
                     onResultChange={v => updateField({ [`second${i}_result`]: v })}
                     onPenaltyChange={v => updateField({ [`second${i}_penalty_type`]: v })}
                     onMissDetailChange={v => updateField({ [`second${i}_miss_detail`]: v })}
