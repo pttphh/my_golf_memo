@@ -31,6 +31,64 @@ const SEGMENTS: { id: SegmentType; label: string }[] = [
   { id: 'putt', label: '퍼팅' },
 ];
 
+type MetricInfo = {
+  title: string;
+  description: string;
+  criteria: string[];
+  goals: { level: string; target: string }[];
+};
+
+const METRIC_INFO: Record<string, MetricInfo> = {
+  손실타수: {
+    title: '손실 타수',
+    description: 'OB, 해저드처럼 공을 잃거나 벌타를 받은 상황에서 잃은 타수입니다. 이 앱에서는 OB 1회 = 2타 손실, 해저드 1회 = 1타 손실로 계산합니다.',
+    criteria: ['OB 발생: 2타 손실', '해저드 발생: 1타 손실', '벌타 없이 다음 샷을 정상적으로 칠 수 있으면 손실타수에 포함하지 않습니다.'],
+    goals: [{ level: '100타대', target: '6타 이하' }, { level: '90타대', target: '4타 이하' }, { level: '80타대', target: '2타 이하' }],
+  },
+  페어웨이안착률: {
+    title: '페어웨이 안착률',
+    description: '티샷이 페어웨이에 안착한 비율입니다. 파3를 제외한 홀에서 계산합니다.',
+    criteria: ['페어웨이에 있으면 성공', '러프, 벙커, OB, 해저드 등은 실패', '단, 페어웨이를 놓쳤더라도 다음 샷이 가능하면 스코어상 치명적인 미스는 아닐 수 있습니다.'],
+    goals: [{ level: '100타대', target: '40% 이상' }, { level: '90타대', target: '50% 이상' }, { level: '80타대', target: '60% 이상' }],
+  },
+  GIR: {
+    title: 'GIR',
+    description: '정해진 타수 안에 공을 그린에 올린 비율입니다. GIR은 "그린 적중률"로 볼 수 있습니다.',
+    criteria: ['파3: 1타 안에 온그린', '파4: 2타 안에 온그린', '파5: 3타 안에 온그린'],
+    goals: [{ level: '100타대', target: '10~20%' }, { level: '90타대', target: '20~35%' }, { level: '80타대', target: '40% 이상' }],
+  },
+  세컨치명미스: {
+    title: '세컨 치명미스',
+    description: '파4에서는 세컨샷, 파5에서는 서드샷이 기준입니다. 이 샷이 홀 주변 40m 이내, 즉 다음 샷으로 정상적인 어프로치가 가능한 위치까지 갔는지를 봅니다.',
+    criteria: ['홀 주변 40m 이내에 도달하면 성공', '40m 밖에 남으면 치명미스', 'OB, 해저드, 나무 뒤, 벙커 턱, 깊은 러프 등 다음 샷이 어려운 위치도 치명미스', '파3는 이 지표에서 제외합니다.'],
+    goals: [{ level: '100타대', target: '6회 이하' }, { level: '90타대', target: '4회 이하' }, { level: '80타대', target: '2회 이하' }],
+  },
+  웨지온실패: {
+    title: '웨지 온 실패',
+    description: '40m 초과 ~ 100m 미만 거리에서 그린을 노린 웨지샷이 온그린에 실패한 경우입니다.',
+    criteria: ['40m 초과 ~ 100m 미만 거리에서 그린에 올리면 성공', '같은 거리에서 그린을 놓치면 웨지 온 실패', '거리 조절 실패, 짧음, 김, 좌우 미스 모두 온그린 실패에 포함합니다.'],
+    goals: [{ level: '100타대', target: '4회 이하' }, { level: '90타대', target: '3회 이하' }, { level: '80타대', target: '1~2회 이하' }],
+  },
+  어프로치성공률: {
+    title: '어프로치 성공률',
+    description: '40m 이내 그린 주변 어프로치가 홀 근처에 잘 붙은 비율입니다.',
+    criteria: ['20m 이내 어프로치: 3m 이내에 붙이면 성공', '20~40m 어프로치: 5m 이내에 붙이면 성공', '기준 거리보다 멀게 남으면 실패', '40m 초과 샷은 웨지 온 실패 지표에서 봅니다.'],
+    goals: [{ level: '100타대', target: '40% 이상' }, { level: '90타대', target: '50% 이상' }, { level: '80타대', target: '60% 이상' }],
+  },
+  퍼팅: {
+    title: '퍼팅',
+    description: '한 라운드에서 그린 위에서 친 전체 퍼팅 수입니다.',
+    criteria: ['그린 위에서 친 퍼팅만 계산합니다.', '3퍼팅은 한 홀에서 퍼팅을 3번 이상 한 경우입니다.', '퍼팅 수가 많다면 3퍼팅이 많았는지, 첫 퍼팅 거리가 길었는지도 함께 봐야 합니다.'],
+    goals: [{ level: '100타대', target: '37개 이하 / 3퍼팅 4회 이하' }, { level: '90타대', target: '35~36개 이하 / 3퍼팅 3회 이하' }, { level: '80타대', target: '33~34개 이하 / 3퍼팅 2회 이하' }, { level: '싱글 수준', target: '32개 이하 / 3퍼팅 1회 이하' }],
+  },
+  숏퍼팅성공률: {
+    title: '숏퍼팅 성공률',
+    description: '2m 이내의 짧은 퍼팅을 성공한 비율입니다.',
+    criteria: ['2m 이내 퍼팅을 넣으면 성공', '2m 이내 퍼팅을 놓치면 실패', '특히 1m 이내 퍼팅 실패가 반복되면 별도로 점검이 필요합니다.'],
+    goals: [{ level: '100타대', target: '60% 이상' }, { level: '90타대', target: '70% 이상' }, { level: '80타대', target: '80% 이상' }],
+  },
+};
+
 const MISS_BAR_COLORS = ['#E24B4A', '#E24B4A', '#EF9F27', '#EF9F27', '#B4B2A9'];
 const PENALTY_MAP: Record<string, number> = { OB: 2, '해저드': 1 };
 
@@ -115,13 +173,16 @@ function ColoredBarChart({ items }: { items: { label: string; avg: number; color
   );
 }
 
-function StatCard({ icon, label, value, sub, sub2, unrecorded }: {
-  icon: React.ReactNode; label: string; value: string | number; sub?: string; sub2?: string; unrecorded?: boolean;
+function StatCard({ icon, label, value, sub, sub2, unrecorded, onClick }: {
+  icon: React.ReactNode; label: string; value: string | number; sub?: string; sub2?: string; unrecorded?: boolean; onClick?: () => void;
 }) {
   const valueCls = unrecorded ? 'text-gray-300' : 'text-gray-800';
   const subCls = unrecorded ? 'text-gray-300' : 'text-gray-500';
   return (
-    <div className="bg-card rounded-2xl p-3.5 border border-gray-100 shadow-sm flex flex-col gap-2">
+    <div
+      className={`bg-card rounded-2xl p-3.5 border border-gray-100 shadow-sm flex flex-col gap-2${onClick ? ' cursor-pointer active:scale-[0.98] transition-transform' : ''}`}
+      onClick={onClick}
+    >
       <div className="flex items-center gap-2">
         <div className="w-7 h-7 rounded-lg bg-green-50 flex items-center justify-center text-[#1B4332] flex-shrink-0">
           {icon}
@@ -131,6 +192,36 @@ function StatCard({ icon, label, value, sub, sub2, unrecorded }: {
       <p className={`text-xl font-bold leading-none ${valueCls}`}>{value}</p>
       {sub && <p className={`text-[11px] ${subCls}`}>{sub}</p>}
       {sub2 && !unrecorded && <p className={`text-[11px] ${subCls}`}>{sub2}</p>}
+    </div>
+  );
+}
+
+function MetricInfoModal({ info, onClose }: { info: MetricInfo; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-white rounded-t-2xl w-full max-w-lg max-h-[80vh] overflow-y-auto p-5 pb-8">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-base font-bold text-gray-800">{info.title}</h3>
+          <button onClick={onClose} className="text-gray-400 text-xl">✕</button>
+        </div>
+        <p className="text-sm text-gray-600 mb-4">{info.description}</p>
+        <p className="text-xs font-bold text-gray-700 mb-2">판정 기준</p>
+        <ul className="text-sm text-gray-600 space-y-1 mb-4">
+          {info.criteria.map((c, i) => <li key={i} className="flex gap-2"><span>•</span><span>{c}</span></li>)}
+        </ul>
+        <p className="text-xs font-bold text-gray-700 mb-2">목표</p>
+        <table className="w-full text-sm border-collapse">
+          <tbody>
+            {info.goals.map((g, i) => (
+              <tr key={i} className={i % 2 === 0 ? 'bg-gray-50' : ''}>
+                <td className="py-1.5 px-2 text-gray-500 text-xs w-24">{g.level}</td>
+                <td className="py-1.5 px-2 text-gray-700">{g.target}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -258,6 +349,7 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
   const [editSaving, setEditSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [activeSegment, setActiveSegment] = useState<SegmentType>('tee');
+  const [activeMetric, setActiveMetric] = useState<string | null>(null);
   const [chartRounds, setChartRounds] = useState<{ round: Round; holes: Hole[] }[]>([]);
 
   useEffect(() => {
@@ -538,6 +630,10 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
         />
       )}
 
+      {activeMetric && METRIC_INFO[activeMetric] && (
+        <MetricInfoModal info={METRIC_INFO[activeMetric]} onClose={() => setActiveMetric(null)} />
+      )}
+
       <div className="min-h-screen bg-surface flex flex-col">
       <div className="bg-[#1B4332] text-white px-4 pb-4" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1rem)' }}>
           <p className="text-green-200 text-xs mb-1">{roundData.date}  · {roundData.time}</p>
@@ -604,13 +700,14 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <StatCard icon={<AlertTriangle size={16} />} label="손실 타수" value={`${penalties}타`} sub={`OB ${obHoles}홀 · 해저드 ${hazardHoles}홀`} />
+                <StatCard icon={<AlertTriangle size={16} />} label="손실 타수" value={`${penalties}타`} sub={`OB ${obHoles}홀 · 해저드 ${hazardHoles}홀`} onClick={() => setActiveMetric('손실타수')} />
                 <StatCard
                   icon={<Flag size={16} />}
                   label="페어웨이 안착률"
                   unrecorded={fairwayRecorded === 0}
                   value={fairwayRecorded === 0 ? '–' : `${fairwayPct}%`}
                   sub={fairwayRecorded === 0 ? '미기록' : `${fairwayHits} / ${fairwayDenom}`}
+                  onClick={() => setActiveMetric('페어웨이안착률')}
                 />
                 <StatCard
                   icon={<Trophy size={16} />}
@@ -618,6 +715,7 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
                   unrecorded={girRecorded === 0}
                   value={girRecorded === 0 ? '–' : `${girPct}%`}
                   sub={girRecorded === 0 ? '미기록' : `${girCount} / 18`}
+                  onClick={() => setActiveMetric('GIR')}
                 />
                 <StatCard
                   icon={<AlertTriangle size={16} />}
@@ -626,6 +724,7 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
                   value={fatalRecorded === 0 ? '–' : `${fatalMissCount}회`}
                   sub={fatalRecorded === 0 ? '미기록' : `OB ${fatalOB} · 해저드 ${fatalHazard}`}
                   sub2={fatalRecorded === 0 ? undefined : `어프로치불가 ${fatalApproachNG}`}
+                  onClick={() => setActiveMetric('세컨치명미스')}
                 />
                 <StatCard
                   icon={<Crosshair size={16} />}
@@ -633,6 +732,7 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
                   unrecorded={wedgeRecorded === 0}
                   value={wedgeRecorded === 0 ? '–' : `${wedgeMiss}회`}
                   sub={wedgeRecorded === 0 ? '미기록' : `시도 ${wedgeTotal}홀 중`}
+                  onClick={() => setActiveMetric('웨지온실패')}
                 />
                 <StatCard
                   icon={<Target size={16} />}
@@ -640,14 +740,16 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
                   unrecorded={approachRecorded === 0}
                   value={approachRecorded === 0 ? '–' : `${approachPct}%`}
                   sub={approachRecorded === 0 ? '미기록' : `${approachSuccess} / ${approachAttempts}홀 성공`}
+                  onClick={() => setActiveMetric('어프로치성공률')}
                 />
-                <StatCard icon={<Disc size={16} />} label="퍼팅" value={`총 ${totalPutts}개`} sub={`3퍼팅 이상 ${threePuttPlus}홀`} />
+                <StatCard icon={<Disc size={16} />} label="퍼팅" value={`총 ${totalPutts}개`} sub={`3퍼팅 이상 ${threePuttPlus}홀`} onClick={() => setActiveMetric('퍼팅')} />
                 <StatCard
                   icon={<CheckCircle size={16} />}
                   label="숏퍼팅 성공률"
                   unrecorded={shortPuttRecorded === 0}
                   value={shortPuttRecorded === 0 ? '–' : `${shortPuttPct}%`}
                   sub={shortPuttRecorded === 0 ? '미기록' : `성공 ${shortPuttSuccess} / 전체 ${puttMissHoles.length}`}
+                  onClick={() => setActiveMetric('숏퍼팅성공률')}
                 />
               </div>
 
