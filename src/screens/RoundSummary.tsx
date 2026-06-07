@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Trophy, Target, AlertTriangle, BarChart2, ChevronRight, List, Trash2, Flag, Pencil, Crosshair, Disc, CheckCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { isAnonymousUser, linkGoogleAccount, signUpWithEmail } from '../lib/auth';
 import type { Round, Hole } from '../types';
 import { collectMissPatterns } from '../lib/missPattern';
 import {
@@ -311,6 +312,116 @@ function EditModal({
   );
 }
 
+function SignUpPromptModal({
+  onLater,
+  onSuccess,
+}: {
+  onLater: () => void;
+  onSuccess: () => void;
+}) {
+  const [emailMode, setEmailMode] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function handleGoogle() {
+    setLoading(true);
+    setError('');
+    const { error: err } = await linkGoogleAccount();
+    if (err) {
+      setError(err.message);
+      setLoading(false);
+    }
+  }
+
+  async function handleEmailSubmit() {
+    if (!email.trim() || password.length < 6) {
+      setError('이메일과 비밀번호(6자 이상)를 입력해 주세요.');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    const { error: err } = await signUpWithEmail(email.trim(), password);
+    setLoading(false);
+    if (err) {
+      setError(err.message);
+      return;
+    }
+    onSuccess();
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+      <div className="absolute inset-0 bg-black/40" onClick={onLater} />
+      <div className="relative bg-white rounded-2xl p-6 w-full max-w-[340px]">
+        <h3 className="text-base font-bold text-gray-800 text-center mb-2">데이터를 안전하게 보관하세요</h3>
+        <p className="text-sm text-gray-500 text-center leading-relaxed mb-5">
+          현재 데이터는 이 기기에만 저장됩니다. 회원가입하면 어디서든 데이터에 접근할 수 있고, 기기를 바꿔도 데이터가 유지됩니다.
+        </p>
+
+        {emailMode ? (
+          <div className="space-y-3 mb-4">
+            <input
+              type="email"
+              placeholder="이메일"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]"
+            />
+            <input
+              type="password"
+              placeholder="비밀번호 (6자 이상)"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]"
+            />
+            <button
+              onClick={handleEmailSubmit}
+              disabled={loading}
+              className="w-full py-3 rounded-xl bg-[#1B4332] text-white font-bold text-sm active:scale-95 transition-transform disabled:opacity-50"
+            >
+              {loading ? '처리 중...' : '회원가입'}
+            </button>
+            <button
+              onClick={() => { setEmailMode(false); setError(''); }}
+              className="w-full py-2 text-sm text-gray-500"
+            >
+              뒤로
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-2 mb-4">
+            <button
+              onClick={handleGoogle}
+              disabled={loading}
+              className="w-full py-3 rounded-xl border-2 border-gray-200 text-gray-700 font-semibold text-sm active:scale-95 transition-transform disabled:opacity-50"
+            >
+              Google로 시작하기
+            </button>
+            <button
+              onClick={() => setEmailMode(true)}
+              disabled={loading}
+              className="w-full py-3 rounded-xl bg-[#1B4332] text-white font-bold text-sm active:scale-95 transition-transform disabled:opacity-50"
+            >
+              이메일로 시작하기
+            </button>
+          </div>
+        )}
+
+        {error && <p className="text-red-500 text-xs text-center mb-3">{error}</p>}
+
+        <button
+          onClick={onLater}
+          className="w-full py-2.5 text-sm text-gray-400 font-medium active:opacity-70"
+        >
+          나중에 하기
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function DeleteModal({ onConfirm, onCancel, deleting }: { onConfirm: () => void; onCancel: () => void; deleting: boolean }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-6">
@@ -351,6 +462,7 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
   const [editForm, setEditForm] = useState<EditForm>(() => roundToEditForm(round));
   const [editSaving, setEditSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showSignUpPrompt, setShowSignUpPrompt] = useState(false);
   const [activeSegment, setActiveSegment] = useState<SegmentType>('tee');
   const [activeMetric, setActiveMetric] = useState<string | null>(null);
   const [chartRounds, setChartRounds] = useState<{ round: Round; holes: Hole[] }[]>([]);
@@ -565,6 +677,15 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
     setSaving(true);
     await new Promise(r => setTimeout(r, 200));
     setSaving(false);
+    if (await isAnonymousUser()) {
+      setShowSignUpPrompt(true);
+      return;
+    }
+    onSave();
+  }
+
+  function handleSignUpLater() {
+    setShowSignUpPrompt(false);
     onSave();
   }
 
@@ -652,6 +773,10 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
 
       {activeMetric && METRIC_INFO[activeMetric] && (
         <MetricInfoModal info={METRIC_INFO[activeMetric]} onClose={() => setActiveMetric(null)} />
+      )}
+
+      {showSignUpPrompt && (
+        <SignUpPromptModal onLater={handleSignUpLater} onSuccess={handleSignUpLater} />
       )}
 
       <div className="min-h-screen bg-surface flex flex-col">

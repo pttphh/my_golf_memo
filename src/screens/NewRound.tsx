@@ -45,6 +45,7 @@ export default function NewRound({ onStart }: Props) {
     try {
       const date = dateTime.slice(0, 10);
       const time = dateTime.slice(11, 16);
+      const { data: { user } } = await supabase.auth.getUser();
       const payload = {
         date,
         time,
@@ -54,6 +55,7 @@ export default function NewRound({ onStart }: Props) {
         companion1: companions[0] ?? '',
         companion2: companions[1] ?? '',
         companion3: companions[2] ?? '',
+        user_id: user?.id,
       };
       const { data: insertedRound, error: err } = await supabase
         .from('rounds')
@@ -61,7 +63,7 @@ export default function NewRound({ onStart }: Props) {
         .select('id')
         .single();
       if (err || !insertedRound) { setError('라운드 생성 실패'); return; }
-      onStart({ ...payload, id: insertedRound.id });
+      onStart({ ...payload, id: insertedRound.id, memo: '' });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : (e as { message?: string })?.message ?? JSON.stringify(e);
       setError(`오류: ${msg}`);

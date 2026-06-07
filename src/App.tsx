@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from './lib/supabase';
+import { ensureSession } from './lib/auth';
 import type { Round, Screen, Hole } from './types';
 
 import BottomNav, { type NavTab } from './components/BottomNav';
@@ -29,6 +30,11 @@ export default function App() {
   const [isRecordingEditMode, setIsRecordingEditMode] = useState(false);
   const [continueFromHole, setContinueFromHole] = useState<number>(1);
   const [summaryViewMode, setSummaryViewMode] = useState<'recording' | 'view'>('recording');
+  const [authReady, setAuthReady] = useState(false);
+
+  useEffect(() => {
+    ensureSession().finally(() => setAuthReady(true));
+  }, []);
 
   const activeTab = screenToTab(screen);
 
@@ -77,6 +83,16 @@ export default function App() {
   }
 
   const showNav = screen !== 'hole-recording';
+
+  if (!authReady) {
+    return (
+      <div className="flex justify-center bg-gray-200 min-h-screen">
+        <div className="w-full max-w-[390px] bg-surface shadow-xl min-h-screen flex items-center justify-center">
+          <p className="text-gray-500 text-sm">불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex justify-center bg-gray-200 min-h-screen">

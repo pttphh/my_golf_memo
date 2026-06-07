@@ -9,6 +9,7 @@ export interface Round {
   companion2: string;
   companion3: string;
   memo: string;
+  user_id?: string;
 }
 
 export interface Hole {
