@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { X } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { ensureSession } from './lib/auth';
 import type { Round, Screen, Hole } from './types';
@@ -31,10 +32,32 @@ export default function App() {
   const [continueFromHole, setContinueFromHole] = useState<number>(1);
   const [summaryViewMode, setSummaryViewMode] = useState<'recording' | 'view'>('recording');
   const [authReady, setAuthReady] = useState(false);
+  const [showHomeBanner, setShowHomeBanner] = useState(false);
+  const [homeBannerText, setHomeBannerText] = useState('');
 
   useEffect(() => {
     ensureSession().finally(() => setAuthReady(true));
   }, []);
+
+  useEffect(() => {
+    if (localStorage.getItem('home_banner_dismissed')) return;
+    if (window.matchMedia('(display-mode: standalone)').matches) return;
+    const ua = navigator.userAgent;
+    const isIOS = /iPhone|iPad/.test(ua);
+    const isAndroid = /Android/.test(ua);
+    if (isIOS) {
+      setHomeBannerText('📱 홈화면에 추가하면 앱처럼 사용할 수 있어요 · Safari 하단 공유버튼 → 홈 화면에 추가');
+      setShowHomeBanner(true);
+    } else if (isAndroid) {
+      setHomeBannerText('📱 홈화면에 추가하면 앱처럼 사용할 수 있어요 · Chrome 우측 메뉴 → 홈 화면에 추가');
+      setShowHomeBanner(true);
+    }
+  }, []);
+
+  function dismissHomeBanner() {
+    localStorage.setItem('home_banner_dismissed', '1');
+    setShowHomeBanner(false);
+  }
 
   const activeTab = screenToTab(screen);
 
@@ -183,6 +206,26 @@ export default function App() {
         </div>
 
         {showNav && <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />}
+
+        {showNav && showHomeBanner && (
+          <div
+            className="fixed left-0 right-0 z-40 flex justify-center pointer-events-none"
+            style={{ bottom: '64px' }}
+          >
+            <div className="w-full max-w-[390px] px-3 pointer-events-auto">
+              <div className="bg-[#1B4332] text-white rounded-xl px-3 py-2.5 flex items-start gap-2 shadow-lg">
+                <p className="text-xs leading-relaxed flex-1">{homeBannerText}</p>
+                <button
+                  onClick={dismissHomeBanner}
+                  className="flex-shrink-0 p-0.5 text-white/80 active:opacity-70"
+                  aria-label="닫기"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

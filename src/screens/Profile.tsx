@@ -3,7 +3,6 @@ import { Settings, Clock, Database } from 'lucide-react';
 import type { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import {
-  linkGoogleAccount,
   signUpWithEmail,
   signOutAndReanonymous,
   getAuthProvider,
@@ -30,14 +29,6 @@ export default function Profile() {
   }, []);
 
   const provider = getAuthProvider(user);
-
-  async function handleGoogle() {
-    setSubmitting(true);
-    setError('');
-    const { error: err } = await linkGoogleAccount();
-    if (err) setError(err.message);
-    setSubmitting(false);
-  }
 
   async function handleEmailSignUp() {
     if (!email.trim() || password.length < 6) {
@@ -116,37 +107,19 @@ export default function Profile() {
                   </button>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  <button
-                    onClick={handleGoogle}
-                    disabled={submitting}
-                    className="w-full py-3 rounded-xl border-2 border-gray-200 text-gray-700 font-semibold text-sm active:scale-95 transition-transform disabled:opacity-50"
-                  >
-                    Google로 시작하기
-                  </button>
-                  <button
-                    onClick={() => setEmailMode(true)}
-                    disabled={submitting}
-                    className="w-full py-3 rounded-xl bg-[#1B4332] text-white font-bold text-sm active:scale-95 transition-transform disabled:opacity-50"
-                  >
-                    이메일로 시작하기
-                  </button>
-                </div>
+                <button
+                  onClick={() => setEmailMode(true)}
+                  disabled={submitting}
+                  className="w-full py-3 rounded-xl bg-[#1B4332] text-white font-bold text-sm active:scale-95 transition-transform disabled:opacity-50"
+                >
+                  이메일로 시작하기
+                </button>
               )}
             </>
           ) : (
             <>
               <p className="text-sm font-medium text-gray-700 mb-1">계정</p>
               <p className="text-sm text-gray-600 mb-4">{user?.email ?? '연동된 계정'}</p>
-              {provider === 'email' && (
-                <button
-                  onClick={handleGoogle}
-                  disabled={submitting}
-                  className="w-full py-3 rounded-xl border-2 border-gray-200 text-gray-700 font-semibold text-sm active:scale-95 transition-transform disabled:opacity-50 mb-2"
-                >
-                  Google 계정 연동
-                </button>
-              )}
               <button
                 onClick={handleLogout}
                 disabled={submitting}

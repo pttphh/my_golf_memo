@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Trophy, Target, AlertTriangle, BarChart2, ChevronRight, List, Trash2, Flag, Pencil, Crosshair, Disc, CheckCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { isAnonymousUser, linkGoogleAccount, signUpWithEmail } from '../lib/auth';
+import { isAnonymousUser, signUpWithEmail } from '../lib/auth';
 import type { Round, Hole } from '../types';
 import { collectMissPatterns } from '../lib/missPattern';
 import {
@@ -319,21 +319,10 @@ function SignUpPromptModal({
   onLater: () => void;
   onSuccess: () => void;
 }) {
-  const [emailMode, setEmailMode] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
-  async function handleGoogle() {
-    setLoading(true);
-    setError('');
-    const { error: err } = await linkGoogleAccount();
-    if (err) {
-      setError(err.message);
-      setLoading(false);
-    }
-  }
 
   async function handleEmailSubmit() {
     if (!email.trim() || password.length < 6) {
@@ -360,54 +349,29 @@ function SignUpPromptModal({
           현재 데이터는 이 기기에만 저장됩니다. 회원가입하면 어디서든 데이터에 접근할 수 있고, 기기를 바꿔도 데이터가 유지됩니다.
         </p>
 
-        {emailMode ? (
-          <div className="space-y-3 mb-4">
-            <input
-              type="email"
-              placeholder="이메일"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]"
-            />
-            <input
-              type="password"
-              placeholder="비밀번호 (6자 이상)"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]"
-            />
-            <button
-              onClick={handleEmailSubmit}
-              disabled={loading}
-              className="w-full py-3 rounded-xl bg-[#1B4332] text-white font-bold text-sm active:scale-95 transition-transform disabled:opacity-50"
-            >
-              {loading ? '처리 중...' : '회원가입'}
-            </button>
-            <button
-              onClick={() => { setEmailMode(false); setError(''); }}
-              className="w-full py-2 text-sm text-gray-500"
-            >
-              뒤로
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-2 mb-4">
-            <button
-              onClick={handleGoogle}
-              disabled={loading}
-              className="w-full py-3 rounded-xl border-2 border-gray-200 text-gray-700 font-semibold text-sm active:scale-95 transition-transform disabled:opacity-50"
-            >
-              Google로 시작하기
-            </button>
-            <button
-              onClick={() => setEmailMode(true)}
-              disabled={loading}
-              className="w-full py-3 rounded-xl bg-[#1B4332] text-white font-bold text-sm active:scale-95 transition-transform disabled:opacity-50"
-            >
-              이메일로 시작하기
-            </button>
-          </div>
-        )}
+        <div className="space-y-3 mb-4">
+          <input
+            type="email"
+            placeholder="이메일"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]"
+          />
+          <input
+            type="password"
+            placeholder="비밀번호 (6자 이상)"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]"
+          />
+          <button
+            onClick={handleEmailSubmit}
+            disabled={loading}
+            className="w-full py-3 rounded-xl bg-[#1B4332] text-white font-bold text-sm active:scale-95 transition-transform disabled:opacity-50"
+          >
+            {loading ? '처리 중...' : '회원가입'}
+          </button>
+        </div>
 
         {error && <p className="text-red-500 text-xs text-center mb-3">{error}</p>}
 
