@@ -34,10 +34,10 @@ export async function linkGoogleAccount() {
 
 
 export async function signUpWithEmail(email: string, password: string) {
-  // 먼저 로그인 시도, 실패하면 회원가입
-  const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-  if (!signInError) return { error: null };
-  // 로그인 실패 시 익명 계정을 이메일 계정으로 전환
+  return supabase.auth.signInWithPassword({ email, password });
+}
+
+export async function signUpNewUser(email: string, password: string) {
   return supabase.auth.updateUser({ email, password });
 }
 

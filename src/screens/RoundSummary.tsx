@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Trophy, Target, AlertTriangle, BarChart2, ChevronRight, List, Trash2, Flag, Pencil, Crosshair, Disc, CheckCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { isAnonymousUser, signUpWithEmail } from '../lib/auth';
+import { isAnonymousUser, signUpWithEmail, signUpNewUser } from '../lib/auth';
 import type { Round, Hole } from '../types';
 import { collectMissPatterns } from '../lib/missPattern';
 import {
@@ -321,6 +321,8 @@ function SignUpPromptModal({
 }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmStep, setConfirmStep] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -332,6 +334,23 @@ function SignUpPromptModal({
     setLoading(true);
     setError('');
     const { error: err } = await signUpWithEmail(email.trim(), password);
+    setLoading(false);
+    if (!err) {
+      onSuccess();
+      return;
+    }
+    setConfirmStep(true);
+    setConfirmPassword('');
+  }
+
+  async function handleConfirmSignUp() {
+    if (password !== confirmPassword) {
+      setError('비밀번호가 일치하지 않습니다');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    const { error: err } = await signUpNewUser(email.trim(), password);
     setLoading(false);
     if (err) {
       setError(err.message);
@@ -350,27 +369,66 @@ function SignUpPromptModal({
         </p>
 
         <div className="space-y-3 mb-4">
-          <input
-            type="email"
-            placeholder="이메일"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]"
-          />
-          <input
-            type="password"
-            placeholder="비밀번호 (6자 이상)"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]"
-          />
-          <button
-            onClick={handleEmailSubmit}
-            disabled={loading}
-            className="w-full py-3 rounded-xl bg-[#1B4332] text-white font-bold text-sm active:scale-95 transition-transform disabled:opacity-50"
-          >
-            {loading ? '처리 중...' : '회원가입'}
-          </button>
+          {confirmStep ? (
+            <>
+              <p className="text-sm text-gray-600 text-center leading-relaxed">
+                <span className="font-medium text-gray-800">{email}</span>
+                <br />
+                이 이메일로 회원가입을 진행할까요?
+              </p>
+              <input
+                type="password"
+                placeholder="비밀번호 (6자 이상)"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]"
+              />
+              <input
+                type="password"
+                placeholder="비밀번호 확인"
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]"
+              />
+              <button
+                onClick={handleConfirmSignUp}
+                disabled={loading}
+                className="w-full py-3 rounded-xl bg-[#1B4332] text-white font-bold text-sm active:scale-95 transition-transform disabled:opacity-50"
+              >
+                {loading ? '처리 중...' : '회원가입'}
+              </button>
+              <button
+                onClick={() => { setConfirmStep(false); setConfirmPassword(''); setError(''); }}
+                className="w-full py-2 text-sm text-gray-500"
+              >
+                뒤로
+              </button>
+            </>
+          ) : (
+            <>
+              <input
+                type="email"
+                placeholder="이메일"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]"
+              />
+              <input
+                type="password"
+                placeholder="비밀번호 (6자 이상)"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]"
+              />
+              <button
+                onClick={handleEmailSubmit}
+                disabled={loading}
+                className="w-full py-3 rounded-xl bg-[#1B4332] text-white font-bold text-sm active:scale-95 transition-transform disabled:opacity-50"
+              >
+                {loading ? '처리 중...' : '로그인 / 회원가입'}
+              </button>
+            </>
+          )}
         </div>
 
         {error && <p className="text-red-500 text-xs text-center mb-3">{error}</p>}

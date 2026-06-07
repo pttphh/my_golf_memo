@@ -4,6 +4,7 @@ import type { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import {
   signUpWithEmail,
+  signUpNewUser,
   signOutAndReanonymous,
   getAuthProvider,
 } from '../lib/auth';
@@ -14,6 +15,8 @@ export default function Profile() {
   const [emailMode, setEmailMode] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmStep, setConfirmStep] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -30,7 +33,7 @@ export default function Profile() {
 
   const provider = getAuthProvider(user);
 
-  async function handleEmailSignUp() {
+  async function handleEmailSubmit() {
     if (!email.trim() || password.length < 6) {
       setError('이메일과 비밀번호(6자 이상)를 입력해 주세요.');
       return;
@@ -39,15 +42,49 @@ export default function Profile() {
     setError('');
     const { error: err } = await signUpWithEmail(email.trim(), password);
     setSubmitting(false);
+    if (!err) {
+      setEmailMode(false);
+      setConfirmStep(false);
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
+      const { data: { user: u } } = await supabase.auth.getUser();
+      setUser(u);
+      return;
+    }
+    setConfirmStep(true);
+    setConfirmPassword('');
+  }
+
+  async function handleConfirmSignUp() {
+    if (password !== confirmPassword) {
+      setError('비밀번호가 일치하지 않습니다');
+      return;
+    }
+    setSubmitting(true);
+    setError('');
+    const { error: err } = await signUpNewUser(email.trim(), password);
+    setSubmitting(false);
     if (err) {
       setError(err.message);
       return;
     }
     setEmailMode(false);
+    setConfirmStep(false);
     setEmail('');
     setPassword('');
+    setConfirmPassword('');
     const { data: { user: u } } = await supabase.auth.getUser();
     setUser(u);
+  }
+
+  function resetEmailForm() {
+    setEmailMode(false);
+    setConfirmStep(false);
+    setEmail('');
+    setPassword('');
+    setConfirmPassword('');
+    setError('');
   }
 
   async function handleLogout() {
@@ -56,6 +93,7 @@ export default function Profile() {
     const { data: { user: u } } = await supabase.auth.getUser();
     setUser(u);
     setEmailMode(false);
+    setConfirmStep(false);
     setSubmitting(false);
   }
 
@@ -78,33 +116,72 @@ export default function Profile() {
               </p>
               {emailMode ? (
                 <div className="space-y-3">
-                  <input
-                    type="email"
-                    placeholder="이메일"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]"
-                  />
-                  <input
-                    type="password"
-                    placeholder="비밀번호 (6자 이상)"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]"
-                  />
-                  <button
-                    onClick={handleEmailSignUp}
-                    disabled={submitting}
-                    className="w-full py-3 rounded-xl bg-[#1B4332] text-white font-bold text-sm active:scale-95 transition-transform disabled:opacity-50"
-                  >
-                    {submitting ? '처리 중...' : '로그인 / 회원가입'}
-                  </button>
-                  <button
-                    onClick={() => { setEmailMode(false); setError(''); }}
-                    className="w-full py-2 text-sm text-gray-500"
-                  >
-                    뒤로
-                  </button>
+                  {confirmStep ? (
+                    <>
+                      <p className="text-sm text-gray-600 text-center leading-relaxed">
+                        <span className="font-medium text-gray-800">{email}</span>
+                        <br />
+                        이 이메일로 회원가입을 진행할까요?
+                      </p>
+                      <input
+                        type="password"
+                        placeholder="비밀번호 (6자 이상)"
+                        value={password}
+                        onChange={e => setPassword(e.target.value)}
+                        className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]"
+                      />
+                      <input
+                        type="password"
+                        placeholder="비밀번호 확인"
+                        value={confirmPassword}
+                        onChange={e => setConfirmPassword(e.target.value)}
+                        className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]"
+                      />
+                      <button
+                        onClick={handleConfirmSignUp}
+                        disabled={submitting}
+                        className="w-full py-3 rounded-xl bg-[#1B4332] text-white font-bold text-sm active:scale-95 transition-transform disabled:opacity-50"
+                      >
+                        {submitting ? '처리 중...' : '회원가입'}
+                      </button>
+                      <button
+                        onClick={() => { setConfirmStep(false); setConfirmPassword(''); setError(''); }}
+                        className="w-full py-2 text-sm text-gray-500"
+                      >
+                        뒤로
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <input
+                        type="email"
+                        placeholder="이메일"
+                        value={email}
+                        onChange={e => setEmail(e.target.value)}
+                        className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]"
+                      />
+                      <input
+                        type="password"
+                        placeholder="비밀번호 (6자 이상)"
+                        value={password}
+                        onChange={e => setPassword(e.target.value)}
+                        className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]"
+                      />
+                      <button
+                        onClick={handleEmailSubmit}
+                        disabled={submitting}
+                        className="w-full py-3 rounded-xl bg-[#1B4332] text-white font-bold text-sm active:scale-95 transition-transform disabled:opacity-50"
+                      >
+                        {submitting ? '처리 중...' : '로그인 / 회원가입'}
+                      </button>
+                      <button
+                        onClick={resetEmailForm}
+                        className="w-full py-2 text-sm text-gray-500"
+                      >
+                        뒤로
+                      </button>
+                    </>
+                  )}
                 </div>
               ) : (
                 <button

@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { ensureSession } from './lib/auth';
 import type { Round, Screen, Hole } from './types';
@@ -33,7 +32,7 @@ export default function App() {
   const [summaryViewMode, setSummaryViewMode] = useState<'recording' | 'view'>('recording');
   const [authReady, setAuthReady] = useState(false);
   const [showHomeBanner, setShowHomeBanner] = useState(false);
-  const [homeBannerText, setHomeBannerText] = useState('');
+  const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
     ensureSession().finally(() => setAuthReady(true));
@@ -43,13 +42,11 @@ export default function App() {
     if (localStorage.getItem('home_banner_dismissed')) return;
     if (window.matchMedia('(display-mode: standalone)').matches) return;
     const ua = navigator.userAgent;
-    const isIOS = /iPhone|iPad/.test(ua);
-    const isAndroid = /Android/.test(ua);
-    if (isIOS) {
-      setHomeBannerText('📱 홈화면에 추가하면 앱처럼 사용할 수 있어요 · Safari 하단 공유버튼 → 홈 화면에 추가');
+    if (/iPhone|iPad/.test(ua)) {
+      setIsIOS(true);
       setShowHomeBanner(true);
-    } else if (isAndroid) {
-      setHomeBannerText('📱 홈화면에 추가하면 앱처럼 사용할 수 있어요 · Chrome 우측 메뉴 → 홈 화면에 추가');
+    } else if (/Android/.test(ua)) {
+      setIsIOS(false);
       setShowHomeBanner(true);
     }
   }, []);
@@ -207,22 +204,41 @@ export default function App() {
 
         {showNav && <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />}
 
-        {showNav && showHomeBanner && (
-          <div
-            className="fixed left-0 right-0 z-40 flex justify-center pointer-events-none"
-            style={{ bottom: '64px' }}
-          >
-            <div className="w-full max-w-[390px] px-3 pointer-events-auto">
-              <div className="bg-[#1B4332] text-white rounded-xl px-3 py-2.5 flex items-start gap-2 shadow-lg">
-                <p className="text-xs leading-relaxed flex-1">{homeBannerText}</p>
-                <button
-                  onClick={dismissHomeBanner}
-                  className="flex-shrink-0 p-0.5 text-white/80 active:opacity-70"
-                  aria-label="닫기"
-                >
-                  <X size={16} />
-                </button>
+        {showHomeBanner && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center">
+            <div className="absolute inset-0 bg-black/40" onClick={dismissHomeBanner} />
+            <div className="relative bg-white rounded-t-2xl w-full max-w-[390px] p-5 pb-10">
+              <h3 className="text-base font-bold text-gray-800 mb-2">📱 홈화면에 추가하기</h3>
+              <p className="text-sm text-gray-500 mb-5 leading-relaxed">
+                홈화면에 추가하면 앱처럼 빠르게 실행할 수 있어요.
+              </p>
+              <div className="space-y-4 mb-6">
+                {(isIOS
+                  ? [
+                      'Safari 하단의 공유 버튼(네모에 화살표 올라가는 아이콘)을 탭하세요.',
+                      '스크롤을 내려 "홈 화면에 추가"를 탭하세요.',
+                      '우측 상단 "추가"를 탭하면 완료!',
+                    ]
+                  : [
+                      'Chrome 우측 상단 점 세 개 메뉴를 탭하세요.',
+                      '"홈 화면에 추가"를 탭하세요.',
+                      '"추가"를 탭하면 완료!',
+                    ]
+                ).map((text, i) => (
+                  <div key={i} className="flex gap-3 items-start">
+                    <span className="w-6 h-6 rounded-full bg-[#1B4332] text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
+                      {i + 1}
+                    </span>
+                    <p className="text-sm text-gray-600 leading-relaxed pt-0.5">{text}</p>
+                  </div>
+                ))}
               </div>
+              <button
+                onClick={dismissHomeBanner}
+                className="w-full py-3 rounded-xl bg-[#1B4332] text-white font-bold text-sm active:scale-95 transition-transform"
+              >
+                확인했어요
+              </button>
             </div>
           </div>
         )}
