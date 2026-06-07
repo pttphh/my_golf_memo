@@ -198,10 +198,10 @@ function StatCard({ icon, label, value, sub, sub2, unrecorded, onClick }: {
 
 function MetricInfoModal({ info, onClose }: { info: MetricInfo; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-t-2xl w-full max-w-lg max-h-[80vh] overflow-y-auto p-5 pb-8">
-        <div className="flex items-center justify-between mb-3">
+<div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+  <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+  <div className="relative bg-white rounded-2xl w-full max-w-lg max-h-[75vh] overflow-y-auto p-5 pb-6">
+                <div className="flex items-center justify-between mb-3">
           <h3 className="text-base font-bold text-gray-800">{info.title}</h3>
           <button onClick={onClose} className="text-gray-400 text-xl">✕</button>
         </div>
@@ -340,6 +340,9 @@ function DeleteModal({ onConfirm, onCancel, deleting }: { onConfirm: () => void;
 
 export default function RoundSummary({ round, viewMode, onSave, onDelete, onMissBreakdown, onViewHoles }: Props) {
   const [roundData, setRoundData] = useState<Round>(round);
+  const [memo, setMemo] = useState<string>(round.memo ?? '');
+  const [memoEditing, setMemoEditing] = useState(false);
+  const [memoInput, setMemoInput] = useState('');
   const [holes, setHoles] = useState<Hole[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -354,6 +357,8 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
 
   useEffect(() => {
     setRoundData(round);
+    setMemo(round.memo ?? '');
+    setMemoEditing(false);
   }, [round]);
 
   useEffect(() => {
@@ -598,6 +603,21 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
     setShowEditModal(false);
   }
 
+  async function saveMemo(text: string) {
+    const trimmed = text.trim();
+    await supabase.from('rounds').update({ memo: trimmed }).eq('id', roundData.id);
+    setMemo(trimmed);
+    setRoundData({ ...roundData, memo: trimmed });
+    setMemoEditing(false);
+  }
+
+  async function deleteMemo() {
+    await supabase.from('rounds').update({ memo: '' }).eq('id', roundData.id);
+    setMemo('');
+    setRoundData({ ...roundData, memo: '' });
+    setMemoEditing(false);
+  }
+
   const overSign = totalOver >= 0 ? `+${totalOver}` : `${totalOver}`;
   const f9Sign = (front9Score - front9Par) >= 0 ? `+${front9Score - front9Par}` : `${front9Score - front9Par}`;
   const b9Sign = (back9Score - back9Par) >= 0 ? `+${back9Score - back9Par}` : `${back9Score - back9Par}`;
@@ -682,6 +702,52 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
         <div className="px-4 py-5 space-y-5 pb-28">
           {holes.length > 0 && (
             <>
+              <div className="bg-card rounded-2xl border border-gray-100 shadow-sm p-4">
+                {memoEditing ? (
+                  <div className="space-y-3">
+                    <textarea
+                      value={memoInput}
+                      onChange={e => setMemoInput(e.target.value)}
+                      placeholder="라운드 메모를 입력하세요"
+                      className="w-full border border-gray-200 rounded-xl p-3 text-sm resize-none min-h-[80px] focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332]"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => saveMemo(memoInput)}
+                        className="flex-1 py-2.5 rounded-xl bg-[#1B4332] text-white text-sm font-semibold active:scale-95 transition-transform"
+                      >
+                        저장
+                      </button>
+                      {memo && (
+                        <button
+                          onClick={deleteMemo}
+                          className="px-4 py-2.5 rounded-xl text-red-400 text-sm font-semibold active:scale-95 transition-transform"
+                        >
+                          삭제
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ) : memo ? (
+                  <div className="relative">
+                    <button
+                      onClick={() => { setMemoInput(memo); setMemoEditing(true); }}
+                      className="absolute top-0 right-0 p-1 text-gray-400 active:scale-95 transition-transform"
+                    >
+                      <Pencil size={16} />
+                    </button>
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap pr-8">{memo}</p>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => { setMemoInput(''); setMemoEditing(true); }}
+                    className="w-full text-sm text-gray-500 text-left active:opacity-70"
+                  >
+                    + 라운드 메모 추가
+                  </button>
+                )}
+              </div>
+
               <div className="bg-card rounded-2xl border border-gray-100 shadow-sm p-4">
                 <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">홀별 결과 분포</h3>
                 <div className="grid grid-cols-5 gap-1">
