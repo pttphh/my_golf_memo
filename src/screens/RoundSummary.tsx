@@ -463,6 +463,11 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
   const [editSaving, setEditSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showSignUpPrompt, setShowSignUpPrompt] = useState(false);
+  useEffect(() => {
+    isAnonymousUser().then(anon => {
+      if (anon) setShowSignUpPrompt(true);
+    });
+  }, []);
   const [activeSegment, setActiveSegment] = useState<SegmentType>('tee');
   const [activeMetric, setActiveMetric] = useState<string | null>(null);
   const [chartRounds, setChartRounds] = useState<{ round: Round; holes: Hole[] }[]>([]);
@@ -686,9 +691,8 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
 
   function handleSignUpLater() {
     setShowSignUpPrompt(false);
-    onSave();
   }
-
+  
   async function handleDelete() {
     setDeleting(true);
     await onDelete();
