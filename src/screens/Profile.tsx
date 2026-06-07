@@ -106,7 +106,7 @@ export default function Profile() {
                     disabled={submitting}
                     className="w-full py-3 rounded-xl bg-[#1B4332] text-white font-bold text-sm active:scale-95 transition-transform disabled:opacity-50"
                   >
-                    {submitting ? '처리 중...' : '회원가입'}
+                    {submitting ? '처리 중...' : '로그인 / 회원가입'}
                   </button>
                   <button
                     onClick={() => { setEmailMode(false); setError(''); }}
