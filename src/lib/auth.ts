@@ -13,11 +13,25 @@ export async function isAnonymousUser(): Promise<boolean> {
 }
 
 export async function linkGoogleAccount() {
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+  if (isStandalone) {
+    // 홈화면 앱 모드에서는 Safari로 강제 이동
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin,
+        skipBrowserRedirect: true,
+      },
+    });
+    if (data?.url) window.open(data.url, '_blank');
+    return { data, error };
+  }
   return supabase.auth.signInWithOAuth({
     provider: 'google',
     options: { redirectTo: window.location.origin },
   });
 }
+
 
 export async function signUpWithEmail(email: string, password: string) {
   // 먼저 로그인 시도, 실패하면 회원가입
