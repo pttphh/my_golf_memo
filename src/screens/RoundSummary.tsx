@@ -800,7 +800,7 @@ export default function RoundSummary({ round, viewMode, shareMode = false, holes
     }
   }
 
-  const metricClick = (key: string) => shareMode ? undefined : () => setActiveMetric(key);
+  const metricClick = (key: string) => () => setActiveMetric(key);
 
   const overSign = totalOver >= 0 ? `+${totalOver}` : `${totalOver}`;
   const f9Sign = (front9Score - front9Par) >= 0 ? `+${front9Score - front9Par}` : `${front9Score - front9Par}`;
@@ -1161,23 +1161,19 @@ export default function RoundSummary({ round, viewMode, shareMode = false, holes
 
               </div>
 
-              {!shareMode && (
-              <>
-              <button onClick={onMissBreakdown}
+              <button onClick={() => onMissBreakdown?.()}
                 className="w-full bg-white border-2 border-[#1B4332]/30 text-[#1B4332] py-3.5 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
                 <BarChart2 size={16} />
                 미스 유형 집계 보기
                 <ChevronRight size={14} />
               </button>
 
-              <button onClick={onViewHoles}
+              <button onClick={() => onViewHoles?.()}
                 className="w-full bg-white border-2 border-[#1B4332]/30 text-[#1B4332] py-3.5 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
                 <List size={16} />
                 각 홀 기록 보기
                 <ChevronRight size={14} />
               </button>
-              </>
-              )}
             </>
           )}
 

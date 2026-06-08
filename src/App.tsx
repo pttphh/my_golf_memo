@@ -149,8 +149,6 @@ export default function App() {
               shareMode={true}
               onSave={() => {}}
               onDelete={async () => {}}
-              onMissBreakdown={() => {}}
-              onViewHoles={() => {}}
             />
           ) : (
             <div className="flex items-center justify-center h-screen">
