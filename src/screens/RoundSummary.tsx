@@ -778,9 +778,26 @@ export default function RoundSummary({ round, viewMode, shareMode = false, holes
   async function handleShare() {
     await supabase.from('rounds').update({ is_public: true }).eq('id', roundData.id);
     const shareUrl = `${window.location.origin}?share=${roundData.id}`;
-    await navigator.clipboard.writeText(shareUrl);
-    setShareToast(true);
-    setTimeout(() => setShareToast(false), 2500);
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setShareToast(true);
+      setTimeout(() => setShareToast(false), 2500);
+    } catch {
+      if (navigator.share) {
+        await navigator.share({ title: roundData.course_name, url: shareUrl });
+        setShareToast(true);
+        setTimeout(() => setShareToast(false), 2500);
+        return;
+      }
+      const input = document.createElement('input');
+      input.value = shareUrl;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      document.body.removeChild(input);
+      setShareToast(true);
+      setTimeout(() => setShareToast(false), 2500);
+    }
   }
 
   const metricClick = (key: string) => shareMode ? undefined : () => setActiveMetric(key);
@@ -840,17 +857,9 @@ export default function RoundSummary({ round, viewMode, shareMode = false, holes
       <div className="bg-[#1B4332] text-white px-4 pb-4" style={{ paddingTop: shareMode ? '1rem' : 'calc(env(safe-area-inset-top) + 1rem)' }}>
           <p className="text-green-200 text-xs mb-1">{roundData.date}  · {roundData.time}</p>
           <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold flex-1">{roundData.course_name}</h2>
-            {!shareMode && (
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <button
-                  type="button"
-                  onClick={handleShare}
-                  className="p-1 active:opacity-70 transition-opacity"
-                  aria-label="라운드 공유"
-                >
-                  <Share2 size={14} className="text-green-300" />
-                </button>
+            <h2 className="text-xl font-bold flex-1 flex items-center gap-2">
+              {roundData.course_name}
+              {!shareMode && (
                 <button
                   type="button"
                   onClick={openEditModal}
@@ -859,7 +868,17 @@ export default function RoundSummary({ round, viewMode, shareMode = false, holes
                 >
                   <Pencil size={14} className="text-green-300" />
                 </button>
-              </div>
+              )}
+            </h2>
+            {!shareMode && (
+              <button
+                type="button"
+                onClick={handleShare}
+                className="p-2 active:opacity-70 transition-opacity flex-shrink-0"
+                aria-label="라운드 공유"
+              >
+                <Share2 size={18} className="text-green-300" />
+              </button>
             )}
           </div>
           {!shareMode && (roundData.companion1 || roundData.companion2 || roundData.companion3) && (
