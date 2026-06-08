@@ -38,7 +38,11 @@ export async function signUpWithEmail(email: string, password: string) {
 }
 
 export async function signUpNewUser(email: string, password: string) {
-  return supabase.auth.updateUser({ email, password });
+  // 익명 계정을 이메일 계정으로 전환
+  const { error: linkError } = await supabase.auth.updateUser({ email });
+  if (linkError) return { error: linkError };
+  // 비밀번호 별도 설정
+  return supabase.auth.updateUser({ password });
 }
 
 export async function signOutAndReanonymous() {
