@@ -248,6 +248,12 @@ export default function Profile() {
           <p className="text-xs text-[#1B4332] text-center leading-relaxed">
             세팅 기능은 순차적으로 업데이트될 예정이에요 😊
           </p>
+          <button
+            onClick={() => window.open('https://open.kakao.com/o/shJEYHyi', '_blank')}
+            className="mt-3 w-full py-2.5 rounded-xl bg-[#1B4332] text-white text-xs font-bold"
+          >
+            💬 의견 및 버그 신고하기
+          </button>
         </div>
       </div>
 
