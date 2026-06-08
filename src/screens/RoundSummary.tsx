@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Trophy, Target, AlertTriangle, BarChart2, ChevronRight, List, Trash2, Flag, Pencil, Crosshair, Disc, CheckCircle } from 'lucide-react';
+import { Trophy, Target, AlertTriangle, BarChart2, ChevronRight, List, Trash2, Flag, Pencil, Crosshair, Disc, CheckCircle, Share2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { isAnonymousUser, signUpWithEmail, signUpNewUser } from '../lib/auth';
 import type { Round, Hole } from '../types';
@@ -17,10 +17,11 @@ import {
 interface Props {
   round: Round;
   viewMode: 'recording' | 'view';
-  onSave: () => void;
-  onDelete: () => void;
-  onMissBreakdown: () => void;
-  onViewHoles: () => void;
+  shareMode?: boolean;
+  onSave?: () => void;
+  onDelete?: () => void;
+  onMissBreakdown?: () => void;
+  onViewHoles?: () => void;
 }
 
 type SegmentType = 'tee' | 'second' | 'approach' | 'putt';
@@ -471,7 +472,7 @@ function DeleteModal({ onConfirm, onCancel, deleting }: { onConfirm: () => void;
   );
 }
 
-export default function RoundSummary({ round, viewMode, onSave, onDelete, onMissBreakdown, onViewHoles }: Props) {
+export default function RoundSummary({ round, viewMode, shareMode = false, onSave, onDelete, onMissBreakdown, onViewHoles }: Props) {
   const [roundData, setRoundData] = useState<Round>(round);
   const [memo, setMemo] = useState<string>(round.memo ?? '');
   const [memoEditing, setMemoEditing] = useState(false);
@@ -485,11 +486,13 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
   const [editSaving, setEditSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showSignUpPrompt, setShowSignUpPrompt] = useState(false);
+  const [shareToast, setShareToast] = useState(false);
   useEffect(() => {
+    if (shareMode) return;
     isAnonymousUser().then(anon => {
       if (anon) setShowSignUpPrompt(true);
     });
-  }, []);
+  }, [shareMode]);
   const [activeSegment, setActiveSegment] = useState<SegmentType>('tee');
   const [activeMetric, setActiveMetric] = useState<string | null>(null);
   const [chartRounds, setChartRounds] = useState<{ round: Round; holes: Hole[] }[]>([]);
@@ -501,6 +504,7 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
   }, [round]);
 
   useEffect(() => {
+    if (shareMode) return;
     async function fetchChartRounds() {
       const { data: rounds } = await supabase
         .from('rounds')
@@ -533,7 +537,7 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
       setChartRounds([...combined].reverse());
     }
     fetchChartRounds();
-  }, []);
+  }, [shareMode]);
 
   useEffect(() => {
     async function fetchHoles() {
@@ -708,7 +712,7 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
       setShowSignUpPrompt(true);
       return;
     }
-    onSave();
+    onSave?.();
   }
 
   function handleSignUpLater() {
@@ -717,7 +721,7 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
   
   async function handleDelete() {
     setDeleting(true);
-    await onDelete();
+    await onDelete?.();
     setDeleting(false);
     setShowDeleteModal(false);
   }
@@ -765,6 +769,16 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
     setMemoEditing(false);
   }
 
+  async function handleShare() {
+    await supabase.from('rounds').update({ is_public: true }).eq('id', roundData.id);
+    const shareUrl = `${window.location.origin}?share=${roundData.id}`;
+    await navigator.clipboard.writeText(shareUrl);
+    setShareToast(true);
+    setTimeout(() => setShareToast(false), 2500);
+  }
+
+  const metricClick = (key: string) => shareMode ? undefined : () => setActiveMetric(key);
+
   const overSign = totalOver >= 0 ? `+${totalOver}` : `${totalOver}`;
   const f9Sign = (front9Score - front9Par) >= 0 ? `+${front9Score - front9Par}` : `${front9Score - front9Par}`;
   const b9Sign = (back9Score - back9Par) >= 0 ? `+${back9Score - back9Par}` : `${back9Score - back9Par}`;
@@ -801,25 +815,48 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
         <MetricInfoModal info={METRIC_INFO[activeMetric]} onClose={() => setActiveMetric(null)} />
       )}
 
-      {showSignUpPrompt && (
+      {showSignUpPrompt && !shareMode && (
         <SignUpPromptModal onLater={handleSignUpLater} onSuccess={handleSignUpLater} />
       )}
 
+      {shareToast && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-gray-800 text-white text-sm px-4 py-2.5 rounded-xl shadow-lg">
+          링크가 복사되었습니다
+        </div>
+      )}
+
       <div className="min-h-screen bg-surface flex flex-col">
-      <div className="bg-[#1B4332] text-white px-4 pb-4" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1rem)' }}>
+      {shareMode && (
+        <div className="bg-gray-50 text-gray-500 text-xs text-center py-2">
+          📋 공유된 라운드 기록입니다
+        </div>
+      )}
+      <div className="bg-[#1B4332] text-white px-4 pb-4" style={{ paddingTop: shareMode ? '1rem' : 'calc(env(safe-area-inset-top) + 1rem)' }}>
           <p className="text-green-200 text-xs mb-1">{roundData.date}  · {roundData.time}</p>
           <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold">{roundData.course_name}</h2>
-            <button
-              type="button"
-              onClick={openEditModal}
-              className="p-1 active:opacity-70 transition-opacity flex-shrink-0"
-              aria-label="라운드 정보 수정"
-            >
-              <Pencil size={14} className="text-green-300" />
-            </button>
+            <h2 className="text-xl font-bold flex-1">{roundData.course_name}</h2>
+            {!shareMode && (
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={handleShare}
+                  className="p-1 active:opacity-70 transition-opacity"
+                  aria-label="라운드 공유"
+                >
+                  <Share2 size={14} className="text-green-300" />
+                </button>
+                <button
+                  type="button"
+                  onClick={openEditModal}
+                  className="p-1 active:opacity-70 transition-opacity"
+                  aria-label="라운드 정보 수정"
+                >
+                  <Pencil size={14} className="text-green-300" />
+                </button>
+              </div>
+            )}
           </div>
-          {(roundData.companion1 || roundData.companion2 || roundData.companion3) && (
+          {!shareMode && (roundData.companion1 || roundData.companion2 || roundData.companion3) && (
   <div className="flex gap-1.5 mt-1.5 flex-wrap">
     {[roundData.companion1, roundData.companion2, roundData.companion3].filter(Boolean).map((name, i) => (
       <span key={i} className="text-xs bg-green-800/50 text-green-200 px-2 py-0.5 rounded-full">{name}</span>
@@ -850,9 +887,10 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
           )}
         </div>
 
-        <div className="px-4 py-5 space-y-5 pb-28">
+        <div className={`px-4 py-5 space-y-5 ${shareMode ? 'pb-8' : 'pb-28'}`}>
           {holes.length > 0 && (
             <>
+              {!shareMode && (
               <div className="bg-card rounded-2xl border border-gray-100 shadow-sm p-4">
                 {memoEditing ? (
                   <div className="space-y-3">
@@ -898,6 +936,7 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
                   </button>
                 )}
               </div>
+              )}
 
               <div className="bg-card rounded-2xl border border-gray-100 shadow-sm p-4">
                 <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">홀별 결과 분포</h3>
@@ -917,14 +956,14 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <StatCard icon={<AlertTriangle size={16} />} label="손실 타수" value={`${penalties}타`} sub={`OB ${obHoles}홀 · 해저드 ${hazardHoles}홀`} onClick={() => setActiveMetric('손실타수')} />
+                <StatCard icon={<AlertTriangle size={16} />} label="손실 타수" value={`${penalties}타`} sub={`OB ${obHoles}홀 · 해저드 ${hazardHoles}홀`} onClick={metricClick('손실타수')} />
                 <StatCard
                   icon={<Flag size={16} />}
                   label="페어웨이 안착률"
                   unrecorded={fairwayRecorded === 0}
                   value={fairwayRecorded === 0 ? '–' : `${fairwayPct}%`}
                   sub={fairwayRecorded === 0 ? '미기록' : `${fairwayHits} / ${fairwayDenom}`}
-                  onClick={() => setActiveMetric('페어웨이안착률')}
+                  onClick={metricClick('페어웨이안착률')}
                 />
                 <StatCard
                   icon={<Trophy size={16} />}
@@ -932,7 +971,7 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
                   unrecorded={girRecorded === 0}
                   value={girRecorded === 0 ? '–' : `${girPct}%`}
                   sub={girRecorded === 0 ? '미기록' : `${girCount} / 18`}
-                  onClick={() => setActiveMetric('GIR')}
+                  onClick={metricClick('GIR')}
                 />
                 <StatCard
                   icon={<AlertTriangle size={16} />}
@@ -941,7 +980,7 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
                   value={fatalRecorded === 0 ? '–' : `${fatalMissCount}회`}
                   sub={fatalRecorded === 0 ? '미기록' : `OB ${fatalOB} · 해저드 ${fatalHazard}`}
                   sub2={fatalRecorded === 0 ? undefined : `어프로치불가 ${fatalApproachNG}`}
-                  onClick={() => setActiveMetric('세컨치명미스')}
+                  onClick={metricClick('세컨치명미스')}
                 />
                 <StatCard
                   icon={<Crosshair size={16} />}
@@ -949,7 +988,7 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
                   unrecorded={wedgeRecorded === 0}
                   value={wedgeRecorded === 0 ? '–' : `${wedgeMiss}회`}
                   sub={wedgeRecorded === 0 ? '미기록' : `시도 ${wedgeTotal}홀 중`}
-                  onClick={() => setActiveMetric('웨지온실패')}
+                  onClick={metricClick('웨지온실패')}
                 />
                 <StatCard
                   icon={<Target size={16} />}
@@ -957,16 +996,16 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
                   unrecorded={approachRecorded === 0}
                   value={approachRecorded === 0 ? '–' : `${approachPct}%`}
                   sub={approachRecorded === 0 ? '미기록' : `${approachSuccess} / ${approachAttempts}홀 성공`}
-                  onClick={() => setActiveMetric('어프로치성공률')}
+                  onClick={metricClick('어프로치성공률')}
                 />
-                <StatCard icon={<Disc size={16} />} label="퍼팅" value={`총 ${totalPutts}개`} sub={`3퍼팅 이상 ${threePuttPlus}홀`} onClick={() => setActiveMetric('퍼팅')} />
+                <StatCard icon={<Disc size={16} />} label="퍼팅" value={`총 ${totalPutts}개`} sub={`3퍼팅 이상 ${threePuttPlus}홀`} onClick={metricClick('퍼팅')} />
                 <StatCard
                   icon={<CheckCircle size={16} />}
                   label="숏퍼팅 성공률"
                   unrecorded={shortPuttRecorded === 0}
                   value={shortPuttRecorded === 0 ? '–' : `${shortPuttPct}%`}
                   sub={shortPuttRecorded === 0 ? '미기록' : `성공 ${shortPuttSuccess} / 전체 ${puttMissHoles.length}`}
-                  onClick={() => setActiveMetric('숏퍼팅성공률')}
+                  onClick={metricClick('숏퍼팅성공률')}
                 />
               </div>
 
@@ -1097,6 +1136,8 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
 
               </div>
 
+              {!shareMode && (
+              <>
               <button onClick={onMissBreakdown}
                 className="w-full bg-white border-2 border-[#1B4332]/30 text-[#1B4332] py-3.5 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
                 <BarChart2 size={16} />
@@ -1110,10 +1151,12 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
                 각 홀 기록 보기
                 <ChevronRight size={14} />
               </button>
+              </>
+              )}
             </>
           )}
 
-          {viewMode === 'recording' ? (
+          {!shareMode && (viewMode === 'recording' ? (
             <button onClick={handleSave} disabled={saving}
               className="w-full bg-[#1B4332] text-white py-4 rounded-2xl font-bold text-base active:scale-95 transition-transform disabled:opacity-60 shadow-lg shadow-green-900/20">
               {saving ? '저장 중...' : '라운드 저장 완료'}
@@ -1124,7 +1167,7 @@ export default function RoundSummary({ round, viewMode, onSave, onDelete, onMiss
               <Trash2 size={18} />
               이 라운드 삭제
             </button>
-          )}
+          ))}
         </div>
       </div>
     </>

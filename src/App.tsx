@@ -3,6 +3,8 @@ import { supabase } from './lib/supabase';
 import { ensureSession } from './lib/auth';
 import type { Round, Screen, Hole } from './types';
 
+const shareId = new URLSearchParams(window.location.search).get('share');
+
 import BottomNav, { type NavTab } from './components/BottomNav';
 import NewRound from './screens/NewRound';
 import HoleRecording from './screens/HoleRecording';
@@ -33,12 +35,46 @@ export default function App() {
   const [authReady, setAuthReady] = useState(false);
   const [showHomeBanner, setShowHomeBanner] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+  const [sharedRound, setSharedRound] = useState<Round | null>(null);
+  const [shareLoading, setShareLoading] = useState(!!shareId);
+  const [shareError, setShareError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (shareId) {
+      setAuthReady(true);
+      return;
+    }
     ensureSession().finally(() => setAuthReady(true));
   }, []);
 
   useEffect(() => {
+    if (!shareId) return;
+    async function loadSharedRound() {
+      setShareLoading(true);
+      setShareError(null);
+      const { data: round, error } = await supabase
+        .from('rounds')
+        .select('*')
+        .eq('id', shareId)
+        .maybeSingle();
+      if (error || !round) {
+        setShareError('공유된 라운드를 찾을 수 없습니다.');
+        setShareLoading(false);
+        return;
+      }
+      if (!round.is_public) {
+        setShareError('비공개 라운드입니다.');
+        setShareLoading(false);
+        return;
+      }
+      setSharedRound(round as Round);
+      setShareLoading(false);
+    }
+    loadSharedRound();
+  }, []);
+
+  useEffect(() => {
+    if (shareId) return;
     if (localStorage.getItem('home_banner_dismissed')) return;
     if (window.matchMedia('(display-mode: standalone)').matches) return;
     const ua = navigator.userAgent;
@@ -102,13 +138,41 @@ export default function App() {
     setScreen('round-list');
   }
 
-  const showNav = screen !== 'hole-recording';
+  const showNav = !shareId && screen !== 'hole-recording';
 
   if (!authReady) {
     return (
       <div className="flex justify-center bg-gray-200 min-h-screen">
         <div className="w-full max-w-[390px] bg-surface shadow-xl min-h-screen flex items-center justify-center">
           <p className="text-gray-500 text-sm">불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (shareId) {
+    if (shareLoading) {
+      return (
+        <div className="flex justify-center bg-gray-200 min-h-screen">
+          <div className="w-full max-w-[390px] bg-surface shadow-xl min-h-screen flex items-center justify-center">
+            <p className="text-gray-500 text-sm">불러오는 중...</p>
+          </div>
+        </div>
+      );
+    }
+    if (shareError || !sharedRound) {
+      return (
+        <div className="flex justify-center bg-gray-200 min-h-screen">
+          <div className="w-full max-w-[390px] bg-surface shadow-xl min-h-screen flex items-center justify-center px-6">
+            <p className="text-gray-500 text-sm text-center">{shareError ?? '공유된 라운드를 찾을 수 없습니다.'}</p>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className="flex justify-center bg-gray-200 min-h-screen">
+        <div className="w-full max-w-[390px] relative bg-surface shadow-xl min-h-screen flex flex-col">
+          <RoundSummary round={sharedRound} viewMode="view" shareMode />
         </div>
       </div>
     );

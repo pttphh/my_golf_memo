@@ -10,6 +10,7 @@ export interface Round {
   companion3: string;
   memo: string;
   user_id?: string;
+  is_public?: boolean;
 }
 
 export interface Hole {
