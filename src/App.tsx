@@ -3,8 +3,6 @@ import { supabase } from './lib/supabase';
 import { ensureSession } from './lib/auth';
 import type { Round, Screen, Hole } from './types';
 
-const shareId = new URLSearchParams(window.location.search).get('share');
-
 import BottomNav, { type NavTab } from './components/BottomNav';
 import NewRound from './screens/NewRound';
 import HoleRecording from './screens/HoleRecording';
@@ -35,46 +33,31 @@ export default function App() {
   const [authReady, setAuthReady] = useState(false);
   const [showHomeBanner, setShowHomeBanner] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
-  const [sharedRound, setSharedRound] = useState<Round | null>(null);
-  const [shareLoading, setShareLoading] = useState(!!shareId);
-  const [shareError, setShareError] = useState<string | null>(null);
+  const [isShareMode, setIsShareMode] = useState(false);
+  const [shareRound, setShareRound] = useState<Round | null>(null);
+  const [shareHoles, setShareHoles] = useState<Hole[]>([]);
+  const [shareError, setShareError] = useState(false);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const shareId = params.get('share');
     if (shareId) {
-      setAuthReady(true);
-      return;
+      setIsShareMode(true);
+      (async () => {
+        const { data: round } = await supabase.from('rounds').select('*').eq('id', shareId).single();
+        if (!round || !round.is_public) { setShareError(true); setAuthReady(true); return; }
+        const { data: holes } = await supabase.from('holes').select('*').eq('round_id', shareId);
+        setShareRound(round as Round);
+        setShareHoles((holes ?? []) as Hole[]);
+        setAuthReady(true);
+      })();
+    } else {
+      ensureSession().finally(() => setAuthReady(true));
     }
-    ensureSession().finally(() => setAuthReady(true));
   }, []);
 
   useEffect(() => {
-    if (!shareId) return;
-    async function loadSharedRound() {
-      setShareLoading(true);
-      setShareError(null);
-      const { data: round, error } = await supabase
-        .from('rounds')
-        .select('*')
-        .eq('id', shareId)
-        .maybeSingle();
-      if (error || !round) {
-        setShareError('공유된 라운드를 찾을 수 없습니다.');
-        setShareLoading(false);
-        return;
-      }
-      if (!round.is_public) {
-        setShareError('비공개 라운드입니다.');
-        setShareLoading(false);
-        return;
-      }
-      setSharedRound(round as Round);
-      setShareLoading(false);
-    }
-    loadSharedRound();
-  }, []);
-
-  useEffect(() => {
-    if (shareId) return;
+    if (isShareMode) return;
     if (localStorage.getItem('home_banner_dismissed')) return;
     if (window.matchMedia('(display-mode: standalone)').matches) return;
     const ua = navigator.userAgent;
@@ -138,7 +121,7 @@ export default function App() {
     setScreen('round-list');
   }
 
-  const showNav = !shareId && screen !== 'hole-recording';
+  const showNav = !isShareMode && screen !== 'hole-recording';
 
   if (!authReady) {
     return (
@@ -150,29 +133,30 @@ export default function App() {
     );
   }
 
-  if (shareId) {
-    if (shareLoading) {
-      return (
-        <div className="flex justify-center bg-gray-200 min-h-screen">
-          <div className="w-full max-w-[390px] bg-surface shadow-xl min-h-screen flex items-center justify-center">
-            <p className="text-gray-500 text-sm">불러오는 중...</p>
-          </div>
-        </div>
-      );
-    }
-    if (shareError || !sharedRound) {
-      return (
-        <div className="flex justify-center bg-gray-200 min-h-screen">
-          <div className="w-full max-w-[390px] bg-surface shadow-xl min-h-screen flex items-center justify-center px-6">
-            <p className="text-gray-500 text-sm text-center">{shareError ?? '공유된 라운드를 찾을 수 없습니다.'}</p>
-          </div>
-        </div>
-      );
-    }
+  if (authReady && isShareMode) {
     return (
       <div className="flex justify-center bg-gray-200 min-h-screen">
         <div className="w-full max-w-[390px] relative bg-surface shadow-xl min-h-screen flex flex-col">
-          <RoundSummary round={sharedRound} viewMode="view" shareMode />
+          {shareError ? (
+            <div className="flex items-center justify-center h-screen">
+              <p className="text-gray-500 text-sm">비공개 라운드이거나 존재하지 않는 링크입니다.</p>
+            </div>
+          ) : shareRound ? (
+            <RoundSummary
+              round={shareRound}
+              holes={shareHoles}
+              viewMode="view"
+              shareMode={true}
+              onSave={() => {}}
+              onDelete={async () => {}}
+              onMissBreakdown={() => {}}
+              onViewHoles={() => {}}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-screen">
+              <p className="text-gray-500 text-sm">불러오는 중...</p>
+            </div>
+          )}
         </div>
       </div>
     );

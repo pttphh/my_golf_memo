@@ -18,6 +18,7 @@ interface Props {
   round: Round;
   viewMode: 'recording' | 'view';
   shareMode?: boolean;
+  holes?: Hole[];
   onSave?: () => void;
   onDelete?: () => void;
   onMissBreakdown?: () => void;
@@ -472,7 +473,7 @@ function DeleteModal({ onConfirm, onCancel, deleting }: { onConfirm: () => void;
   );
 }
 
-export default function RoundSummary({ round, viewMode, shareMode = false, onSave, onDelete, onMissBreakdown, onViewHoles }: Props) {
+export default function RoundSummary({ round, viewMode, shareMode = false, holes: externalHoles, onSave, onDelete, onMissBreakdown, onViewHoles }: Props) {
   const [roundData, setRoundData] = useState<Round>(round);
   const [memo, setMemo] = useState<string>(round.memo ?? '');
   const [memoEditing, setMemoEditing] = useState(false);
@@ -540,6 +541,11 @@ export default function RoundSummary({ round, viewMode, shareMode = false, onSav
   }, [shareMode]);
 
   useEffect(() => {
+    if (externalHoles) {
+      setHoles(externalHoles);
+      setLoading(false);
+      return;
+    }
     async function fetchHoles() {
       setLoading(true);
       const { data, error } = await supabase
@@ -552,7 +558,7 @@ export default function RoundSummary({ round, viewMode, shareMode = false, onSav
       setLoading(false);
     }
     fetchHoles();
-  }, [roundData.id]);
+  }, [roundData.id, externalHoles]);
 
   const totalStrokes = holes.reduce((s, h) => s + h.total_strokes, 0);
   const totalPar = holes.reduce((s, h) => s + h.par, 0);
@@ -827,8 +833,8 @@ export default function RoundSummary({ round, viewMode, shareMode = false, onSav
 
       <div className="min-h-screen bg-surface flex flex-col">
       {shareMode && (
-        <div className="bg-gray-50 text-gray-500 text-xs text-center py-2">
-          📋 공유된 라운드 기록입니다
+        <div className="bg-gray-50 border-b border-gray-200 py-2 text-center">
+          <p className="text-xs text-gray-400">📋 공유된 라운드 기록입니다</p>
         </div>
       )}
       <div className="bg-[#1B4332] text-white px-4 pb-4" style={{ paddingTop: shareMode ? '1rem' : 'calc(env(safe-area-inset-top) + 1rem)' }}>
