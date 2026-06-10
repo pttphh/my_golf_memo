@@ -1,0 +1,7 @@
+ALTER TABLE holes ADD COLUMN IF NOT EXISTS second4_club text DEFAULT '';
+ALTER TABLE holes ADD COLUMN IF NOT EXISTS second4_result text DEFAULT '';
+ALTER TABLE holes ADD COLUMN IF NOT EXISTS second4_miss text DEFAULT '';
+ALTER TABLE holes ADD COLUMN IF NOT EXISTS second4_penalty_type text DEFAULT '';
+ALTER TABLE holes ADD COLUMN IF NOT EXISTS approach3_club text DEFAULT '';
+ALTER TABLE holes ADD COLUMN IF NOT EXISTS approach3_result text DEFAULT '';
+ALTER TABLE holes ADD COLUMN IF NOT EXISTS approach3_miss text DEFAULT '';

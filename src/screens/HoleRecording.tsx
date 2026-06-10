@@ -53,7 +53,7 @@ const SHOT_CLUBS = ['우드', '유틸', '아이언', '웨지'];
 const PENALTY_TRIGGER = '패널티';
 
 const APPROACH_DISTANCES = [
-  { label: '20m이내 · 3m 안착', value: '20m이내' },
+  { label: '20m이내 · 2m 안착', value: '20m이내' },
   { label: '20~40m · 5m 안착', value: '20~40m' },
 ] as const;
 const APPROACH_OUTCOMES = [
@@ -85,7 +85,7 @@ function getPenaltyStrokes(h: Hole): number {
   let pen = 0;
   pen += FAIRWAY_MISS_PENALTY[h.tee_penalty_type] ?? 0;
   pen += FAIRWAY_MISS_PENALTY[h.tee2_penalty_type] ?? 0;
-  for (const p of [h.second1_penalty_type, h.second2_penalty_type, h.second3_penalty_type]) {
+  for (const p of [h.second1_penalty_type, h.second2_penalty_type, h.second3_penalty_type, h.second4_penalty_type ?? '']) {
     pen += FAIRWAY_MISS_PENALTY[p] ?? 0;
   }
   return pen;
@@ -108,7 +108,7 @@ function clearPutt2(): Partial<Hole> {
   };
 }
 
-function clearSecondShot(hole: Hole, i: 2 | 3): Partial<Hole> {
+function clearSecondShot(hole: Hole, i: 2 | 3 | 4): Partial<Hole> {
   void hole;
   return {
     [`second${i}_club`]: '',
@@ -435,6 +435,7 @@ function SecondShotBlock({ par, shotIndex, result, penaltyType, missDetail, miss
               );
             })}
           </div>
+          <p className="text-xs text-gray-400 mt-1">나무 뒤, 벙커 턱, 깊은 러프 등은 어프로치 불가 선택</p>
         </div>
       )}
 
@@ -580,11 +581,13 @@ export default function HoleRecording({
   const [saving, setSaving] = useState(false);
   const [secondShotsCount, setSecondShotsCount] = useState(() => {
     if (!initialHole) return 1;
+    if (initialHole.second4_club || initialHole.second4_result || initialHole.second4_miss) return 4;
     if (initialHole.second3_club || initialHole.second3_result || initialHole.second3_miss) return 3;
     if (initialHole.second2_club || initialHole.second2_result || initialHole.second2_miss) return 2;
     return 1;
   });
   const [approachCount, setApproachCount] = useState(() =>
+    initialHole?.approach3_club || initialHole?.approach3_miss ? 3 :
     initialHole?.approach2_club || initialHole?.approach2_miss ? 2 : 1,
   );
   const [teeShotsCount, setTeeShotsCount] = useState(() => {
@@ -603,10 +606,14 @@ export default function HoleRecording({
     setHole(h);
     setIsManual(Boolean(h.is_manual));
     let sc = 1;
-    if (h.second3_club || h.second3_result || h.second3_miss) sc = 3;
+    if (h.second4_club || h.second4_result || h.second4_miss) sc = 4;
+    else if (h.second3_club || h.second3_result || h.second3_miss) sc = 3;
     else if (h.second2_club || h.second2_result || h.second2_miss) sc = 2;
     setSecondShotsCount(sc);
-    setApproachCount(h.approach2_club || h.approach2_miss ? 2 : 1);
+    setApproachCount(
+      h.approach3_club || h.approach3_miss ? 3 :
+      h.approach2_club || h.approach2_miss ? 2 : 1,
+    );
     setTeeShotsCount(h.tee2_club || h.tee2_result || h.tee2_miss ? 2 : 1);
     setPuttCount(h.putt2_miss || h.putt2_memo ? 2 : 1);
   }
@@ -689,7 +696,7 @@ export default function HoleRecording({
     });
   }
 
-  function removeSecondShot(i: 2 | 3) {
+  function removeSecondShot(i: 2 | 3 | 4) {
     updateField(clearSecondShot(hole, i));
     setSecondShotsCount(i - 1);
   }
@@ -752,10 +759,10 @@ const back9Over = savedOnly.filter(h => h.hole_number >= 10).reduce((s, h) => s 
   const isMaxScore = isYangpa(hole.par, hole.total_strokes);
   const scoreStyle = getScoreStyle(hole.par, hole.total_strokes, overPar);
 
-  const secondKeys = ([1, 2, 3] as const).slice(0, secondShotsCount);
+  const secondKeys = ([1, 2, 3, 4] as const).slice(0, secondShotsCount);
 
   return (
-    <div className="min-h-screen bg-[#f9f9f7] flex flex-col">
+<div className="h-screen bg-[#f9f9f7] flex flex-col overflow-hidden">
       <div
         className="text-white px-4 pb-3"
         style={{
@@ -842,8 +849,8 @@ const back9Over = savedOnly.filter(h => h.hole_number >= 10).reduce((s, h) => s 
         </div>
       </div>
 
-      <div className="flex-1 px-4 py-4 space-y-4 pb-28">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="flex-1 px-4 py-4 space-y-4 pb-28 overflow-y-auto">
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           {/* Counters side by side */}
           <div className="grid grid-cols-2 divide-x divide-gray-100">
             {/* Green shots */}
@@ -973,7 +980,7 @@ const back9Over = savedOnly.filter(h => h.hole_number >= 10).reduce((s, h) => s 
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-xs font-semibold text-gray-500">{i}번째 샷</p>
                     {i > 1 && (
-                      <button onClick={() => removeSecondShot(i as 2 | 3)}
+                      <button onClick={() => removeSecondShot(i as 2 | 3 | 4)}
                         className="w-6 h-6 rounded-full bg-red-50 border border-red-200 text-red-500 flex items-center justify-center active:scale-90 transition-transform">
                         <X size={12} />
                       </button>
@@ -1003,7 +1010,7 @@ const back9Over = savedOnly.filter(h => h.hole_number >= 10).reduce((s, h) => s 
                 </div>
               </div>
             ))}
-            {secondShotsCount < 3 && (
+            {secondShotsCount < 4 && (
               <button onClick={() => setSecondShotsCount(c => c + 1)}
                 className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-gray-200 text-gray-500 text-sm active:bg-gray-50 transition-colors">
                 <Plus size={15} /> 샷 추가
@@ -1016,7 +1023,7 @@ const back9Over = savedOnly.filter(h => h.hole_number >= 10).reduce((s, h) => s 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
           <SectionHeader title="어프로치" />
           <div className="space-y-4">
-            {([1, 2] as const).slice(0, approachCount).map(i => (
+            {([1, 2, 3] as const).slice(0, approachCount).map(i => (
               <div key={i} className={`${i > 1 ? 'pt-3 border-t border-gray-100' : ''}`}>
                 {approachCount > 1 && <p className="text-xs font-semibold text-gray-500 mb-2">{i}번째 어프로치</p>}
                 <div className="space-y-3">
@@ -1035,7 +1042,7 @@ const back9Over = savedOnly.filter(h => h.hole_number >= 10).reduce((s, h) => s 
                 </div>
               </div>
             ))}
-            {approachCount < 2 && (
+            {approachCount < 3 && (
               <button onClick={() => setApproachCount(c => c + 1)}
                 className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-gray-200 text-gray-500 text-sm active:bg-gray-50 transition-colors">
                 <Plus size={15} /> 어프로치 추가

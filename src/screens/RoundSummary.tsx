@@ -38,6 +38,7 @@ type MetricInfo = {
   title: string;
   description: string;
   criteria: string[];
+  goalsLabel: string;
   goals: { level: string; target: string }[];
 };
 
@@ -46,49 +47,57 @@ const METRIC_INFO: Record<string, MetricInfo> = {
     title: '손실 타수',
     description: 'OB, 해저드처럼 공을 잃거나 벌타를 받은 상황에서 잃은 타수입니다. 이 앱에서는 OB 1회 = 2타 손실, 해저드 1회 = 1타 손실로 계산합니다.',
     criteria: ['OB 발생: 2타 손실', '해저드 발생: 1타 손실', '벌타 없이 다음 샷을 정상적으로 칠 수 있으면 손실타수에 포함하지 않습니다.'],
-    goals: [{ level: '100타대', target: '6타 이하' }, { level: '90타대', target: '4타 이하' }, { level: '80타대', target: '2타 이하' }],
+    goalsLabel: '허용 손실 상한',
+    goals: [{ level: '100타대', target: '4타 이하' }, { level: '90타대', target: '2타 이하' }, { level: '80타대', target: '1타 이하' }],
   },
   페어웨이안착률: {
     title: '페어웨이 안착률',
     description: '티샷이 페어웨이에 안착한 비율입니다. 파3를 제외한 홀에서 계산합니다.',
     criteria: ['페어웨이에 있으면 성공', '러프, 벙커, OB, 해저드 등은 실패', '단, 페어웨이를 놓쳤더라도 다음 샷이 가능하면 스코어상 치명적인 미스는 아닐 수 있습니다.'],
+    goalsLabel: '권장 안착률',
     goals: [{ level: '100타대', target: '40% 이상' }, { level: '90타대', target: '50% 이상' }, { level: '80타대', target: '60% 이상' }],
   },
   GIR: {
     title: 'GIR',
     description: '정해진 타수 안에 공을 그린에 올린 비율입니다. GIR은 "그린 적중률"로 볼 수 있습니다.',
     criteria: ['파3: 1타 안에 온그린', '파4: 2타 안에 온그린', '파5: 3타 안에 온그린'],
-    goals: [{ level: '100타대', target: '10~20%' }, { level: '90타대', target: '20~35%' }, { level: '80타대', target: '40% 이상' }],
+    goalsLabel: '권장 달성률',
+    goals: [{ level: '100타대', target: '10% 이상' }, { level: '90타대', target: '20% 이상' }, { level: '80타대', target: '30% 이상' }],
   },
   세컨치명미스: {
-    title: '세컨 치명미스',
+    title: '40m 이내 스코어링 구간 진입 실패',
     description: '파4에서는 세컨샷, 파5에서는 서드샷이 기준입니다. 이 샷이 홀 주변 40m 이내, 즉 다음 샷으로 정상적인 어프로치가 가능한 위치까지 갔는지를 봅니다.',
-    criteria: ['홀 주변 40m 이내에 도달하면 성공', '40m 밖에 남으면 치명미스', 'OB, 해저드, 나무 뒤, 벙커 턱, 깊은 러프 등 다음 샷이 어려운 위치도 치명미스', '파3는 이 지표에서 제외합니다.'],
-    goals: [{ level: '100타대', target: '6회 이하' }, { level: '90타대', target: '4회 이하' }, { level: '80타대', target: '2회 이하' }],
+    criteria: ['홀 주변 40m 이내에 도달하면 성공', '40m 밖에 남으면 스코어링 구간 진입 실패', 'OB, 해저드, 나무 뒤, 벙커 턱, 깊은 러프 등 다음 샷이 어려운 위치도 스코어링 구간 진입 실패', '파3는 이 지표에서 제외합니다.'],
+    goalsLabel: '허용 실패 상한',
+    goals: [{ level: '100타대', target: '7개 이하' }, { level: '90타대', target: '5회 이하' }, { level: '80타대', target: '3회 이하' }],
   },
   웨지온실패: {
-    title: '웨지 온 실패',
-    description: '40m 초과 ~ 100m 미만 거리에서 그린을 노린 웨지샷이 온그린에 실패한 경우입니다.',
-    criteria: ['40m 초과 ~ 100m 미만 거리에서 그린에 올리면 성공', '같은 거리에서 그린을 놓치면 웨지 온 실패', '거리 조절 실패, 짧음, 김, 좌우 미스 모두 온그린 실패에 포함합니다.'],
-    goals: [{ level: '100타대', target: '4회 이하' }, { level: '90타대', target: '3회 이하' }, { level: '80타대', target: '1~2회 이하' }],
+    title: '40~100m 웨지 온 성공',
+    description: '40m 초과 ~ 100m 미만 거리에서 그린을 노린 웨지샷이 온그린에 성공한 비율입니다.',
+    criteria: ['40m 초과 ~ 100m 미만 거리에서 그린에 올리면 성공', '그린을 놓치면 실패', '거리 조절 실패, 짧음, 김, 좌우 미스 모두 실패에 포함합니다.'],
+    goalsLabel: '권장 성공률',
+    goals: [{ level: '100타대', target: '30% 이상' }, { level: '90타대', target: '40% 이상' }, { level: '80타대', target: '50% 이상' }],
   },
   어프로치성공률: {
     title: '어프로치 성공률',
     description: '40m 이내 그린 주변 어프로치가 홀 근처에 잘 붙은 비율입니다.',
-    criteria: ['20m 이내 어프로치: 3m 이내에 붙이면 성공', '20~40m 어프로치: 5m 이내에 붙이면 성공', '기준 거리보다 멀게 남으면 실패', '40m 초과 샷은 웨지 온 실패 지표에서 봅니다.'],
-    goals: [{ level: '100타대', target: '40% 이상' }, { level: '90타대', target: '50% 이상' }, { level: '80타대', target: '60% 이상' }],
+    criteria: ['20m 이내 어프로치: 2m 이내에 붙이면 성공', '20~40m 어프로치: 5m 이내에 붙이면 성공', '기준 거리보다 멀게 남으면 실패', '40m 초과 샷은 웨지 온 지표에서 봅니다.'],
+    goalsLabel: '권장 성공률',
+    goals: [{ level: '100타대', target: '35% 이상' }, { level: '90타대', target: '45% 이상' }, { level: '80타대', target: '55% 이상' }],
   },
   퍼팅: {
     title: '퍼팅',
     description: '한 라운드에서 그린 위에서 친 전체 퍼팅 수입니다.',
     criteria: ['그린 위에서 친 퍼팅만 계산합니다.', '3퍼팅은 한 홀에서 퍼팅을 3번 이상 한 경우입니다.', '퍼팅 수가 많다면 3퍼팅이 많았는지, 첫 퍼팅 거리가 길었는지도 함께 봐야 합니다.'],
-    goals: [{ level: '100타대', target: '37개 이하 / 3퍼팅 4회 이하' }, { level: '90타대', target: '35~36개 이하 / 3퍼팅 3회 이하' }, { level: '80타대', target: '33~34개 이하 / 3퍼팅 2회 이하' }, { level: '싱글 수준', target: '32개 이하 / 3퍼팅 1회 이하' }],
+    goalsLabel: '권장 퍼팅 횟수',
+    goals: [{ level: '100타대', target: '38개 이하 / 3퍼팅 4회 이하' }, { level: '90타대', target: '36개 이하 / 3퍼팅 3회 이하' }, { level: '80타대', target: '34개 이하 / 3퍼팅 2회 이하' }, { level: '싱글 수준', target: '32개 이하 / 3퍼팅 1회 이하' }],
   },
   숏퍼팅성공률: {
     title: '숏퍼팅 성공률',
-    description: '2m 이내의 짧은 퍼팅을 성공한 비율입니다.',
+    description: 'OK를 제외한 2m 이내 퍼트 성공률입니다. 보통 약 1.2~2.0m 퍼트를 기준으로 봅니다.',
     criteria: ['2m 이내 퍼팅을 넣으면 성공', '2m 이내 퍼팅을 놓치면 실패', '특히 1m 이내 퍼팅 실패가 반복되면 별도로 점검이 필요합니다.'],
-    goals: [{ level: '100타대', target: '60% 이상' }, { level: '90타대', target: '70% 이상' }, { level: '80타대', target: '80% 이상' }],
+    goalsLabel: '권장 성공률',
+    goals: [{ level: '100타대', target: '40% 이상' }, { level: '90타대', target: '50% 이상' }, { level: '80타대', target: '60% 이상' }],
   },
 };
 
@@ -213,7 +222,7 @@ function MetricInfoModal({ info, onClose }: { info: MetricInfo; onClose: () => v
         <ul className="text-sm text-gray-600 space-y-1 mb-4">
           {info.criteria.map((c, i) => <li key={i} className="flex gap-2"><span>•</span><span>{c}</span></li>)}
         </ul>
-        <p className="text-xs font-bold text-gray-700 mb-2">목표</p>
+        <p className="text-xs font-bold text-gray-700 mb-2">{info.goalsLabel}</p>
         <table className="w-full text-sm border-collapse">
           <tbody>
             {info.goals.map((g, i) => (
@@ -263,8 +272,7 @@ function EditModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-6">
       <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
-      <div className="relative bg-card rounded-2xl shadow-2xl p-6 w-full max-w-[340px] max-h-[85vh] overflow-y-auto">
-        <h3 className="text-base font-bold text-gray-800 text-center mb-4">라운드 정보 수정</h3>
+      <div className="relative bg-card rounded-2xl shadow-2xl p-6 pb-10 w-full max-w-[340px] max-h-[75vh] overflow-y-auto">        <h3 className="text-base font-bold text-gray-800 text-center mb-4">라운드 정보 수정</h3>
         <div className="space-y-3 mb-6">
           <div>
             <label className="block text-xs text-gray-500 mb-1">골프장 이름</label>
@@ -639,12 +647,12 @@ export default function RoundSummary({ round, viewMode, shareMode = false, holes
     [h.second1_club, h.second2_club, h.second3_club].some(c => c?.includes('웨지')),
   ).length;
 
-  const wedgeMiss = holes.filter(h =>
-    [h.second1_club, h.second2_club, h.second3_club].some((c, i) => {
-      const results = [h.second1_result, h.second2_result, h.second3_result];
-      return c?.includes('웨지') && results[i] === '그린 미스';
-    }),
-  ).length;
+  const wedgeSuccess = holes.filter(h => {
+    const clubs = [h.second1_club, h.second2_club, h.second3_club];
+    const results = [h.second1_result, h.second2_result, h.second3_result];
+    return clubs.some((c, i) => c?.includes('웨지') && results[i] === '그린 온(GIR)');
+  }).length;
+  const wedgeSuccessRate = wedgeTotal > 0 ? Math.round((wedgeSuccess / wedgeTotal) * 100) : null;
 
   const puttMissHoles = holes.filter(h => h.putt_miss);
   const shortPuttSuccess = puttMissHoles.filter(h => h.putt_miss === '숏퍼팅 성공').length;
@@ -1000,7 +1008,7 @@ export default function RoundSummary({ round, viewMode, shareMode = false, holes
                 />
                 <StatCard
                   icon={<AlertTriangle size={16} />}
-                  label="세컨샷 치명미스"
+                  label="어프로치권 실패"
                   unrecorded={fatalRecorded === 0}
                   value={fatalRecorded === 0 ? '–' : `${fatalMissCount}회`}
                   sub={fatalRecorded === 0 ? '미기록' : `OB ${fatalOB} · 해저드 ${fatalHazard}`}
@@ -1009,9 +1017,9 @@ export default function RoundSummary({ round, viewMode, shareMode = false, holes
                 />
                 <StatCard
                   icon={<Crosshair size={16} />}
-                  label="웨지 미스"
+                  label="웨지온 성공률"
                   unrecorded={wedgeRecorded === 0}
-                  value={wedgeRecorded === 0 ? '–' : `${wedgeMiss}회`}
+                  value={wedgeRecorded === 0 ? '–' : wedgeSuccessRate !== null ? `${wedgeSuccessRate}%` : '–'}
                   sub={wedgeRecorded === 0 ? '미기록' : `시도 ${wedgeTotal}홀 중`}
                   onClick={metricClick('웨지온실패')}
                 />
@@ -1085,7 +1093,7 @@ export default function RoundSummary({ round, viewMode, shareMode = false, holes
                     <div className="grid grid-cols-3 gap-2 mb-4">
                       <MetricCell label="GIR" value={`${segSecondGir}홀`} valueClass="text-blue-500" />
                       <MetricCell label="치명미스" value={`${fatalMissCount}`} valueClass="text-red-500" />
-                      <MetricCell label="웨지 미스" value={`${wedgeMiss}`} valueClass="text-amber-600" />
+                      <MetricCell label="웨지 온 성공" value={`${wedgeSuccess}`} valueClass="text-amber-600" />
                     </div>
                     <p className="text-xs font-semibold text-gray-500 mb-2">치명미스 추이</p>
                     <SegmentLineChart
@@ -1108,7 +1116,7 @@ export default function RoundSummary({ round, viewMode, shareMode = false, holes
                   <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
                     <h3 className="text-sm font-semibold text-gray-800 mb-3">어프로치</h3>
                     <div className="grid grid-cols-2 gap-2 mb-4">
-                      <MetricCell label="20m이내 3m안착" value={approach20Total === 0 ? '–' : `${approach20Success} / ${approach20Total}`} valueClass="text-teal-600" />
+                      <MetricCell label="20m이내 2m안착" value={approach20Total === 0 ? '–' : `${approach20Success} / ${approach20Total}`} valueClass="text-teal-600" />
                       <MetricCell label="20~40m 5m안착" value={approach2040Total === 0 ? '–' : `${approach2040Success} / ${approach2040Total}`} valueClass="text-amber-600" />
                     </div>
                     <p className="text-xs font-semibold text-gray-500 mb-2">어프로치 성공률 추이</p>
@@ -1124,7 +1132,7 @@ export default function RoundSummary({ round, viewMode, shareMode = false, holes
                     <p className="text-xs font-semibold text-gray-500 mb-2 mt-4">미스 TOP5</p>
                     <RankedMissBarChart items={approachMissBars} />
                     <SegmentCardFootnote>
-                      * 어프로치 성공률: 20m이내 3m안착 + 20~40m 5m안착 합산 기준
+                      * 어프로치 성공률: 20m이내 2m안착 + 20~40m 5m안착 합산 기준
                     </SegmentCardFootnote>
                   </div>
                 )}

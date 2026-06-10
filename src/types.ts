@@ -57,6 +57,11 @@ export interface Hole {
   second3_miss_detail: string;
   second3_memo: string;
 
+  second4_club?: string;
+  second4_result?: string;
+  second4_miss?: string;
+  second4_penalty_type?: string;
+
   approach1_club: string;
   approach1_result: string;
   approach1_miss: string;
@@ -68,6 +73,10 @@ export interface Hole {
   approach2_miss: string;
   approach2_miss_detail: string;
   approach2_memo: string;
+
+  approach3_club?: string;
+  approach3_result?: string;
+  approach3_miss?: string;
 
   putt_miss: string;
   putt_memo: string;
