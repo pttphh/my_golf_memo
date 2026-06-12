@@ -147,8 +147,8 @@ export default function HoleDetail({ roundId, selectedIndices, onBack }: Props) 
   }
 
   return (
-    <div className="min-h-screen bg-surface flex flex-col">
-      <div className="bg-[#1B4332] text-white px-4 pt-4 pb-4">
+    <div className="h-screen bg-surface flex flex-col overflow-hidden">
+      <div className="bg-[#1B4332] text-white px-4 pb-4" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1rem)' }}>
         <button onClick={onBack} className="flex items-center gap-1.5 text-green-200 text-sm mb-3 active:opacity-70">
           <ChevronLeft size={16} /> 홀 선택으로
         </button>
@@ -156,7 +156,7 @@ export default function HoleDetail({ roundId, selectedIndices, onBack }: Props) 
         <p className="text-green-200 text-sm mt-0.5">{selectedHoles.length}개 홀 상세 기록</p>
       </div>
 
-      <div className="px-4 py-5 space-y-4 pb-28">
+      <div className="px-4 py-5 space-y-4 pb-28 overflow-y-auto flex-1">
         {selectedHoles.map(hole => (
           <HoleCard key={hole.hole_number} hole={hole} />
         ))}

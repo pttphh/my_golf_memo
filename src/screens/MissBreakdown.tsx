@@ -147,8 +147,8 @@ export default function MissBreakdown({ roundId, onBack }: Props) {
     shortPuttFail;
 
   return (
-    <div className="min-h-screen bg-surface flex flex-col">
-      <div className="bg-[#1B4332] text-white px-4 pt-4 pb-4">
+    <div className="h-screen bg-surface flex flex-col overflow-hidden">
+      <div className="bg-[#1B4332] text-white px-4 pb-4" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1rem)' }}>
         <button onClick={onBack} className="flex items-center gap-1 text-green-200 text-sm mb-3 active:opacity-70">
           <ChevronLeft size={16} />
           라운드 요약으로
@@ -157,7 +157,7 @@ export default function MissBreakdown({ roundId, onBack }: Props) {
         <p className="text-green-200 text-sm mt-1">{holes.length}홀 · 총 {totalMisses}회 미스</p>
       </div>
 
-      <div className="px-4 py-5 space-y-4 pb-28">
+      <div className="px-4 py-5 space-y-4 pb-28 overflow-y-auto flex-1">
         {totalMisses === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center text-gray-500">
             기록된 미스가 없어요

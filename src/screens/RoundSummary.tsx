@@ -856,7 +856,7 @@ export default function RoundSummary({ round, viewMode, shareMode = false, holes
         </div>
       )}
 
-      <div className="min-h-screen bg-surface flex flex-col">
+      <div className="h-screen bg-surface flex flex-col overflow-hidden">
       {shareMode && (
         <div className="bg-gray-50 border-b border-gray-200 py-2 text-center">
           <p className="text-xs text-gray-400">📋 공유된 라운드 기록입니다</p>
@@ -920,7 +920,7 @@ export default function RoundSummary({ round, viewMode, shareMode = false, holes
           )}
         </div>
 
-        <div className={`px-4 py-5 space-y-5 ${shareMode ? 'pb-8' : 'pb-28'}`}>
+        <div className={`px-4 py-5 space-y-5 overflow-y-auto flex-1 ${shareMode ? 'pb-8' : 'pb-28'}`}>
           {holes.length > 0 && (
             <>
               {!shareMode && (
@@ -1095,12 +1095,12 @@ export default function RoundSummary({ round, viewMode, shareMode = false, holes
                       <MetricCell label="치명미스" value={`${fatalMissCount}`} valueClass="text-red-500" />
                       <MetricCell label="웨지 온 성공" value={`${wedgeSuccess}`} valueClass="text-amber-600" />
                     </div>
-                    <p className="text-xs font-semibold text-gray-500 mb-2">치명미스 추이</p>
+                    <p className="text-xs font-semibold text-gray-500 mb-2">스코어링 구간 진입 실패 추이</p>
                     <SegmentLineChart
                       points={chart6CriticalMiss}
                       lineColor="#E24B4A"
                       avgValue={avgChartCriticalMiss}
-                      caption="치명미스 추이 · 최근 6라운드 (낮을수록 좋음)"
+                      caption="스코어링 구간 진입 실패 추이 · 최근 6라운드 (낮을수록 좋음)"
                       formatValue={v => `${v}`}
                       yMin={0}
                     />
