@@ -43,13 +43,16 @@ export default function RoundList({ onRoundSelect, onIncompleteRoundSelect, onAd
 
   useEffect(() => {
     async function load() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setLoading(false); return; }
       const { data: roundRows } = await supabase
         .from('rounds')
         .select('*')
+        .eq('user_id', user.id)
         .order('date', { ascending: false })
         .order('time', { ascending: false })
         .limit(50);
-
+        
       if (!roundRows || roundRows.length === 0) { setLoading(false); return; }
 
       const { data: allHoles } = await supabase

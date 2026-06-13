@@ -227,13 +227,17 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
 
   useEffect(() => {
     async function load() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setLoading(false); return; }
       const { data: rounds } = await supabase
         .from('rounds')
         .select('*')
+        .eq('user_id', user.id)
         .order('date', { ascending: false })
         .order('time', { ascending: false })
         .limit(20);
 
+        
       if (!rounds || rounds.length === 0) {
         setLoading(false);
         return;

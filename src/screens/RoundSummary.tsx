@@ -11,6 +11,15 @@ import {
   computeRoundFatalMissCount,
   computeRoundApproachTrendPct,
   computeRoundShortPuttMissCount,
+  computeTeePenaltyStrokes,
+  computeFairwayPct,
+  computeGirPct,
+  computeWedgeSuccessRate,
+  computeApproach20Pct,
+  computeApproach2040Pct,
+  computeTotalPutts,
+  computeThreePuttCount,
+  computeShortPuttSuccessRate,
   chartPointsAvg,
 } from '../components/SegmentChart';
 
@@ -606,16 +615,24 @@ export default function RoundSummary({ round, viewMode, shareMode = false, holes
   const girCount = holes.filter(isGirHole).length;
   const girPct = Math.round((girCount / 18) * 100);
 
-  const approachSuccess = holes.filter(
-    h => h.approach1_result === '성공' || h.approach2_result === '성공',
-  ).length;
-  const approachAttempts = holes.filter(
-    h => ['20m이내', '20~40m'].includes(h.approach1_club ?? '') ||
-         ['20m이내', '20~40m'].includes(h.approach2_club ?? ''),
-  ).length;
+  const approachSuccess = holes.reduce((sum, h) => {
+    let count = 0;
+    if (h.approach1_result === '성공') count++;
+    if (h.approach2_result === '성공') count++;
+    if (h.approach3_result === '성공') count++;
+    return sum + count;
+  }, 0);
+  const approachAttempts = holes.reduce((sum, h) => {
+    let count = 0;
+    if (h.approach1_result) count++;
+    if (h.approach2_result) count++;
+    if (h.approach3_result) count++;
+    return sum + count;
+  }, 0);
   const approachPct = approachAttempts > 0
     ? Math.round((approachSuccess / approachAttempts) * 100)
     : 0;
+
 
   const fatalMissCount = holes.reduce((sum, h) => {
     let count = 0;
@@ -643,15 +660,16 @@ export default function RoundSummary({ round, viewMode, shareMode = false, holes
 
   const fatalApproachNG = fatalMissCount - fatalOB - fatalHazard;
 
-  const wedgeTotal = holes.filter(h =>
-    [h.second1_club, h.second2_club, h.second3_club].some(c => c?.includes('웨지')),
-  ).length;
+const wedgeTotal = holes.reduce((sum, h) => {
+    const clubs = [h.second1_club, h.second2_club, h.second3_club, h.second4_club];
+    return sum + clubs.filter(c => c?.includes('웨지')).length;
+  }, 0);
 
-  const wedgeSuccess = holes.filter(h => {
-    const clubs = [h.second1_club, h.second2_club, h.second3_club];
-    const results = [h.second1_result, h.second2_result, h.second3_result];
-    return clubs.some((c, i) => c?.includes('웨지') && results[i] === '그린 온(GIR)');
-  }).length;
+  const wedgeSuccess = holes.reduce((sum, h) => {
+    const clubs = [h.second1_club, h.second2_club, h.second3_club, h.second4_club];
+    const results = [h.second1_result, h.second2_result, h.second3_result, h.second4_result];
+    return sum + clubs.filter((c, i) => c?.includes('웨지') && results[i] === '그린 온(GIR)').length;
+  }, 0);
   const wedgeSuccessRate = wedgeTotal > 0 ? Math.round((wedgeSuccess / wedgeTotal) * 100) : null;
 
   const puttMissHoles = holes.filter(h => h.putt_miss);
@@ -713,10 +731,28 @@ export default function RoundSummary({ round, viewMode, shareMode = false, holes
     value: computeRoundShortPuttMissCount(d.holes),
     date: d.round.date,
   }));
+  const chart6TeePenalty = chartRounds.map(d => ({ value: computeTeePenaltyStrokes(d.holes), date: d.round.date }));
+  const chart6Fairway = chartRounds.map(d => ({ value: computeFairwayPct(d.holes), date: d.round.date }));
+  const chart6Gir = chartRounds.map(d => ({ value: computeGirPct(d.holes), date: d.round.date }));
+  const chart6WedgeSuccess = chartRounds.map(d => ({ value: computeWedgeSuccessRate(d.holes), date: d.round.date }));
+  const chart6Approach20 = chartRounds.map(d => ({ value: computeApproach20Pct(d.holes), date: d.round.date }));
+  const chart6Approach2040 = chartRounds.map(d => ({ value: computeApproach2040Pct(d.holes), date: d.round.date }));
+  const chart6TotalPutts = chartRounds.map(d => ({ value: computeTotalPutts(d.holes), date: d.round.date }));
+  const chart6ThreePutt = chartRounds.map(d => ({ value: computeThreePuttCount(d.holes), date: d.round.date }));
+  const chart6ShortPuttSuccess = chartRounds.map(d => ({ value: computeShortPuttSuccessRate(d.holes), date: d.round.date }));
   const avgChartPenalty = chartPointsAvg(chart6Penalty);
   const avgChartCriticalMiss = chartPointsAvg(chart6CriticalMiss);
   const avgChartApproachSuccess = chartPointsAvg(chart6ApproachSuccess);
   const avgChartShortPuttMiss = chartPointsAvg(chart6ShortPuttMiss);
+  const avgChart6TeePenalty = chartPointsAvg(chart6TeePenalty);
+  const avgChart6Fairway = chartPointsAvg(chart6Fairway);
+  const avgChart6Gir = chartPointsAvg(chart6Gir);
+  const avgChart6WedgeSuccess = chartPointsAvg(chart6WedgeSuccess);
+  const avgChart6Approach20 = chartPointsAvg(chart6Approach20);
+  const avgChart6Approach2040 = chartPointsAvg(chart6Approach2040);
+  const avgChart6TotalPutts = chartPointsAvg(chart6TotalPutts);
+  const avgChart6ThreePutt = chartPointsAvg(chart6ThreePutt);
+  const avgChart6ShortPuttSuccess = chartPointsAvg(chart6ShortPuttSuccess);
 
   async function handleSave() {
     setSaving(true);
@@ -1066,23 +1102,31 @@ export default function RoundSummary({ round, viewMode, shareMode = false, holes
                 {activeSegment === 'tee' && (
                   <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
                     <h3 className="text-sm font-semibold text-gray-800 mb-3">티샷</h3>
-                    <div className="grid grid-cols-2 gap-2 mb-4">
-                      <MetricCell label="페어웨이 안착률" value={`${segFairwayPct}%`} valueClass="text-amber-600" />
-                      <MetricCell label="평균 벌타" value={`${penalties}타`} valueClass="text-red-500" />
-                    </div>
-                    <p className="text-xs font-semibold text-gray-500 mb-2">벌타 추이</p>
+                    <p className="text-xs font-semibold text-gray-500 mb-2">티샷 손실타수</p>
                     <SegmentLineChart
-                      points={chart6Penalty}
+                      points={chart6TeePenalty}
                       lineColor="#E24B4A"
-                      avgValue={avgChartPenalty}
-                      caption="벌타 추이 · 최근 6라운드 (낮을수록 좋음)"
-                      formatValue={v => `${v}`}
+                      avgValue={avgChart6TeePenalty}
+                      caption="티샷 손실타수 추이 · 최근 6라운드 (낮을수록 좋음)"
+                      formatValue={v => `${v}타`}
                       yMin={0}
                     />
+                    <div className="mt-4">
+                      <p className="text-xs font-semibold text-gray-500 mb-2 mt-4">페어웨이 안착률</p>
+                      <SegmentLineChart
+                        points={chart6Fairway}
+                        lineColor="#1D9E75"
+                        avgValue={avgChart6Fairway}
+                        caption="페어웨이 안착률 추이 · 최근 6라운드 (높을수록 좋음)"
+                        formatValue={v => `${v}%`}
+                        yMin={0}
+                        yMax={100}
+                      />
+                    </div>
                     <p className="text-xs font-semibold text-gray-500 mb-2 mt-4">미스 TOP5</p>
                     <RankedMissBarChart items={teeMissBars} />
                     <SegmentCardFootnote>
-                      * 평균 벌타는 OB 1회 = 2타, 해저드 1회 = 1타로 계산합니다
+                      * 티샷 손실타수는 OB 1회 = 2타, 해저드 1회 = 1타로 계산합니다
                     </SegmentCardFootnote>
                   </div>
                 )}
@@ -1090,24 +1134,43 @@ export default function RoundSummary({ round, viewMode, shareMode = false, holes
                 {activeSegment === 'second' && (
                   <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
                     <h3 className="text-sm font-semibold text-gray-800 mb-3">세컨샷</h3>
-                    <div className="grid grid-cols-3 gap-2 mb-4">
-                      <MetricCell label="GIR" value={`${segSecondGir}홀`} valueClass="text-blue-500" />
-                      <MetricCell label="치명미스" value={`${fatalMissCount}`} valueClass="text-red-500" />
-                      <MetricCell label="웨지 온 성공" value={`${wedgeSuccess}`} valueClass="text-amber-600" />
-                    </div>
-                    <p className="text-xs font-semibold text-gray-500 mb-2">스코어링 구간 진입 실패 추이</p>
+                    <p className="text-xs font-semibold text-gray-500 mb-2">GIR</p>
                     <SegmentLineChart
-                      points={chart6CriticalMiss}
-                      lineColor="#E24B4A"
-                      avgValue={avgChartCriticalMiss}
-                      caption="스코어링 구간 진입 실패 추이 · 최근 6라운드 (낮을수록 좋음)"
-                      formatValue={v => `${v}`}
+                      points={chart6Gir}
+                      lineColor="#1D9E75"
+                      avgValue={avgChart6Gir}
+                      caption="GIR 추이 · 최근 6라운드 (높을수록 좋음)"
+                      formatValue={v => `${v}%`}
                       yMin={0}
+                      yMax={100}
                     />
+                    <div className="mt-4">
+                      <p className="text-xs font-semibold text-gray-500 mb-2 mt-4">스코어링 구간 진입 실패</p>
+                      <SegmentLineChart
+                        points={chart6CriticalMiss}
+                        lineColor="#E24B4A"
+                        avgValue={avgChartCriticalMiss}
+                        caption="스코어링 구간 진입 실패 추이 · 최근 6라운드 (낮을수록 좋음)"
+                        formatValue={v => `${v}회`}
+                        yMin={0}
+                      />
+                    </div>
+                    <div className="mt-4">
+                      <p className="text-xs font-semibold text-gray-500 mb-2 mt-4">웨지온 성공률</p>
+                      <SegmentLineChart
+                        points={chart6WedgeSuccess}
+                        lineColor="#F59E0B"
+                        avgValue={avgChart6WedgeSuccess}
+                        caption="웨지온 성공률 추이 · 최근 6라운드 (높을수록 좋음)"
+                        formatValue={v => `${v}%`}
+                        yMin={0}
+                        yMax={100}
+                      />
+                    </div>
                     <p className="text-xs font-semibold text-gray-500 mb-2 mt-4">미스 TOP5</p>
                     <RankedMissBarChart items={secondMissBars} />
                     <SegmentCardFootnote>
-                      * 치명미스: 세컨샷 후 40m 이내의 어프로치 불가 또는 OB, 해저드로 이어진 경우
+                      * 스코어링 구간 진입 실패: 세컨샷 후 40m 이내의 어프로치 불가 또는 OB, 해저드로 이어진 경우
                     </SegmentCardFootnote>
                   </div>
                 )}
@@ -1115,46 +1178,37 @@ export default function RoundSummary({ round, viewMode, shareMode = false, holes
                 {activeSegment === 'approach' && (
                   <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
                     <h3 className="text-sm font-semibold text-gray-800 mb-3">어프로치</h3>
-                    <div className="grid grid-cols-2 gap-2 mb-4">
-                      <MetricCell label="20m이내 2m안착" value={approach20Total === 0 ? '–' : `${approach20Success} / ${approach20Total}`} valueClass="text-teal-600" />
-                      <MetricCell label="20~40m 5m안착" value={approach2040Total === 0 ? '–' : `${approach2040Success} / ${approach2040Total}`} valueClass="text-amber-600" />
-                    </div>
-                    <p className="text-xs font-semibold text-gray-500 mb-2">어프로치 성공률 추이</p>
+                    <p className="text-xs font-semibold text-gray-500 mb-2">20m이내 2m안착 성공률</p>
                     <SegmentLineChart
-                      points={chart6ApproachSuccess}
+                        points={chart6Approach20}
                       lineColor="#1D9E75"
-                      avgValue={avgChartApproachSuccess}
-                      caption="어프로치 성공률 추이 · 최근 6라운드 (높을수록 좋음)"
+                      avgValue={avgChart6Approach20}
+                      caption="20m이내 2m안착 성공률 추이 · 최근 6라운드 (높을수록 좋음)"
                       formatValue={v => `${v}%`}
                       yMin={0}
                       yMax={100}
                     />
+                    <div className="mt-4">
+                      <p className="text-xs font-semibold text-gray-500 mb-2 mt-4">20~40m 5m안착 성공률</p>
+                      <SegmentLineChart
+                        points={chart6Approach2040}
+                        lineColor="#F59E0B"
+                        avgValue={avgChart6Approach2040}
+                        caption="20~40m 5m안착 성공률 추이 · 최근 6라운드 (높을수록 좋음)"
+                        formatValue={v => `${v}%`}
+                        yMin={0}
+                        yMax={100}
+                      />
+                    </div>
                     <p className="text-xs font-semibold text-gray-500 mb-2 mt-4">미스 TOP5</p>
                     <RankedMissBarChart items={approachMissBars} />
-                    <SegmentCardFootnote>
-                      * 어프로치 성공률: 20m이내 2m안착 + 20~40m 5m안착 합산 기준
-                    </SegmentCardFootnote>
                   </div>
                 )}
 
                 {activeSegment === 'putt' && (
                   <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
                     <h3 className="text-sm font-semibold text-gray-800 mb-3">퍼팅</h3>
-                    <div className="grid grid-cols-3 gap-2 mb-4">
-                      <MetricCell label="평균 퍼팅" value={`${avgPuttsPerHole}`} valueClass="text-blue-500" />
-                      <MetricCell label="3퍼팅 이상" value={`${threePuttPlus}홀`} valueClass="text-red-500" />
-                      <MetricCell label="숏퍼팅 미스" value={`${shortPuttMissCount}`} valueClass="text-amber-600" />
-                    </div>
-                    <p className="text-xs font-semibold text-gray-500 mb-2">숏퍼팅 미스 추이</p>
-                    <SegmentLineChart
-                      points={chart6ShortPuttMiss}
-                      lineColor="#E24B4A"
-                      avgValue={avgChartShortPuttMiss}
-                      caption="숏퍼팅 미스 추이 · 최근 6라운드 (낮을수록 좋음)"
-                      formatValue={v => `${v}`}
-                      yMin={0}
-                    />
-                    <p className="text-xs font-semibold text-gray-500 mb-2 mt-4">홀별 퍼팅 분포</p>
+                    <p className="text-xs font-semibold text-gray-500 mb-2">홀별 퍼팅 분포</p>
                     <ColoredBarChart
                       items={[
                         { label: '1퍼팅', avg: putt1, color: '#1D9E75' },
@@ -1163,6 +1217,40 @@ export default function RoundSummary({ round, viewMode, shareMode = false, holes
                         { label: '4퍼팅+', avg: putt4plus, color: '#E24B4A' },
                       ]}
                     />
+                    <div className="mt-4">
+                      <p className="text-xs font-semibold text-gray-500 mb-2">총 퍼팅 수</p>
+                      <SegmentLineChart
+                        points={chart6TotalPutts}
+                        lineColor="#3B82F6"
+                        avgValue={avgChart6TotalPutts}
+                        caption="총 퍼팅 수 추이 · 최근 6라운드 (낮을수록 좋음)"
+                        formatValue={v => `${v}개`}
+                        yMin={0}
+                      />
+                    </div>
+                    <div className="mt-4">
+                      <p className="text-xs font-semibold text-gray-500 mb-2 mt-4">3퍼팅 이상 홀 수</p>
+                      <SegmentLineChart
+                        points={chart6ThreePutt}
+                        lineColor="#E24B4A"
+                        avgValue={avgChart6ThreePutt}
+                        caption="3퍼팅 이상 홀 수 추이 · 최근 6라운드 (낮을수록 좋음)"
+                        formatValue={v => `${v}홀`}
+                        yMin={0}
+                      />
+                    </div>
+                    <div className="mt-4">
+                      <p className="text-xs font-semibold text-gray-500 mb-2 mt-4">숏퍼팅 성공률</p>
+                      <SegmentLineChart
+                        points={chart6ShortPuttSuccess}
+                        lineColor="#1D9E75"
+                        avgValue={avgChart6ShortPuttSuccess}
+                        caption="숏퍼팅 성공률 추이 · 최근 6라운드 (높을수록 좋음)"
+                        formatValue={v => `${v}%`}
+                        yMin={0}
+                        yMax={100}
+                      />
+                    </div>
                     <SegmentCardFootnote>* 숏퍼팅: 2m 이내 홀인 퍼팅</SegmentCardFootnote>
                   </div>
                 )}
