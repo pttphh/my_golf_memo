@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Trophy, Target, AlertTriangle, BarChart2, ChevronRight, List, Trash2, Flag, Pencil, Crosshair, Disc, CheckCircle, Share2 } from 'lucide-react';
+import { Trophy, Target, AlertTriangle, BarChart2, ChevronRight, List, Trash2, Flag, Pencil, Crosshair, Disc, CheckCircle, Share2, TicketX, PlayOff, MapPinCheck, Ban, Zap, Route, MapPinOff, Locate } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { isAnonymousUser, signUpWithEmail, signUpNewUser } from '../lib/auth';
 import type { Round, Hole } from '../types';
@@ -194,19 +194,23 @@ function ColoredBarChart({ items }: { items: { label: string; avg: number; color
   );
 }
 
-function StatCard({ icon, label, value, sub, sub2, unrecorded, onClick }: {
-  icon: React.ReactNode; label: string; value: string | number; sub?: string; sub2?: string; unrecorded?: boolean; onClick?: () => void;
+function StatCard({ icon, label, value, sub, sub2, unrecorded, onClick, failed }: {
+  icon: React.ReactNode; label: string; value: string | number; sub?: string; sub2?: string; unrecorded?: boolean; onClick?: () => void; failed?: boolean;
 }) {
   const valueCls = unrecorded ? 'text-gray-300' : 'text-gray-800';
   const subCls = unrecorded ? 'text-gray-300' : 'text-gray-500';
   return (
     <div
-      className={`bg-card rounded-2xl p-3.5 border border-gray-100 shadow-sm flex flex-col gap-2${onClick ? ' cursor-pointer active:scale-[0.98] transition-transform' : ''}`}
+      className={`bg-card rounded-2xl p-3.5 shadow-sm flex flex-col gap-2${onClick ? ' cursor-pointer active:scale-[0.98] transition-transform' : ''}`}
+      style={{ border: failed ? '1px solid #E24B4A' : '0.5px solid var(--color-border-tertiary)' }}
       onClick={onClick}
     >
       <div className="flex items-center gap-2">
-        <div className="w-7 h-7 rounded-lg bg-green-50 flex items-center justify-center text-[#1B4332] flex-shrink-0">
-          {icon}
+        <div
+          className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+          style={{ color: failed ? '#E24B4A' : '#1B4332', background: failed ? '#FCEBEB' : '#f0faf4' }}
+        >
+          {failed ? <AlertTriangle size={16} /> : icon}
         </div>
         <p className="text-xs text-gray-500 leading-tight">{label}</p>
       </div>
@@ -578,6 +582,16 @@ export default function RoundSummary({ round, viewMode, shareMode = false, holes
   }, [roundData.id, externalHoles]);
 
   const totalStrokes = holes.reduce((s, h) => s + h.total_strokes, 0);
+  const goalTier = totalStrokes >= 97 ? 0 : totalStrokes >= 92 ? 1 : 2;
+  const goalPenalty = [4, 3, 2][goalTier];
+  const goalFairway = [40, 50, 55][goalTier];
+  const goalGir = [3, 4, 6][goalTier];
+  const goalFatalMiss = [7, 6, 5][goalTier];
+  const goalWedge = [30, 40, 50][goalTier];
+  const goalApproach = [30, 40, 50][goalTier];
+  const goalTotalPutts = [40, 38, 36][goalTier];
+  const goalThreePutt = [6, 4, 3][goalTier];
+  const goalShortPutt = [40, 50, 60][goalTier];
   const totalPar = holes.reduce((s, h) => s + h.par, 0);
   const totalOver = totalStrokes - totalPar;
 
@@ -693,6 +707,7 @@ const wedgeTotal = holes.reduce((sum, h) => {
   ).length;
   const approachRecorded = holes.filter(h => h.approach1_club).length;
   const shortPuttRecorded = holes.filter(h => h.putt_miss).length;
+  const penaltiesRecorded = holes.length > 0;
 
   const segFairwayPct = fairwayPct;
   const segSecondGir = holes.filter(isGirHole).length;
@@ -1027,55 +1042,61 @@ const wedgeTotal = holes.reduce((sum, h) => {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <StatCard icon={<AlertTriangle size={16} />} label="손실 타수" value={`${penalties}타`} sub={`OB ${obHoles}홀 · 해저드 ${hazardHoles}홀`} onClick={metricClick('손실타수')} />
+                <StatCard icon={<TicketX size={16} />} label="손실 타수" value={`${penalties}타`} sub={`OB ${obHoles}홀 · 해저드 ${hazardHoles}홀`} unrecorded={!penaltiesRecorded} failed={holes.length > 0 && penalties > goalPenalty} onClick={metricClick('손실타수')} />
                 <StatCard
                   icon={<Flag size={16} />}
                   label="페어웨이 안착률"
                   unrecorded={fairwayRecorded === 0}
                   value={fairwayRecorded === 0 ? '–' : `${fairwayPct}%`}
                   sub={fairwayRecorded === 0 ? '미기록' : `${fairwayHits} / ${fairwayDenom}`}
+                  failed={!!fairwayRecorded && fairwayPct < goalFairway}
                   onClick={metricClick('페어웨이안착률')}
                 />
                 <StatCard
-                  icon={<Trophy size={16} />}
+                  icon={<Route size={16} />}
                   label="GIR"
                   unrecorded={girRecorded === 0}
                   value={girRecorded === 0 ? '–' : `${girCount}홀`}
                   sub={girRecorded === 0 ? '미기록' : `파3 ${par3Gir}홀 · 파4 ${par4Gir}홀 · 파5 ${par5Gir}홀`}
+                  failed={!!girRecorded && girCount < goalGir}
                   onClick={metricClick('GIR')}
                 />
                 <StatCard
-                  icon={<AlertTriangle size={16} />}
+                  icon={<PlayOff size={16} />}
                   label="어프로치권 실패"
                   unrecorded={fatalRecorded === 0}
                   value={fatalRecorded === 0 ? '–' : `${fatalMissCount}회`}
                   sub={fatalRecorded === 0 ? '미기록' : `OB ${fatalOB} · 해저드 ${fatalHazard}`}
                   sub2={fatalRecorded === 0 ? undefined : `어프로치불가 ${fatalApproachNG}`}
+                  failed={!!fatalRecorded && fatalMissCount > goalFatalMiss}
                   onClick={metricClick('세컨치명미스')}
                 />
                 <StatCard
-                  icon={<Crosshair size={16} />}
+                  icon={<Zap size={16} />}
                   label="웨지온 성공률"
                   unrecorded={wedgeRecorded === 0}
                   value={wedgeRecorded === 0 ? '–' : wedgeSuccessRate !== null ? `${wedgeSuccessRate}%` : '–'}
                   sub={wedgeRecorded === 0 ? '미기록' : `시도 ${wedgeTotal}홀 중`}
+                  failed={!!wedgeRecorded && (wedgeSuccessRate ?? 0) < goalWedge}
                   onClick={metricClick('웨지온실패')}
                 />
                 <StatCard
-                  icon={<Target size={16} />}
+                  icon={<MapPinCheck size={16} />}
                   label="어프로치 성공률"
                   unrecorded={approachRecorded === 0}
                   value={approachRecorded === 0 ? '–' : `${approachPct}%`}
                   sub={approachRecorded === 0 ? '미기록' : `${approachSuccess} / ${approachAttempts}홀 성공`}
+                  failed={!!approachRecorded && approachPct < goalApproach}
                   onClick={metricClick('어프로치성공률')}
                 />
-                <StatCard icon={<Disc size={16} />} label="퍼팅" value={`총 ${totalPutts}개`} sub={`3퍼팅 이상 ${threePuttPlus}홀`} onClick={metricClick('퍼팅')} />
+                <StatCard icon={<Disc size={16} />} label="퍼팅" value={`총 ${totalPutts}개`} sub={`3퍼팅 이상 ${threePuttPlus}홀`} failed={holes.length > 0 && (totalPutts > goalTotalPutts || threePuttPlus > goalThreePutt)} onClick={metricClick('퍼팅')} />
                 <StatCard
-                  icon={<CheckCircle size={16} />}
+                  icon={<Trophy size={16} />}
                   label="숏퍼팅 성공률"
                   unrecorded={shortPuttRecorded === 0}
                   value={shortPuttRecorded === 0 ? '–' : `${shortPuttPct}%`}
                   sub={shortPuttRecorded === 0 ? '미기록' : `성공 ${shortPuttSuccess} / 전체 ${puttMissHoles.length}`}
+                  failed={!!shortPuttRecorded && shortPuttPct < goalShortPutt}
                   onClick={metricClick('숏퍼팅성공률')}
                 />
               </div>
