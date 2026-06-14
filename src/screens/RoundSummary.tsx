@@ -57,7 +57,7 @@ const METRIC_INFO: Record<string, MetricInfo> = {
     description: 'OB, 해저드처럼 공을 잃거나 벌타를 받은 상황에서 잃은 타수입니다. 이 앱에서는 OB 1회 = 2타 손실, 해저드 1회 = 1타 손실로 계산합니다.',
     criteria: ['OB 발생: 2타 손실', '해저드 발생: 1타 손실', '벌타 없이 다음 샷을 정상적으로 칠 수 있으면 손실타수에 포함하지 않습니다.'],
     goalsLabel: '허용 손실 상한',
-    goals: [{ level: '97타 (+25 오버)', target: '4타 이하' }, { level: '92타 (+20 오버)', target: '3타 이하' }, { level: '87타 (+15 오버)', target: '2타 이하' }],
+    goals: [{ level: '97타 (+25 오버)', target: '5타 이하' }, { level: '92타 (+20 오버)', target: '3타 이하' }, { level: '87타 (+15 오버)', target: '2타 이하' }],
   },
   페어웨이안착률: {
     title: '페어웨이 안착률',
@@ -78,7 +78,7 @@ const METRIC_INFO: Record<string, MetricInfo> = {
     description: '파4에서는 세컨샷, 파5에서는 서드샷이 기준입니다. 이 샷이 홀 주변 40m 이내, 즉 다음 샷으로 정상적인 어프로치가 가능한 위치까지 갔는지를 봅니다.',
     criteria: ['홀 주변 40m 이내에 도달하면 성공', '40m 밖에 남으면 스코어링 구간 진입 실패', 'OB, 해저드, 나무 뒤, 벙커 턱, 깊은 러프 등 다음 샷이 어려운 위치도 스코어링 구간 진입 실패', '파3는 이 지표에서 제외합니다.'],
     goalsLabel: '허용 실패 상한',
-    goals: [{ level: '97타 (+25 오버)', target: '7회 이하' }, { level: '92타 (+20 오버)', target: '6회 이하' }, { level: '87타 (+15 오버)', target: '5회 이하' }],
+    goals: [{ level: '97타 (+25 오버)', target: '6회 이하' }, { level: '92타 (+20 오버)', target: '4회 이하' }, { level: '87타 (+15 오버)', target: '3회 이하' }],
   },
   웨지온실패: {
     title: '40~100m 웨지 온 성공',
@@ -201,7 +201,7 @@ function StatCard({ icon, label, value, sub, sub2, unrecorded, onClick, failed }
   const subCls = unrecorded ? 'text-gray-300' : 'text-gray-500';
   return (
     <div
-      className={`bg-card rounded-2xl p-3.5 shadow-sm flex flex-col gap-2${onClick ? ' cursor-pointer active:scale-[0.98] transition-transform' : ''}`}
+      className={`bg-card rounded-2xl p-3.5 shadow-sm flex flex-col${onClick ? ' cursor-pointer active:scale-[0.98] transition-transform' : ''}`}
       style={{ border: failed ? '1px solid #E24B4A' : '0.5px solid var(--color-border-tertiary)' }}
       onClick={onClick}
     >
@@ -214,9 +214,9 @@ function StatCard({ icon, label, value, sub, sub2, unrecorded, onClick, failed }
         </div>
         <p className="text-xs text-gray-500 leading-tight">{label}</p>
       </div>
-      <p className={`text-xl font-bold leading-none ${valueCls}`}>{value}</p>
-      {sub && <p className={`text-[11px] ${subCls}`}>{sub}</p>}
-      {sub2 && !unrecorded && <p className={`text-[11px] ${subCls}`}>{sub2}</p>}
+      <p className={`text-xl font-bold leading-none mt-2 mb-2 ${valueCls}`}>{value}</p>
+      {sub && <p className={`text-[11px] mt-1 ${subCls}`}>{sub}</p>}
+      {sub2 && !unrecorded && <p className={`text-[11px] mt-0.5 ${subCls}`}>{sub2}</p>}
     </div>
   );
 }
@@ -583,10 +583,10 @@ export default function RoundSummary({ round, viewMode, shareMode = false, holes
 
   const totalStrokes = holes.reduce((s, h) => s + h.total_strokes, 0);
   const goalTier = totalStrokes >= 97 ? 0 : totalStrokes >= 92 ? 1 : 2;
-  const goalPenalty = [4, 3, 2][goalTier];
+  const goalPenalty = [5, 3, 2][goalTier];
   const goalFairway = [40, 50, 55][goalTier];
   const goalGir = [3, 4, 6][goalTier];
-  const goalFatalMiss = [7, 6, 5][goalTier];
+  const goalFatalMiss = [6, 4, 3][goalTier];
   const goalWedge = [30, 40, 50][goalTier];
   const goalApproach = [30, 40, 50][goalTier];
   const goalTotalPutts = [40, 38, 36][goalTier];
@@ -696,6 +696,10 @@ const wedgeTotal = holes.reduce((sum, h) => {
 
   const obHoles = countHolesWithPenalty(holes, 'OB');
   const hazardHoles = countHolesWithPenalty(holes, '해저드');
+  const teeOB = holes.filter(h => [h.tee_penalty_type, h.tee2_penalty_type].includes('OB')).length;
+  const teeHZ = holes.filter(h => [h.tee_penalty_type, h.tee2_penalty_type].includes('해저드')).length;
+  const secondOB = holes.filter(h => [h.second1_penalty_type, h.second2_penalty_type, h.second3_penalty_type].includes('OB')).length;
+  const secondHZ = holes.filter(h => [h.second1_penalty_type, h.second2_penalty_type, h.second3_penalty_type].includes('해저드')).length;
 
   const fairwayRecorded = holes.filter(h => h.par !== 3 && h.tee_result).length;
   const girRecorded = holes.filter(hasGirRecorded).length;
@@ -1041,14 +1045,19 @@ const wedgeTotal = holes.reduce((sum, h) => {
                 </div>
               </div>
 
+              {(() => {
+                const teeSubParts = [teeOB > 0 ? `OB ${teeOB}회` : '', teeHZ > 0 ? `HZ ${teeHZ}회` : ''].filter(Boolean).join(' · ');
+                const secondSubParts = [secondOB > 0 ? `OB ${secondOB}회` : '', secondHZ > 0 ? `HZ ${secondHZ}회` : ''].filter(Boolean).join(' · ');
+                const girParts = [par3Gir > 0 ? `파3 ${par3Gir}홀` : '', par4Gir > 0 ? `파4 ${par4Gir}홀` : '', par5Gir > 0 ? `파5 ${par5Gir}홀` : ''].filter(Boolean);
+                return (
               <div className="grid grid-cols-2 gap-3">
-                <StatCard icon={<TicketX size={16} />} label="손실 타수" value={`${penalties}타`} sub={`OB ${obHoles}홀 · 해저드 ${hazardHoles}홀`} unrecorded={!penaltiesRecorded} failed={holes.length > 0 && penalties > goalPenalty} onClick={metricClick('손실타수')} />
+                <StatCard icon={<TicketX size={16} />} label="손실 타수" value={`${penalties}타`} sub={teeSubParts ? `티샷 (${teeSubParts})` : '티샷 없음'} sub2={secondSubParts ? `세컨샷 (${secondSubParts})` : undefined} unrecorded={!penaltiesRecorded} failed={holes.length > 0 && penalties > goalPenalty} onClick={metricClick('손실타수')} />
                 <StatCard
                   icon={<Flag size={16} />}
                   label="페어웨이 안착률"
                   unrecorded={fairwayRecorded === 0}
                   value={fairwayRecorded === 0 ? '–' : `${fairwayPct}%`}
-                  sub={fairwayRecorded === 0 ? '미기록' : `${fairwayHits} / ${fairwayDenom}`}
+                  sub={fairwayRecorded === 0 ? '미기록' : `${fairwayHits} / ${fairwayDenom}홀 안착`}
                   failed={!!fairwayRecorded && fairwayPct < goalFairway}
                   onClick={metricClick('페어웨이안착률')}
                 />
@@ -1057,7 +1066,8 @@ const wedgeTotal = holes.reduce((sum, h) => {
                   label="GIR"
                   unrecorded={girRecorded === 0}
                   value={girRecorded === 0 ? '–' : `${girCount}홀`}
-                  sub={girRecorded === 0 ? '미기록' : `파3 ${par3Gir}홀 · 파4 ${par4Gir}홀 · 파5 ${par5Gir}홀`}
+                  sub={girRecorded === 0 ? '미기록' : girParts.length === 0 ? '온그린 없음' : girParts.length === 3 ? girParts.slice(0, 2).join(' · ') : girParts.join(' · ')}
+                  sub2={girRecorded === 0 ? undefined : girParts.length === 3 ? girParts[2] : undefined}
                   failed={!!girRecorded && girCount < goalGir}
                   onClick={metricClick('GIR')}
                 />
@@ -1066,8 +1076,8 @@ const wedgeTotal = holes.reduce((sum, h) => {
                   label="어프로치권 실패"
                   unrecorded={fatalRecorded === 0}
                   value={fatalRecorded === 0 ? '–' : `${fatalMissCount}회`}
-                  sub={fatalRecorded === 0 ? '미기록' : `OB ${fatalOB} · 해저드 ${fatalHazard}`}
-                  sub2={fatalRecorded === 0 ? undefined : `어프로치불가 ${fatalApproachNG}`}
+                  sub={fatalRecorded === 0 ? '미기록' : `어프로치불가 ${fatalApproachNG}회`}
+                  sub2={fatalRecorded === 0 ? undefined : [fatalOB > 0 ? `OB ${fatalOB}회` : '', fatalHazard > 0 ? `해저드 ${fatalHazard}회` : ''].filter(Boolean).join(' · ') || undefined}
                   failed={!!fatalRecorded && fatalMissCount > goalFatalMiss}
                   onClick={metricClick('세컨치명미스')}
                 />
@@ -1076,7 +1086,7 @@ const wedgeTotal = holes.reduce((sum, h) => {
                   label="웨지온 성공률"
                   unrecorded={wedgeRecorded === 0}
                   value={wedgeRecorded === 0 ? '–' : wedgeSuccessRate !== null ? `${wedgeSuccessRate}%` : '–'}
-                  sub={wedgeRecorded === 0 ? '미기록' : `시도 ${wedgeTotal}홀 중`}
+                  sub={wedgeRecorded === 0 ? '미기록' : `${wedgeSuccess} / ${wedgeTotal}회 온그린`}
                   failed={!!wedgeRecorded && (wedgeSuccessRate ?? 0) < goalWedge}
                   onClick={metricClick('웨지온실패')}
                 />
@@ -1085,7 +1095,8 @@ const wedgeTotal = holes.reduce((sum, h) => {
                   label="어프로치 성공률"
                   unrecorded={approachRecorded === 0}
                   value={approachRecorded === 0 ? '–' : `${approachPct}%`}
-                  sub={approachRecorded === 0 ? '미기록' : `${approachSuccess} / ${approachAttempts}홀 성공`}
+                  sub={approachRecorded === 0 ? '미기록' : `20m이내 ${approach20Total > 0 ? Math.round((approach20Success / approach20Total) * 100) : '–'}%`}
+                  sub2={approachRecorded === 0 ? undefined : `20~40m ${approach2040Total > 0 ? Math.round((approach2040Success / approach2040Total) * 100) : '–'}%`}
                   failed={!!approachRecorded && approachPct < goalApproach}
                   onClick={metricClick('어프로치성공률')}
                 />
@@ -1095,11 +1106,13 @@ const wedgeTotal = holes.reduce((sum, h) => {
                   label="숏퍼팅 성공률"
                   unrecorded={shortPuttRecorded === 0}
                   value={shortPuttRecorded === 0 ? '–' : `${shortPuttPct}%`}
-                  sub={shortPuttRecorded === 0 ? '미기록' : `성공 ${shortPuttSuccess} / 전체 ${puttMissHoles.length}`}
+                  sub={shortPuttRecorded === 0 ? '미기록' : `${shortPuttSuccess} / ${puttMissHoles.length}회 성공`}
                   failed={!!shortPuttRecorded && shortPuttPct < goalShortPutt}
                   onClick={metricClick('숏퍼팅성공률')}
                 />
               </div>
+                );
+              })()}
 
               <div className="space-y-3">
                 <p className="text-xs text-gray-500 px-1">구간별 분석</p>
