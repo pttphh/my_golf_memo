@@ -64,14 +64,13 @@ export function computeFairwayPct(holes: Hole[]): number {
   return Math.round((hits / 14) * 100);
 }
 
-export function computeGirPct(holes: Hole[]): number {
-  const gir = holes.filter(h => {
+export function computeGirCount(holes: Hole[]): number {
+  return holes.filter(h => {
     if (h.par === 3) return h.tee_result === '그린 온(GIR)';
     if (h.par === 4) return h.second1_result === '그린 온(GIR)';
     if (h.par === 5) return h.second2_result === '그린 온(GIR)';
     return false;
   }).length;
-  return Math.round((gir / 18) * 100);
 }
 
 export function computeWedgeSuccessRate(holes: Hole[]): number {
@@ -179,14 +178,14 @@ export function SegmentLineChart({
   const rawMin = Math.min(...values, avgValue);
   const rawMax = Math.max(...values, avgValue);
   const rawRange = rawMax - rawMin || 1;
-  const pad = rawRange * 0.3;
+  const pad = Math.max(rawRange * 0.4, rawMax * 0.1, 1);
   const minV = yMin !== undefined ? yMin : Math.max(0, rawMin - pad);
   const maxV = yMax !== undefined ? yMax : rawMax + pad;
   const range = maxV - minV || 1;
   const padX = 24;
   const chartW = 320 - padX * 2;
-  const chartTop = 14;
-  const chartBottom = 58;
+  const chartTop = 10;
+  const chartBottom = 70;
   const chartH = chartBottom - chartTop;
 
   const toY = (v: number) => chartBottom - ((v - minV) / range) * chartH;
@@ -197,7 +196,7 @@ export function SegmentLineChart({
 
   return (
     <div>
-      <svg viewBox="0 0 320 80" className="w-full h-auto">
+      <svg viewBox="0 0 320 90" className="w-full h-auto">
         <line
           x1={padX}
           y1={avgY}

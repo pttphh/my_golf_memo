@@ -368,8 +368,8 @@ function SecondShotBlock({ par, shotIndex, result, penaltyType, missDetail, miss
     );
   }
 
-  const isGirLabelFirst = (par === 5 && shotIndex === 2) || (par !== 5 && shotIndex === 1);
-  const greenOnLabel = isGirLabelFirst ? '그린 온(GIR)' : '그린 온';
+  const isGirLabelFirst = (par === 5 && shotIndex === 2) || (par === 4 && shotIndex === 1);
+    const greenOnLabel = isGirLabelFirst ? '그린 온(GIR)' : '그린 온';
   const showSub = result === '그린 미스';
 
   function getApproachSubSelection(): string {

@@ -13,7 +13,7 @@ import {
   computeRoundShortPuttMissCount,
   computeTeePenaltyStrokes,
   computeFairwayPct,
-  computeGirPct,
+  computeGirCount,
   computeWedgeSuccessRate,
   computeApproach20Pct,
   computeApproach2040Pct,
@@ -57,56 +57,56 @@ const METRIC_INFO: Record<string, MetricInfo> = {
     description: 'OB, 해저드처럼 공을 잃거나 벌타를 받은 상황에서 잃은 타수입니다. 이 앱에서는 OB 1회 = 2타 손실, 해저드 1회 = 1타 손실로 계산합니다.',
     criteria: ['OB 발생: 2타 손실', '해저드 발생: 1타 손실', '벌타 없이 다음 샷을 정상적으로 칠 수 있으면 손실타수에 포함하지 않습니다.'],
     goalsLabel: '허용 손실 상한',
-    goals: [{ level: '100타대', target: '4타 이하' }, { level: '90타대', target: '2타 이하' }, { level: '80타대', target: '1타 이하' }],
+    goals: [{ level: '97타 (+25 오버)', target: '4타 이하' }, { level: '92타 (+20 오버)', target: '3타 이하' }, { level: '87타 (+15 오버)', target: '2타 이하' }],
   },
   페어웨이안착률: {
     title: '페어웨이 안착률',
     description: '티샷이 페어웨이에 안착한 비율입니다. 파3를 제외한 홀에서 계산합니다.',
     criteria: ['페어웨이에 있으면 성공', '러프, 벙커, OB, 해저드 등은 실패', '단, 페어웨이를 놓쳤더라도 다음 샷이 가능하면 스코어상 치명적인 미스는 아닐 수 있습니다.'],
     goalsLabel: '권장 안착률',
-    goals: [{ level: '100타대', target: '40% 이상' }, { level: '90타대', target: '50% 이상' }, { level: '80타대', target: '60% 이상' }],
+    goals: [{ level: '97타 (+25 오버)', target: '40% 이상' }, { level: '92타 (+20 오버)', target: '50% 이상' }, { level: '87타 (+15 오버)', target: '55% 이상' }],
   },
   GIR: {
     title: 'GIR',
-    description: '정해진 타수 안에 공을 그린에 올린 비율입니다. GIR은 "그린 적중률"로 볼 수 있습니다.',
+    description: '정해진 타수 안에 공을 그린에 올린 홀 수입니다.',
     criteria: ['파3: 1타 안에 온그린', '파4: 2타 안에 온그린', '파5: 3타 안에 온그린'],
-    goalsLabel: '권장 달성률',
-    goals: [{ level: '100타대', target: '10% 이상' }, { level: '90타대', target: '20% 이상' }, { level: '80타대', target: '30% 이상' }],
+    goalsLabel: '권장 달성 홀 수',
+    goals: [{ level: '97타 (+25 오버)', target: '3홀 이상' }, { level: '92타 (+20 오버)', target: '4홀 이상' }, { level: '87타 (+15 오버)', target: '6홀 이상' }],
   },
   세컨치명미스: {
     title: '40m 이내 스코어링 구간 진입 실패',
     description: '파4에서는 세컨샷, 파5에서는 서드샷이 기준입니다. 이 샷이 홀 주변 40m 이내, 즉 다음 샷으로 정상적인 어프로치가 가능한 위치까지 갔는지를 봅니다.',
     criteria: ['홀 주변 40m 이내에 도달하면 성공', '40m 밖에 남으면 스코어링 구간 진입 실패', 'OB, 해저드, 나무 뒤, 벙커 턱, 깊은 러프 등 다음 샷이 어려운 위치도 스코어링 구간 진입 실패', '파3는 이 지표에서 제외합니다.'],
     goalsLabel: '허용 실패 상한',
-    goals: [{ level: '100타대', target: '7개 이하' }, { level: '90타대', target: '5회 이하' }, { level: '80타대', target: '3회 이하' }],
+    goals: [{ level: '97타 (+25 오버)', target: '7회 이하' }, { level: '92타 (+20 오버)', target: '6회 이하' }, { level: '87타 (+15 오버)', target: '5회 이하' }],
   },
   웨지온실패: {
     title: '40~100m 웨지 온 성공',
     description: '40m 초과 ~ 100m 미만 거리에서 그린을 노린 웨지샷이 온그린에 성공한 비율입니다.',
     criteria: ['40m 초과 ~ 100m 미만 거리에서 그린에 올리면 성공', '그린을 놓치면 실패', '거리 조절 실패, 짧음, 김, 좌우 미스 모두 실패에 포함합니다.'],
     goalsLabel: '권장 성공률',
-    goals: [{ level: '100타대', target: '30% 이상' }, { level: '90타대', target: '40% 이상' }, { level: '80타대', target: '50% 이상' }],
+    goals: [{ level: '97타 (+25 오버)', target: '30% 이상' }, { level: '92타 (+20 오버)', target: '40% 이상' }, { level: '87타 (+15 오버)', target: '50% 이상' }],
   },
   어프로치성공률: {
     title: '어프로치 성공률',
     description: '40m 이내 그린 주변 어프로치가 홀 근처에 잘 붙은 비율입니다.',
     criteria: ['20m 이내 어프로치: 2m 이내에 붙이면 성공', '20~40m 어프로치: 5m 이내에 붙이면 성공', '기준 거리보다 멀게 남으면 실패', '40m 초과 샷은 웨지 온 지표에서 봅니다.'],
     goalsLabel: '권장 성공률',
-    goals: [{ level: '100타대', target: '35% 이상' }, { level: '90타대', target: '45% 이상' }, { level: '80타대', target: '55% 이상' }],
+    goals: [{ level: '97타 (+25 오버)', target: '30% 이상' }, { level: '92타 (+20 오버)', target: '40% 이상' }, { level: '87타 (+15 오버)', target: '50% 이상' }],
   },
   퍼팅: {
     title: '퍼팅',
     description: '한 라운드에서 그린 위에서 친 전체 퍼팅 수입니다.',
     criteria: ['그린 위에서 친 퍼팅만 계산합니다.', '3퍼팅은 한 홀에서 퍼팅을 3번 이상 한 경우입니다.', '퍼팅 수가 많다면 3퍼팅이 많았는지, 첫 퍼팅 거리가 길었는지도 함께 봐야 합니다.'],
     goalsLabel: '권장 퍼팅 횟수',
-    goals: [{ level: '100타대', target: '38개 이하 / 3퍼팅 4회 이하' }, { level: '90타대', target: '36개 이하 / 3퍼팅 3회 이하' }, { level: '80타대', target: '34개 이하 / 3퍼팅 2회 이하' }, { level: '싱글 수준', target: '32개 이하 / 3퍼팅 1회 이하' }],
+    goals: [{ level: '97타 (+25 오버)', target: '40개 이하 / 3퍼팅 6회 이하' }, { level: '92타 (+20 오버)', target: '38개 이하 / 3퍼팅 4회 이하' }, { level: '87타 (+15 오버)', target: '36개 이하 / 3퍼팅 3회 이하' }],
   },
   숏퍼팅성공률: {
     title: '숏퍼팅 성공률',
     description: 'OK를 제외한 2m 이내 퍼트 성공률입니다. 보통 약 1.2~2.0m 퍼트를 기준으로 봅니다.',
     criteria: ['2m 이내 퍼팅을 넣으면 성공', '2m 이내 퍼팅을 놓치면 실패', '특히 1m 이내 퍼팅 실패가 반복되면 별도로 점검이 필요합니다.'],
     goalsLabel: '권장 성공률',
-    goals: [{ level: '100타대', target: '40% 이상' }, { level: '90타대', target: '50% 이상' }, { level: '80타대', target: '60% 이상' }],
+    goals: [{ level: '97타 (+25 오버)', target: '40% 이상' }, { level: '92타 (+20 오버)', target: '50% 이상' }, { level: '87타 (+15 오버)', target: '60% 이상' }],
   },
 };
 
@@ -236,7 +236,7 @@ function MetricInfoModal({ info, onClose }: { info: MetricInfo; onClose: () => v
           <tbody>
             {info.goals.map((g, i) => (
               <tr key={i} className={i % 2 === 0 ? 'bg-gray-50' : ''}>
-                <td className="py-1.5 px-2 text-gray-500 text-xs w-24">{g.level}</td>
+<td className="py-1.5 px-2 text-gray-500 text-xs w-32 whitespace-nowrap">{g.level}</td>
                 <td className="py-1.5 px-2 text-gray-700">{g.target}</td>
               </tr>
             ))}
@@ -613,7 +613,9 @@ export default function RoundSummary({ round, viewMode, shareMode = false, holes
   const fairwayPct = Math.round((fairwayHits / fairwayDenom) * 100);
 
   const girCount = holes.filter(isGirHole).length;
-  const girPct = Math.round((girCount / 18) * 100);
+  const par3Gir = holes.filter(h => h.par === 3 && h.tee_result === '그린 온(GIR)').length;
+  const par4Gir = holes.filter(h => h.par === 4 && h.second1_result === '그린 온(GIR)').length;
+  const par5Gir = holes.filter(h => h.par === 5 && h.second2_result === '그린 온(GIR)').length;
 
   const approachSuccess = holes.reduce((sum, h) => {
     let count = 0;
@@ -733,7 +735,7 @@ const wedgeTotal = holes.reduce((sum, h) => {
   }));
   const chart6TeePenalty = chartRounds.map(d => ({ value: computeTeePenaltyStrokes(d.holes), date: d.round.date }));
   const chart6Fairway = chartRounds.map(d => ({ value: computeFairwayPct(d.holes), date: d.round.date }));
-  const chart6Gir = chartRounds.map(d => ({ value: computeGirPct(d.holes), date: d.round.date }));
+  const chart6Gir = chartRounds.map(d => ({ value: computeGirCount(d.holes), date: d.round.date }));
   const chart6WedgeSuccess = chartRounds.map(d => ({ value: computeWedgeSuccessRate(d.holes), date: d.round.date }));
   const chart6Approach20 = chartRounds.map(d => ({ value: computeApproach20Pct(d.holes), date: d.round.date }));
   const chart6Approach2040 = chartRounds.map(d => ({ value: computeApproach2040Pct(d.holes), date: d.round.date }));
@@ -940,18 +942,6 @@ const wedgeTotal = holes.reduce((sum, h) => {
                 <span className="text-5xl font-extrabold">{totalStrokes}타</span>
                 <span className="text-green-200 text-xl font-semibold pb-1">{overSign} 오버파</span>
               </div>
-              <div className="mt-4 flex gap-3">
-                <div className="flex-1 bg-green-800/50 rounded-xl p-3 text-center">
-                <p className="text-green-200 text-xs mb-1">전반 {roundData.course_front ? `(${roundData.course_front})` : '(1-9홀)'}</p>
-                  <p className="text-white font-bold text-xl">{front9Score}</p>
-                  <p className="text-green-300 text-sm">{f9Sign}</p>
-                </div>
-                <div className="flex-1 bg-green-800/50 rounded-xl p-3 text-center">
-                <p className="text-green-200 text-xs mb-1">후반 {roundData.course_back ? `(${roundData.course_back})` : '(10-18홀)'}</p>
-                  <p className="text-white font-bold text-xl">{back9Score}</p>
-                  <p className="text-green-300 text-sm">{b9Sign}</p>
-                </div>
-              </div>
             </>
           )}
         </div>
@@ -959,6 +949,18 @@ const wedgeTotal = holes.reduce((sum, h) => {
         <div className={`px-4 py-5 space-y-5 overflow-y-auto flex-1 ${shareMode ? 'pb-8' : 'pb-28'}`}>
           {holes.length > 0 && (
             <>
+              <div className="flex gap-3 px-0">
+                <div className="flex-1 bg-white rounded-2xl border border-gray-100 shadow-sm p-3 text-center">
+                  <p className="text-gray-400 text-xs mb-1">전반 {roundData.course_front ? `(${roundData.course_front})` : '(1-9홀)'}</p>
+                  <p className="text-gray-800 font-bold text-xl">{front9Score}</p>
+                  <p className="text-gray-500 text-sm">{f9Sign}</p>
+                </div>
+                <div className="flex-1 bg-white rounded-2xl border border-gray-100 shadow-sm p-3 text-center">
+                  <p className="text-gray-400 text-xs mb-1">후반 {roundData.course_back ? `(${roundData.course_back})` : '(10-18홀)'}</p>
+                  <p className="text-gray-800 font-bold text-xl">{back9Score}</p>
+                  <p className="text-gray-500 text-sm">{b9Sign}</p>
+                </div>
+              </div>
               {!shareMode && (
               <div className="bg-card rounded-2xl border border-gray-100 shadow-sm p-4">
                 {memoEditing ? (
@@ -1038,8 +1040,8 @@ const wedgeTotal = holes.reduce((sum, h) => {
                   icon={<Trophy size={16} />}
                   label="GIR"
                   unrecorded={girRecorded === 0}
-                  value={girRecorded === 0 ? '–' : `${girPct}%`}
-                  sub={girRecorded === 0 ? '미기록' : `${girCount} / 18`}
+                  value={girRecorded === 0 ? '–' : `${girCount}홀`}
+                  sub={girRecorded === 0 ? '미기록' : `파3 ${par3Gir}홀 · 파4 ${par4Gir}홀 · 파5 ${par5Gir}홀`}
                   onClick={metricClick('GIR')}
                 />
                 <StatCard
@@ -1140,9 +1142,8 @@ const wedgeTotal = holes.reduce((sum, h) => {
                       lineColor="#1D9E75"
                       avgValue={avgChart6Gir}
                       caption="GIR 추이 · 최근 6라운드 (높을수록 좋음)"
-                      formatValue={v => `${v}%`}
+                      formatValue={v => `${v}홀`}
                       yMin={0}
-                      yMax={100}
                     />
                     <div className="mt-4">
                       <p className="text-xs font-semibold text-gray-500 mb-2 mt-4">스코어링 구간 진입 실패</p>
