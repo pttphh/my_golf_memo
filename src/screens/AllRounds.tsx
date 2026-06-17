@@ -266,8 +266,9 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
     load();
   }, []);
 
+  const detailedData = data.filter(d => d.round.is_detailed !== false);
   const filteredData =
-    filter === 'recent5' ? data.slice(0, 5) : filter === 'recent10' ? data.slice(0, 10) : data;
+    filter === 'recent5' ? detailedData.slice(0, 5) : filter === 'recent10' ? detailedData.slice(0, 10) : detailedData;
   const roundCount = filteredData.length;
   const allHoles = filteredData.flatMap(d => d.holes);
 

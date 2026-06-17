@@ -261,6 +261,7 @@ function roundToEditForm(r: Round) {
     companion1: r.companion1 ?? '',
     companion2: r.companion2 ?? '',
     companion3: r.companion3 ?? '',
+    is_detailed: r.is_detailed ?? true,
   };
 }
 
@@ -290,6 +291,19 @@ function EditModal({
           <div>
             <label className="block text-xs text-gray-500 mb-1">골프장 이름</label>
             <input type="text" value={form.course_name} onChange={e => onChange({ course_name: e.target.value })} className={inputCls} />
+          </div>
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">기록 방식</label>
+            <div className="flex gap-2">
+              <button
+                onClick={() => onChange({ is_detailed: true })}
+                className={`flex-1 py-2 rounded-xl text-sm font-medium border ${form.is_detailed !== false ? 'bg-[#1B4332] text-white border-[#1B4332]' : 'bg-white text-gray-500 border-gray-200'}`}
+              >상세</button>
+              <button
+                onClick={() => onChange({ is_detailed: false })}
+                className={`flex-1 py-2 rounded-xl text-sm font-medium border ${form.is_detailed === false ? 'bg-[#1B4332] text-white border-[#1B4332]' : 'bg-white text-gray-500 border-gray-200'}`}
+              >단순</button>
+            </div>
           </div>
           <div>
             <label className="block text-xs text-gray-500 mb-1">전반 코스명</label>
@@ -814,6 +828,7 @@ const wedgeTotal = holes.reduce((sum, h) => {
       companion1: editForm.companion1.trim(),
       companion2: editForm.companion2.trim(),
       companion3: editForm.companion3.trim(),
+      is_detailed: editForm.is_detailed,
     };
     const { error } = await supabase.from('rounds').update(payload).eq('id', roundData.id);
     setEditSaving(false);
@@ -1045,6 +1060,8 @@ const wedgeTotal = holes.reduce((sum, h) => {
                 </div>
               </div>
 
+              {roundData.is_detailed !== false && (
+              <>
               {(() => {
                 const teeSubParts = [teeOB > 0 ? `OB ${teeOB}회` : '', teeHZ > 0 ? `HZ ${teeHZ}회` : ''].filter(Boolean).join(' · ');
                 const secondSubParts = [secondOB > 0 ? `OB ${secondOB}회` : '', secondHZ > 0 ? `HZ ${secondHZ}회` : ''].filter(Boolean).join(' · ');
@@ -1291,6 +1308,8 @@ const wedgeTotal = holes.reduce((sum, h) => {
                 )}
 
               </div>
+              </>
+              )}
 
               <button onClick={() => onMissBreakdown?.()}
                 className="w-full bg-white border-2 border-[#1B4332]/30 text-[#1B4332] py-3.5 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">

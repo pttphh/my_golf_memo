@@ -22,6 +22,7 @@ export default function NewRound({ onStart }: Props) {
   const [companionInput, setCompanionInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isDetailed, setIsDetailed] = useState(true);
 
   function addCompanion() {
     const name = companionInput.trim();
@@ -56,6 +57,7 @@ export default function NewRound({ onStart }: Props) {
         companion2: companions[1] ?? '',
         companion3: companions[2] ?? '',
         user_id: user?.id,
+        is_detailed: isDetailed,
       };
       const { data: insertedRound, error: err } = await supabase
         .from('rounds')
@@ -103,6 +105,27 @@ export default function NewRound({ onStart }: Props) {
     />
   </div>
 </div>
+
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-3">
+          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">기록 방식</h2>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setIsDetailed(true)}
+              className={`flex-1 py-2.5 rounded-xl text-sm font-medium border transition-colors ${isDetailed ? 'bg-[#1B4332] text-white border-[#1B4332]' : 'bg-white text-gray-500 border-gray-200'}`}
+            >
+              상세 기록
+            </button>
+            <button
+              onClick={() => setIsDetailed(false)}
+              className={`flex-1 py-2.5 rounded-xl text-sm font-medium border transition-colors ${!isDetailed ? 'bg-[#1B4332] text-white border-[#1B4332]' : 'bg-white text-gray-500 border-gray-200'}`}
+            >
+              단순 기록
+            </button>
+          </div>
+          <p className="text-xs text-gray-400">
+            {isDetailed ? '티샷·세컨샷·어프로치·퍼팅 등 모든 항목을 기록합니다.' : '스코어와 퍼팅 수만 기록합니다. 통계 집계에서 제외됩니다.'}
+          </p>
+        </div>
 
         {/* Course */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">

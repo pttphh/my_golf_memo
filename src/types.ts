@@ -11,6 +11,7 @@ export interface Round {
   memo: string;
   user_id?: string;
   is_public?: boolean;
+  is_detailed?: boolean;
 }
 
 export interface Hole {
