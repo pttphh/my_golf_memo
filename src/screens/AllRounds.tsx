@@ -272,7 +272,7 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
   const roundCount = filteredData.length;
   const allHoles = filteredData.flatMap(d => d.holes);
 
-  const chart6 = [...data.slice(0, 6)].reverse();
+  const chart6 = [...detailedData.slice(0, 6)].reverse();
 
   const allBestData =
     data.length > 0 ? data.reduce((best, d) => (d.totalStrokes < best.totalStrokes ? d : best)) : null;

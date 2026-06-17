@@ -570,7 +570,7 @@ export default function RoundSummary({ round, viewMode, shareMode = false, holes
         holes: (holesMap[r.id] ?? []).sort((a, b) => a.hole_number - b.hole_number),
       }));
 
-      setChartRounds([...combined].reverse());
+      setChartRounds([...combined].filter(d => d.round.is_detailed !== false).reverse());
     }
     fetchChartRounds();
   }, [shareMode]);
