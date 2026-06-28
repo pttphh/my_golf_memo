@@ -319,7 +319,7 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
   const avgApproachSuccess = pctFromTotals(
     periodHoles.filter(h => h.approach1_result === '성공' || h.approach2_result === '성공').length,
     periodHoles.filter(h => h.approach1_club === '20m이내').length,
-  );  );
+  );  
   const avgShortPuttSuccess = pctFromTotals(
     periodHoles.filter(h => h.putt_miss === '숏퍼팅 성공').length,
     periodHoles.filter(h => h.putt_miss).length,
