@@ -38,11 +38,21 @@ export function computeRoundFatalMissCount(holes: Hole[]): number {
   }, 0);
 }
 
-/** 20m이내·20~40m approach1 기준 성공률 (추이 그래프용) */
+/** approach1~3 결과 기준 근접률 (추이 그래프용) */
 export function computeRoundApproachTrendPct(holes: Hole[]): number {
-  const attempts = holes.filter(h => h.approach1_club === '20m이내' || h.approach1_club === '20~40m');
-  if (attempts.length === 0) return 0;
-  return Math.round((attempts.filter(h => h.approach1_result === '성공').length / attempts.length) * 100);
+  const results = holes.flatMap(h => [h.approach1_result, h.approach2_result, h.approach3_result]).filter(Boolean);
+  if (results.length === 0) return 0;
+  return Math.round((results.filter(r => r === '성공').length / results.length) * 100);
+}
+
+export function computeRoundApproachFailCount(holes: Hole[]): number {
+  return holes.reduce((sum, h) =>
+    sum
+    + (h.approach1_result === '실패' ? 1 : 0)
+    + (h.approach2_result === '실패' ? 1 : 0)
+    + (h.approach3_result === '실패' ? 1 : 0),
+    0,
+  );
 }
 
 export function computeRoundShortPuttMissCount(holes: Hole[]): number {

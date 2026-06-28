@@ -57,8 +57,8 @@ function HoleCard({ hole }: { hole: Hole }) {
   ].filter(s => s.club || s.result || s.miss || s.memo);
 
   const approaches = [
-    { key: '어프로치 1', club: hole.approach1_club, miss: hole.approach1_miss, memo: hole.approach1_memo },
-    { key: '어프로치 2', club: hole.approach2_club, miss: hole.approach2_miss, memo: hole.approach2_memo },
+    { key: '어프로치 1', club: hole.approach1_club, result: hole.approach1_result, miss: hole.approach1_miss, memo: hole.approach1_memo },
+    { key: '어프로치 2', club: hole.approach2_club, result: hole.approach2_result, miss: hole.approach2_miss, memo: hole.approach2_memo },
   ].filter(a => a.club || a.miss || a.memo);
 
   return (
@@ -98,7 +98,7 @@ function HoleCard({ hole }: { hole: Hole }) {
               {approaches.length > 1 ? a.key : '어프로치'}
             </p>
             <div className="divide-y divide-gray-50">
-              <Row label="클럽" value={a.club} />
+              <Row label="결과" value={a.result} />
               <Row label="미스 유형" value={a.miss} />
               <Row label="메모" value={a.memo} />
             </div>

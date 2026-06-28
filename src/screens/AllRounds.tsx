@@ -317,16 +317,14 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
   const avgCriticalMiss = avgPerRoundNullable(validFatalRounds, roundFatalMissCount);
   const avgWedgeSuccess = avgPerRoundNullable(validWedgeRounds, roundWedgeSuccessCount);
   const avgApproachSuccess = pctFromTotals(
-    periodHoles.filter(h => h.approach1_result === '성공' || h.approach2_result === '성공').length,
-    periodHoles.filter(h => h.approach1_club === '20m이내').length,
-  );  
+    periodHoles.reduce((sum, h) => sum + (h.approach1_result === '성공' ? 1 : 0) + (h.approach2_result === '성공' ? 1 : 0), 0),
+    periodHoles.reduce((sum, h) => sum + (h.approach1_result ? 1 : 0) + (h.approach2_result ? 1 : 0), 0),
+  );
   const avgShortPuttSuccess = pctFromTotals(
     periodHoles.filter(h => h.putt_miss === '숏퍼팅 성공').length,
     periodHoles.filter(h => h.putt_miss).length,
   );
 
-  const approach20Success = periodHoles.filter(h => h.approach1_club === '20m이내' && h.approach1_result === '성공').length;
-  const approach20Total = periodHoles.filter(h => h.approach1_club === '20m이내').length;
   const avgApproachFail = avgPerRound(filteredData, roundApproachFailCount);
 
   const avg1Putt = avgPerRound(filteredData, holes => holes.filter(h => h.putts === 1).length);
@@ -565,16 +563,19 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
                 <div className="grid grid-cols-2 gap-2 mb-4">
                   {(() => {
                     const d = metricDisplay(avgApproachSuccess, v => `${v}%`, 'text-[#1B4332]');
-                    return <MetricCell label="어프로치 성공률" value={d.value} sub={d.sub} valueClass={d.valueClass} />;
+                    return <MetricCell label="어프로치 근접률" value={d.value} sub={d.sub} valueClass={d.valueClass} />;
                   })()}
-                  <MetricCell label="20m이내 2m안착" value={approach20Total === 0 ? '–' : `${Math.round((approach20Success / approach20Total) * 100)}%`} valueClass="text-teal-600" />
+                  {(() => {
+                    const d = metricDisplay(avgApproachFail, v => `${v}회`, 'text-amber-600');
+                    return <MetricCell label="어프로치 실패 횟수" value={d.value} sub={d.sub} valueClass={d.valueClass} />;
+                  })()}
                 </div>
-                                <p className="text-xs font-semibold text-gray-500 mb-2">어프로치 성공률 추이</p>
+                <p className="text-xs font-semibold text-gray-500 mb-2">어프로치 근접률 추이</p>
                 <SegmentLineChart
                   points={chart6ApproachSuccess}
                   lineColor="#1D9E75"
                   avgValue={avgChartApproachSuccess}
-                  caption="어프로치 성공률 추이 · 최근 6라운드 (높을수록 좋음)"
+                  caption="어프로치 근접률 추이 · 최근 6라운드 (높을수록 좋음)"
                   formatValue={v => `${v}%`}
                   yMin={0}
                   yMax={100}
@@ -591,7 +592,7 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
                 <p className="text-xs font-semibold text-gray-500 mb-2 mt-4">미스 TOP5</p>
                 <RankedMissBarChart items={approachMissBars} />
                 <SegmentCardFootnote>
-                * 어프로치 성공률: 20m이내 2m안착 기준
+                * 어프로치 근접률: 어프로치한 거리의 10% 이내로 붙이면 성공 (예: 20m → 2m, 40m → 4m)
                                 </SegmentCardFootnote>
               </div>
             )}

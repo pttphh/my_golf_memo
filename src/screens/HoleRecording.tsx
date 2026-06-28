@@ -52,9 +52,6 @@ const TEE_CLUBS = ['드라이버', '우드', '유틸', '아이언', '웨지'];
 const SHOT_CLUBS = ['우드', '유틸', '아이언', '웨지'];
 const PENALTY_TRIGGER = '패널티';
 
-const APPROACH_DISTANCES = [
-  { label: '20m이내 · 2m 안착', value: '20m이내' },
-] as const;
 const APPROACH_OUTCOMES = [
   { label: '성공', value: '성공' },
   { label: '실패', value: '실패' },
@@ -461,51 +458,29 @@ function ApproachBlock({ distance, result, missDetail, miss, memo,
   onMissChange: (v: string) => void;
   onMemoChange: (v: string) => void;
 }) {
-  function handleDistance(value: string) {
-    if (distance === value) {
-      onDistanceChange('');
-      onResultChange('');
-      onMissDetailChange('');
-    } else {
-      onDistanceChange(value);
-      onResultChange('');
-      onMissDetailChange('');
-    }
-  }
-
   function handleOutcome(value: string) {
     if (result === value) {
       onResultChange('');
       onMissDetailChange('');
+      onDistanceChange('');
     } else {
       onResultChange(value);
+      onDistanceChange('기록');
       if (value !== '실패') onMissDetailChange('');
     }
   }
 
   return (
     <div className="space-y-3">
-      <select
-        value={distance}
-        onChange={e => handleDistance(e.target.value)}
-        className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 focus:border-[#1B4332] text-gray-700"
-      >
-        <option value="">시도 거리 선택</option>
-        {APPROACH_DISTANCES.map(({ label, value }) => (
-          <option key={value} value={value}>{label}</option>
-        ))}
-      </select>
-
-      {distance && (
-        <div>
-          <p className="text-xs text-gray-500 mb-1.5">결과</p>
-          <div className="flex flex-wrap gap-2">
-            {APPROACH_OUTCOMES.map(({ label, value }) => (
-              <Chip key={value} label={label} selected={result === value} onClick={() => handleOutcome(value)} />
-            ))}
-          </div>
+      <div>
+        <p className="text-xs text-gray-500 mb-1.5">결과</p>
+        <div className="flex flex-wrap gap-2">
+          {APPROACH_OUTCOMES.map(({ label, value }) => (
+            <Chip key={value} label={label} selected={result === value} onClick={() => handleOutcome(value)} />
+          ))}
         </div>
-      )}
+        <p className="text-[10px] text-gray-400">어프로치한 거리의 10%이내로 홀에 붙이면 성공 (예: 20m 남았으면 2m 이내)</p>
+      </div>
 
       {result === '실패' && (
         <div className="pl-3 border-l-2 border-gray-200 space-y-2">

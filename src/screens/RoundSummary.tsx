@@ -10,12 +10,12 @@ import {
   computeRoundPenaltyStrokes,
   computeRoundFatalMissCount,
   computeRoundApproachTrendPct,
+  computeRoundApproachFailCount,
   computeRoundShortPuttMissCount,
   computeTeePenaltyStrokes,
   computeFairwayPct,
   computeGirCount,
   computeWedgeSuccessRate,
-  computeApproach20Pct,
   computeTotalPutts,
   computeThreePuttCount,
   computeShortPuttSuccessRate,
@@ -87,11 +87,11 @@ const METRIC_INFO: Record<string, MetricInfo> = {
     goals: [{ level: '97타 (+25 오버)', target: '30% 이상' }, { level: '92타 (+20 오버)', target: '40% 이상' }, { level: '87타 (+15 오버)', target: '50% 이상' }],
   },
   어프로치성공률: {
-    title: '어프로치 성공률',
-    description: '20m 이내 그린 주변 어프로치가 홀 근처에 잘 붙은 비율입니다.',
-    criteria: ['20m 이내 어프로치: 2m 이내에 붙이면 성공', '기준 거리보다 멀게 남으면 실패', '20m 초과 샷은 웨지 온 지표에서 봅니다.'],
-        goalsLabel: '권장 성공률',
-    goals: [{ level: '97타 (+25 오버)', target: '30% 이상' }, { level: '92타 (+20 오버)', target: '40% 이상' }, { level: '87타 (+15 오버)', target: '50% 이상' }],
+    title: '어프로치 근접률',
+    description: '어프로치한 거리의 10% 이내로 홀에 붙이면 성공입니다. (예: 20m 남았으면 2m 이내, 40m 남았으면 4m 이내)',
+    criteria: ['어프로치한 거리의 10% 이내로 붙이면 성공 (예: 20m → 2m, 40m → 4m)', '10% 거리보다 멀게 남으면 실패', '40m 초과 샷은 웨지 온 지표에서 봅니다.'],
+    goalsLabel: '권장 근접률',
+    goals: [{ level: '97타 (+25 오버)', target: '25% 이상' }, { level: '92타 (+20 오버)', target: '35% 이상' }, { level: '87타 (+15 오버)', target: '45% 이상' }],
   },
   퍼팅: {
     title: '퍼팅',
@@ -728,8 +728,6 @@ const wedgeTotal = holes.reduce((sum, h) => {
 
   const segFairwayPct = fairwayPct;
   const segSecondGir = holes.filter(isGirHole).length;
-  const approach20Success = holes.filter(h => h.approach1_club === '20m이내' && h.approach1_result === '성공').length;
-  const approach20Total = holes.filter(h => h.approach1_club === '20m이내').length;
   const avgPuttsPerHole = holes.length > 0
     ? Math.round((totalPutts / holes.length) * 10) / 10
     : 0;
@@ -759,6 +757,10 @@ const wedgeTotal = holes.reduce((sum, h) => {
     value: computeRoundApproachTrendPct(d.holes),
     date: d.round.date,
   }));
+  const chart6ApproachFail = chartRounds.map(d => ({
+    value: computeRoundApproachFailCount(d.holes),
+    date: d.round.date,
+  }));
   const chart6ShortPuttMiss = chartRounds.map(d => ({
     value: computeRoundShortPuttMissCount(d.holes),
     date: d.round.date,
@@ -767,19 +769,18 @@ const wedgeTotal = holes.reduce((sum, h) => {
   const chart6Fairway = chartRounds.map(d => ({ value: computeFairwayPct(d.holes), date: d.round.date }));
   const chart6Gir = chartRounds.map(d => ({ value: computeGirCount(d.holes), date: d.round.date }));
   const chart6WedgeSuccess = chartRounds.map(d => ({ value: computeWedgeSuccessRate(d.holes), date: d.round.date }));
-  const chart6Approach20 = chartRounds.map(d => ({ value: computeApproach20Pct(d.holes), date: d.round.date }));
   const chart6TotalPutts = chartRounds.map(d => ({ value: computeTotalPutts(d.holes), date: d.round.date }));
   const chart6ThreePutt = chartRounds.map(d => ({ value: computeThreePuttCount(d.holes), date: d.round.date }));
   const chart6ShortPuttSuccess = chartRounds.map(d => ({ value: computeShortPuttSuccessRate(d.holes), date: d.round.date }));
   const avgChartPenalty = chartPointsAvg(chart6Penalty);
   const avgChartCriticalMiss = chartPointsAvg(chart6CriticalMiss);
   const avgChartApproachSuccess = chartPointsAvg(chart6ApproachSuccess);
+  const avgChart6ApproachFail = chartPointsAvg(chart6ApproachFail);
   const avgChartShortPuttMiss = chartPointsAvg(chart6ShortPuttMiss);
   const avgChart6TeePenalty = chartPointsAvg(chart6TeePenalty);
   const avgChart6Fairway = chartPointsAvg(chart6Fairway);
   const avgChart6Gir = chartPointsAvg(chart6Gir);
   const avgChart6WedgeSuccess = chartPointsAvg(chart6WedgeSuccess);
-  const avgChart6Approach20 = chartPointsAvg(chart6Approach20);
   const avgChart6TotalPutts = chartPointsAvg(chart6TotalPutts);
   const avgChart6ThreePutt = chartPointsAvg(chart6ThreePutt);
   const avgChart6ShortPuttSuccess = chartPointsAvg(chart6ShortPuttSuccess);
@@ -1104,10 +1105,10 @@ const wedgeTotal = holes.reduce((sum, h) => {
                 />
                 <StatCard
                   icon={<MapPinCheck size={16} />}
-                  label="어프로치 성공률"
+                  label="어프로치 근접률"
                   unrecorded={approachRecorded === 0}
                   value={approachRecorded === 0 ? '–' : `${approachPct}%`}
-                  sub={approachRecorded === 0 ? '미기록' : `20m이내 ${approach20Total > 0 ? Math.round((approach20Success / approach20Total) * 100) : '–'}%`}
+                  sub={approachRecorded === 0 ? '미기록' : `${approachSuccess} / ${approachAttempts}회 근접`}
                   failed={!!approachRecorded && approachPct < goalApproach}
                   onClick={metricClick('어프로치성공률')}
                 />
@@ -1224,15 +1225,24 @@ const wedgeTotal = holes.reduce((sum, h) => {
                 {activeSegment === 'approach' && (
                   <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
                     <h3 className="text-sm font-semibold text-gray-800 mb-3">어프로치</h3>
-                    <p className="text-xs font-semibold text-gray-500 mb-2">20m이내 2m안착 성공률</p>
+                    <p className="text-xs font-semibold text-gray-500 mb-2">어프로치 근접률</p>
                     <SegmentLineChart
-                        points={chart6Approach20}
+                      points={chart6ApproachSuccess}
                       lineColor="#1D9E75"
-                      avgValue={avgChart6Approach20}
-                      caption="20m이내 2m안착 성공률 추이 · 최근 6라운드 (높을수록 좋음)"
+                      avgValue={avgChartApproachSuccess}
+                      caption="어프로치 근접률 추이 · 최근 6라운드 (높을수록 좋음)"
                       formatValue={v => `${v}%`}
                       yMin={0}
                       yMax={100}
+                    />
+                    <p className="text-xs font-semibold text-gray-500 mb-2 mt-4">어프로치 실패 횟수</p>
+                    <SegmentLineChart
+                      points={chart6ApproachFail}
+                      lineColor="#E24B4A"
+                      avgValue={avgChart6ApproachFail}
+                      caption="어프로치 실패 횟수 추이 · 최근 6라운드 (낮을수록 좋음)"
+                      formatValue={v => `${v}회`}
+                      yMin={0}
                     />
                     <p className="text-xs font-semibold text-gray-500 mb-2 mt-4">미스 TOP5</p>
                     <RankedMissBarChart items={approachMissBars} />
