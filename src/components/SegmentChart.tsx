@@ -105,21 +105,6 @@ export function computeApproach20Pct(holes: Hole[]): number {
   return total > 0 ? Math.round((success / total) * 100) : 0;
 }
 
-export function computeApproach2040Pct(holes: Hole[]): number {
-  let total = 0;
-  let success = 0;
-  for (const h of holes) {
-    const clubs = [h.approach1_club, h.approach2_club, h.approach3_club];
-    const results = [h.approach1_result, h.approach2_result, h.approach3_result];
-    clubs.forEach((c, i) => {
-      if (c === '20~40m') {
-        total++;
-        if (results[i] === '성공') success++;
-      }
-    });
-  }
-  return total > 0 ? Math.round((success / total) * 100) : 0;
-}
 
 export function computeTotalPutts(holes: Hole[]): number {
   return holes.reduce((s, h) => s + (h.putts ?? 0), 0);

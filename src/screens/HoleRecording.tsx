@@ -54,7 +54,6 @@ const PENALTY_TRIGGER = '패널티';
 
 const APPROACH_DISTANCES = [
   { label: '20m이내 · 2m 안착', value: '20m이내' },
-  { label: '20~40m · 5m 안착', value: '20~40m' },
 ] as const;
 const APPROACH_OUTCOMES = [
   { label: '성공', value: '성공' },
