@@ -884,7 +884,7 @@ const wedgeTotal = holes.reduce((sum, h) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-surface flex items-center justify-center">
+      <div className="min-h-dvh bg-surface flex items-center justify-center">
         <p className="text-gray-500 text-sm">불러오는 중...</p>
       </div>
     );

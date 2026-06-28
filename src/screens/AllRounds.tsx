@@ -365,14 +365,14 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f9f9f7] flex items-center justify-center">
+      <div className="min-h-dvh bg-[#f9f9f7] flex items-center justify-center">
         <div className="text-gray-500">불러오는 중...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#f9f9f7] flex flex-col">
+    <div className="min-h-dvh bg-[#f9f9f7] flex flex-col">
       <div className="px-4 pb-4" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1.5rem)' }}>
         <h2 className="text-xl font-bold text-gray-900">통계</h2>
       </div>

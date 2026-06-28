@@ -125,8 +125,8 @@ export default function App() {
 
   if (!authReady) {
     return (
-      <div className="flex justify-center bg-gray-200 min-h-screen">
-        <div className="w-full max-w-[390px] bg-surface shadow-xl min-h-screen flex items-center justify-center">
+      <div className="flex justify-center bg-gray-200 min-h-dvh">
+        <div className="w-full max-w-[390px] bg-surface shadow-xl min-h-dvh flex items-center justify-center">
           <p className="text-gray-500 text-sm">불러오는 중...</p>
         </div>
       </div>
@@ -135,8 +135,8 @@ export default function App() {
 
   if (authReady && isShareMode) {
     return (
-      <div className="flex justify-center bg-gray-200 min-h-screen">
-        <div className="w-full max-w-[390px] relative bg-surface shadow-xl min-h-screen flex flex-col">
+      <div className="flex justify-center bg-gray-200 min-h-dvh">
+        <div className="w-full max-w-[390px] relative bg-surface shadow-xl min-h-dvh flex flex-col">
           {shareError ? (
             <div className="flex items-center justify-center h-screen">
               <p className="text-gray-500 text-sm">비공개 라운드이거나 존재하지 않는 링크입니다.</p>
@@ -161,8 +161,8 @@ export default function App() {
   }
 
   return (
-    <div className="flex justify-center bg-gray-200 min-h-screen">
-<div className="w-full max-w-[390px] relative bg-surface shadow-xl min-h-screen flex flex-col">        <div className="flex-1">
+    <div className="flex justify-center bg-gray-200 min-h-dvh">
+<div className="w-full max-w-[390px] relative bg-surface shadow-xl min-h-dvh flex flex-col">        <div className="flex-1">
           {screen === 'new-round' && (
             <NewRound onStart={handleRoundStart} />
           )}

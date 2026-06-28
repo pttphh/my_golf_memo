@@ -76,7 +76,7 @@ export default function NewRound({ onStart }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-[#f9f9f7] flex flex-col">
+    <div className="min-h-dvh bg-[#f9f9f7] flex flex-col">
       <div className="px-4 pb-4" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1rem)' }}>
         <h1 className="text-xl font-bold text-gray-900">새 라운드</h1>
         <p className="text-gray-500 text-sm mt-0.5">라운드 정보를 입력하세요</p>

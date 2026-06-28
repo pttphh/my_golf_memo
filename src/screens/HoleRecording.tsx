@@ -473,13 +473,12 @@ function ApproachBlock({ distance, result, missDetail, miss, memo,
   return (
     <div className="space-y-3">
       <div>
-        <p className="text-xs text-gray-500 mb-1.5">결과</p>
         <div className="flex flex-wrap gap-2">
           {APPROACH_OUTCOMES.map(({ label, value }) => (
             <Chip key={value} label={label} selected={result === value} onClick={() => handleOutcome(value)} />
           ))}
         </div>
-        <p className="text-[10px] text-gray-400">어프로치한 거리의 10%이내로 홀에 붙이면 성공 (예: 20m 남았으면 2m 이내)</p>
+        <p className="text-[10px] text-gray-400 mt-1.5">어프로치한 거리의 10%이내로 홀에 붙이면 성공 (예: 20m 남았으면 2m 이내)</p>
       </div>
 
       {result === '실패' && (
