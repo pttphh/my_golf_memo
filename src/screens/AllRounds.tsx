@@ -64,7 +64,13 @@ function computeHoleStats(holes: Hole[]): Omit<RoundWithHoles, 'round' | 'holes'
     }
     return s + pen;
   }, 0);
-  const gir = holes.filter(h => h.green_shots <= h.par - 2 && h.green_shots > 0).length;
+  const gir = holes.filter(h => {
+    if (h.green_shots <= 0) return false;
+    const PEN: Record<string, number> = { OB: 2, '해저드': 1 };
+    const pen = [h.tee_penalty_type, h.tee2_penalty_type, h.second1_penalty_type, h.second2_penalty_type, h.second3_penalty_type]
+      .reduce((s, p) => s + (PEN[p] ?? 0), 0);
+    return h.green_shots + pen <= h.par - 2;
+  }).length;
   const fairwayDenom = 14;
   const fairwayHits = holes.filter(h => h.par !== 3 && h.tee_result === '페어웨이').length;
   const birdie = holes.filter(h => h.over_par <= -1).length;

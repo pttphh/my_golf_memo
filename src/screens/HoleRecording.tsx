@@ -216,7 +216,7 @@ function TeeShotBlock({ par, topResult, subResult, miss, memo, onTopChange, onSu
 }) {
   const isPar3 = par === 3;
   const topOptions = isPar3
-    ? ['그린 온(GIR)', '그린 미스']
+    ? ['그린 온', '그린 미스']
     : ['페어웨이', '페어웨이 미스'];
   const missLabel = isPar3 ? '그린 미스' : '페어웨이 미스';
   const showSub = topResult === missLabel;
@@ -364,8 +364,7 @@ function SecondShotBlock({ par, shotIndex, result, penaltyType, missDetail, miss
     );
   }
 
-  const isGirLabelFirst = (par === 5 && shotIndex === 2) || (par === 4 && shotIndex === 1);
-    const greenOnLabel = isGirLabelFirst ? '그린 온(GIR)' : '그린 온';
+  const greenOnLabel = '그린 온';
   const showSub = result === '그린 미스';
 
   function getApproachSubSelection(): string {

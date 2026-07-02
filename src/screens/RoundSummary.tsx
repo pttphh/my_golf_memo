@@ -124,16 +124,18 @@ function countHolesWithPenalty(holes: Hole[], type: string): number {
   return holes.filter(h => allPenaltyFields(h).includes(type)).length;
 }
 
+function girPenaltyStrokes(h: Hole): number {
+  return allPenaltyFields(h).reduce((s, p) => s + (PENALTY_MAP[p] ?? 0), 0);
+}
+
+// GIR = 그린까지 친 타수(green_shots)가 정규(par-2) 이하. OB/해저드 벌타는 더해서 판정 → 벌타 홀 자동 제외.
 function isGirHole(h: Hole): boolean {
-  if (h.par === 3) return h.tee_result === '그린 온(GIR)';
-  if (h.par === 4) return h.second1_result === '그린 온(GIR)';
-  if (h.par === 5) return h.second2_result === '그린 온(GIR)';
-  return false;
+  if (h.green_shots <= 0) return false;
+  return h.green_shots + girPenaltyStrokes(h) <= h.par - 2;
 }
 
 function hasGirRecorded(h: Hole): boolean {
-  if (h.par === 5) return !!(h.second2_result || h.second3_result);
-  return !!h.second1_result;
+  return h.green_shots > 0;
 }
 
 function topMissBars(raws: string[], limit = 5) {
@@ -640,9 +642,9 @@ export default function RoundSummary({ round, viewMode, shareMode = false, holes
   const fairwayPct = Math.round((fairwayHits / fairwayDenom) * 100);
 
   const girCount = holes.filter(isGirHole).length;
-  const par3Gir = holes.filter(h => h.par === 3 && h.tee_result === '그린 온(GIR)').length;
-  const par4Gir = holes.filter(h => h.par === 4 && h.second1_result === '그린 온(GIR)').length;
-  const par5Gir = holes.filter(h => h.par === 5 && h.second2_result === '그린 온(GIR)').length;
+  const par3Gir = holes.filter(h => h.par === 3 && isGirHole(h)).length;
+  const par4Gir = holes.filter(h => h.par === 4 && isGirHole(h)).length;
+  const par5Gir = holes.filter(h => h.par === 5 && isGirHole(h)).length;
 
   const approachSuccess = holes.reduce((sum, h) => {
     let count = 0;

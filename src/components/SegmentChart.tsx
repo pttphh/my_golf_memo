@@ -75,11 +75,12 @@ export function computeFairwayPct(holes: Hole[]): number {
 }
 
 export function computeGirCount(holes: Hole[]): number {
+  const PEN: Record<string, number> = { OB: 2, '해저드': 1 };
   return holes.filter(h => {
-    if (h.par === 3) return h.tee_result === '그린 온(GIR)';
-    if (h.par === 4) return h.second1_result === '그린 온(GIR)';
-    if (h.par === 5) return h.second2_result === '그린 온(GIR)';
-    return false;
+    if (h.green_shots <= 0) return false;
+    const pen = [h.tee_penalty_type, h.tee2_penalty_type, h.second1_penalty_type, h.second2_penalty_type, h.second3_penalty_type]
+      .reduce((s, p) => s + (PEN[p] ?? 0), 0);
+    return h.green_shots + pen <= h.par - 2;
   }).length;
 }
 
