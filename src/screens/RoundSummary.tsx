@@ -70,7 +70,7 @@ const METRIC_INFO: Record<string, MetricInfo> = {
     description: '정해진 타수 안에 공을 그린에 올린 홀 수입니다.',
     criteria: ['파3: 1타 안에 온그린', '파4: 2타 안에 온그린', '파5: 3타 안에 온그린'],
     goalsLabel: '권장 달성 홀 수',
-    goals: [{ level: '97타 (+25 오버)', target: '3홀 이상' }, { level: '92타 (+20 오버)', target: '4홀 이상' }, { level: '87타 (+15 오버)', target: '6홀 이상' }],
+    goals: [{ level: '97타 (+25 오버)', target: '3홀 이상' }, { level: '92타 (+20 오버)', target: '4홀 이상' }, { level: '87타 (+15 오버)', target: '5홀 이상' }],
   },
   세컨치명미스: {
     title: '40m 이내 스코어링 구간 진입 실패',
@@ -80,16 +80,16 @@ const METRIC_INFO: Record<string, MetricInfo> = {
     goals: [{ level: '97타 (+25 오버)', target: '6회 이하' }, { level: '92타 (+20 오버)', target: '4회 이하' }, { level: '87타 (+15 오버)', target: '3회 이하' }],
   },
   웨지온실패: {
-    title: '40~100m 웨지 온 성공',
-    description: '40m 초과 ~ 100m 미만 거리에서 그린을 노린 웨지샷이 온그린에 성공한 비율입니다.',
-    criteria: ['40m 초과 ~ 100m 미만 거리에서 그린에 올리면 성공', '그린을 놓치면 실패', '거리 조절 실패, 짧음, 김, 좌우 미스 모두 실패에 포함합니다.'],
+    title: '50~100m 웨지 온 성공',
+    description: '50m 초과 ~ 100m 미만 거리에서 그린을 노린 웨지샷이 온그린에 성공한 비율입니다.',
+    criteria: ['50m 초과 ~ 100m 미만 거리에서 그린에 올리면 성공', '그린을 놓치면 실패', '거리 조절 실패, 짧음, 김, 좌우 미스 모두 실패에 포함합니다.'],
     goalsLabel: '권장 성공률',
-    goals: [{ level: '97타 (+25 오버)', target: '30% 이상' }, { level: '92타 (+20 오버)', target: '40% 이상' }, { level: '87타 (+15 오버)', target: '50% 이상' }],
+    goals: [{ level: '97타 (+25 오버)', target: '35% 이상' }, { level: '92타 (+20 오버)', target: '45% 이상' }, { level: '87타 (+15 오버)', target: '55% 이상' }],
   },
   어프로치성공률: {
     title: '어프로치 근접률',
     description: '어프로치한 거리의 10% 이내로 홀에 붙이면 성공입니다. (예: 20m 남았으면 2m 이내, 40m 남았으면 4m 이내)',
-    criteria: ['어프로치한 거리의 10% 이내로 붙이면 성공 (예: 20m → 2m, 40m → 4m)', '10% 거리보다 멀게 남으면 실패', '40m 초과 샷은 웨지 온 지표에서 봅니다.'],
+    criteria: ['어프로치한 거리의 10% 이내로 붙이면 성공 (예: 20m → 2m, 40m → 4m)', '10% 거리보다 멀게 남으면 실패', '50m 초과 샷은 웨지 온 지표에서 봅니다.'],
     goalsLabel: '권장 근접률',
     goals: [{ level: '97타 (+25 오버)', target: '25% 이상' }, { level: '92타 (+20 오버)', target: '35% 이상' }, { level: '87타 (+15 오버)', target: '45% 이상' }],
   },
@@ -600,9 +600,9 @@ export default function RoundSummary({ round, viewMode, shareMode = false, holes
   const goalTier = totalStrokes >= 97 ? 0 : totalStrokes >= 92 ? 1 : 2;
   const goalPenalty = [5, 3, 2][goalTier];
   const goalFairway = [40, 50, 55][goalTier];
-  const goalGir = [3, 4, 6][goalTier];
+  const goalGir = [3, 4, 5][goalTier];
   const goalFatalMiss = [6, 4, 3][goalTier];
-  const goalWedge = [30, 40, 50][goalTier];
+  const goalWedge = [35, 45, 55][goalTier];
   const goalApproach = [30, 40, 50][goalTier];
   const goalTotalPutts = [40, 38, 36][goalTier];
   const goalThreePutt = [6, 4, 3][goalTier];
