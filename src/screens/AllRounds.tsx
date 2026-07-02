@@ -119,7 +119,7 @@ function roundWedgeSuccessCount(holes: Hole[]): number {
     const clubs = [h.second1_club, h.second2_club, h.second3_club];
     const results = [h.second1_result, h.second2_result, h.second3_result];
     for (let i = 0; i < 3; i++) {
-      if (clubs[i]?.includes('웨지') && results[i] === '그린 온(GIR)') count++;
+      if (clubs[i]?.includes('웨지') && (results[i] === '그린 온(GIR)' || results[i] === '그린 온')) count++;
     }
     return sum + count;
   }, 0);
@@ -321,8 +321,8 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
     periodHoles.reduce((sum, h) => sum + (h.approach1_result ? 1 : 0) + (h.approach2_result ? 1 : 0), 0),
   );
   const avgShortPuttSuccess = pctFromTotals(
-    periodHoles.filter(h => h.putt_miss === '숏퍼팅 성공').length,
-    periodHoles.filter(h => h.putt_miss).length,
+    periodHoles.flatMap(h => [h.putt_miss, h.putt2_miss]).filter(v => v === '숏퍼팅 성공').length,
+    periodHoles.flatMap(h => [h.putt_miss, h.putt2_miss]).filter(v => v === '숏퍼팅 성공' || v === '숏퍼팅 실패').length,
   );
 
   const avgApproachFail = avgPerRound(filteredData, roundApproachFailCount);

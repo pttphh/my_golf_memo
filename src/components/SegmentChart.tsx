@@ -56,7 +56,7 @@ export function computeRoundApproachFailCount(holes: Hole[]): number {
 }
 
 export function computeRoundShortPuttMissCount(holes: Hole[]): number {
-  return holes.filter(h => h.putt_miss === '숏퍼팅 실패').length;
+  return holes.flatMap(h => [h.putt_miss, h.putt2_miss]).filter(v => v === '숏퍼팅 실패').length;
 }
 
 export function computeTeePenaltyStrokes(holes: Hole[]): number {
@@ -92,7 +92,7 @@ export function computeWedgeSuccessRate(holes: Hole[]): number {
     clubs.forEach((c, i) => {
       if (c?.includes('웨지')) {
         total++;
-        if (results[i] === '그린 온(GIR)') success++;
+        if (results[i] === '그린 온(GIR)' || results[i] === '그린 온') success++;
       }
     });
   }
@@ -125,10 +125,11 @@ export function computeThreePuttCount(holes: Hole[]): number {
 }
 
 export function computeShortPuttSuccessRate(holes: Hole[]): number {
-  const recorded = holes.filter(h => h.putt_miss);
-  if (recorded.length === 0) return 0;
-  const success = recorded.filter(h => h.putt_miss === '숏퍼팅 성공').length;
-  return Math.round((success / recorded.length) * 100);
+  const slots = holes.flatMap(h => [h.putt_miss, h.putt2_miss]);
+  const attempts = slots.filter(v => v === '숏퍼팅 성공' || v === '숏퍼팅 실패').length;
+  if (attempts === 0) return 0;
+  const success = slots.filter(v => v === '숏퍼팅 성공').length;
+  return Math.round((success / attempts) * 100);
 }
 
 export function chartPointsAvg(points: { value: number }[]): number {

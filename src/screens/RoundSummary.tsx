@@ -697,14 +697,15 @@ const wedgeTotal = holes.reduce((sum, h) => {
   const wedgeSuccess = holes.reduce((sum, h) => {
     const clubs = [h.second1_club, h.second2_club, h.second3_club, h.second4_club];
     const results = [h.second1_result, h.second2_result, h.second3_result, h.second4_result];
-    return sum + clubs.filter((c, i) => c?.includes('웨지') && results[i] === '그린 온(GIR)').length;
+    return sum + clubs.filter((c, i) => c?.includes('웨지') && (results[i] === '그린 온(GIR)' || results[i] === '그린 온')).length;
   }, 0);
   const wedgeSuccessRate = wedgeTotal > 0 ? Math.round((wedgeSuccess / wedgeTotal) * 100) : null;
 
-  const puttMissHoles = holes.filter(h => h.putt_miss);
-  const shortPuttSuccess = puttMissHoles.filter(h => h.putt_miss === '숏퍼팅 성공').length;
-  const shortPuttPct = puttMissHoles.length > 0
-    ? Math.round((shortPuttSuccess / puttMissHoles.length) * 100)
+  const shortPuttSlots = holes.flatMap(h => [h.putt_miss, h.putt2_miss]);
+  const shortPuttAttempts = shortPuttSlots.filter(v => v === '숏퍼팅 성공' || v === '숏퍼팅 실패').length;
+  const shortPuttSuccess = shortPuttSlots.filter(v => v === '숏퍼팅 성공').length;
+  const shortPuttPct = shortPuttAttempts > 0
+    ? Math.round((shortPuttSuccess / shortPuttAttempts) * 100)
     : 0;
 
   const obHoles = countHolesWithPenalty(holes, 'OB');
@@ -723,7 +724,7 @@ const wedgeTotal = holes.reduce((sum, h) => {
     [h.second1_club, h.second2_club, h.second3_club].some(c => c?.includes('웨지')),
   ).length;
   const approachRecorded = holes.filter(h => h.approach1_club).length;
-  const shortPuttRecorded = holes.filter(h => h.putt_miss).length;
+  const shortPuttRecorded = holes.filter(h => h.putt_miss || h.putt2_miss).length;
   const penaltiesRecorded = holes.length > 0;
 
   const segFairwayPct = fairwayPct;
@@ -731,7 +732,7 @@ const wedgeTotal = holes.reduce((sum, h) => {
   const avgPuttsPerHole = holes.length > 0
     ? Math.round((totalPutts / holes.length) * 10) / 10
     : 0;
-  const shortPuttMissCount = holes.filter(h => h.putt_miss === '숏퍼팅 실패' || h.putt2_miss === '숏퍼팅 실패').length;
+  const shortPuttMissCount = holes.flatMap(h => [h.putt_miss, h.putt2_miss]).filter(v => v === '숏퍼팅 실패').length;
   const putt1 = holes.filter(h => h.putts === 1).length;
   const putt2 = holes.filter(h => h.putts === 2).length;
   const putt3 = holes.filter(h => h.putts === 3).length;
@@ -1118,7 +1119,7 @@ const wedgeTotal = holes.reduce((sum, h) => {
                   label="숏퍼팅 성공률"
                   unrecorded={shortPuttRecorded === 0}
                   value={shortPuttRecorded === 0 ? '–' : `${shortPuttPct}%`}
-                  sub={shortPuttRecorded === 0 ? '미기록' : `${shortPuttSuccess} / ${puttMissHoles.length}회 성공`}
+                  sub={shortPuttRecorded === 0 ? '미기록' : `${shortPuttSuccess} / ${shortPuttAttempts}회 성공`}
                   failed={!!shortPuttRecorded && shortPuttPct < goalShortPutt}
                   onClick={metricClick('숏퍼팅성공률')}
                 />
