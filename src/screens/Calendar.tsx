@@ -25,12 +25,21 @@ function toKey(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
-function loadPlanned(): string[] {
+type PlanState = 'temp' | 'confirmed';
+
+function loadPlanned(): Record<string, PlanState> {
   try {
     const raw = localStorage.getItem(PLANNED_KEY);
-    return raw ? (JSON.parse(raw) as string[]) : [];
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      const obj: Record<string, PlanState> = {};
+      for (const k of parsed as string[]) obj[k] = 'temp';
+      return obj;
+    }
+    return parsed as Record<string, PlanState>;
   } catch {
-    return [];
+    return {};
   }
 }
 
@@ -40,7 +49,7 @@ interface Props {
 
 export default function Calendar({ onRoundSelect }: Props) {
   const [rounds, setRounds] = useState<Round[]>([]);
-  const [planned, setPlanned] = useState<string[]>(() => loadPlanned());
+  const [planned, setPlanned] = useState<Record<string, PlanState>>(() => loadPlanned());
   const [loading, setLoading] = useState(true);
   const [cursor, setCursor] = useState(() => {
     const n = new Date();
@@ -69,15 +78,13 @@ export default function Calendar({ onRoundSelect }: Props) {
     list.push(r);
     byDate.set(r.date, list);
   }
-  const plannedSet = new Set(planned);
-
-  // 활성 날짜 = 기록 라운드 OR 예정. 창 안 '고유 날짜' 수(같은 날 둘 다 있어도 1로 카운트).
+  // 활성 날짜 = 기록 라운드 OR 예정(임시·확정). 창 안 '고유 날짜' 수(같은 날 둘 다 있어도 1로 카운트).
   function windowCount(d: Date): number {
     let c = 0;
     for (let off = -7; off <= 7; off++) {
       const dd = new Date(d.getFullYear(), d.getMonth(), d.getDate() + off);
       const k = toKey(dd);
-      if (byDate.has(k) || plannedSet.has(k)) c++;
+      if (byDate.has(k) || planned[k]) c++;
     }
     return c;
   }
@@ -103,8 +110,15 @@ export default function Calendar({ onRoundSelect }: Props) {
       onRoundSelect(list[0]); // 기록된 라운드 → 그 날 라운드 요약으로 이동
       return;
     }
-    // 예정 토글: 없으면 추가, 있으면 삭제
-    setPlanned(prev => (prev.includes(k) ? prev.filter(x => x !== k) : [...prev, k]));
+    // 예정 3단계 순환: 없음 → 임시(○) → 확정(깃발) → 삭제
+    setPlanned(prev => {
+      const next = { ...prev };
+      const cur = next[k];
+      if (!cur) next[k] = 'temp';
+      else if (cur === 'temp') next[k] = 'confirmed';
+      else delete next[k];
+      return next;
+    });
   }
 
   return (
@@ -146,7 +160,7 @@ export default function Calendar({ onRoundSelect }: Props) {
               const color = DENSITY[level];
               const dayRounds = byDate.get(k) ?? [];
               const hasRound = dayRounds.length > 0;
-              const isPlanned = plannedSet.has(k) && !hasRound;
+              const planState = !hasRound ? planned[k] : undefined;
               const isToday = k === todayKey;
               const textColor = level === 0 ? '#6B7280' : color.text;
               const courseName = hasRound ? (dayRounds[0].course_name || '') : '';
@@ -172,8 +186,11 @@ export default function Calendar({ onRoundSelect }: Props) {
                   {hasRound && !courseName && (
                     <Flag size={11} className="mt-1.5" strokeWidth={2.5} style={{ color: level >= 4 ? '#FFFFFF' : '#1B4332' }} />
                   )}
-                  {isPlanned && (
+                  {planState === 'temp' && (
                     <span className="mt-2 w-2.5 h-2.5 rounded-full border-2" style={{ borderColor: level >= 4 ? '#FFFFFF' : '#1B4332' }} />
+                  )}
+                  {planState === 'confirmed' && (
+                    <Flag size={13} className="mt-2" strokeWidth={2.5} style={{ color: level >= 4 ? '#FFFFFF' : '#1B4332' }} />
                   )}
                 </button>
               );
@@ -197,7 +214,7 @@ export default function Calendar({ onRoundSelect }: Props) {
               ))}
             </div>
             <p className="text-[10px] text-gray-400 mt-3 leading-relaxed">
-              골프장 이름 = 기록된 라운드, 원(○) = 직접 추가한 예정일. 라운드 있는 날을 탭하면 요약으로 이동하고, 빈 날을 탭하면 예정일 추가, 예정일을 다시 탭하면 삭제됩니다.
+              골프장 이름 = 기록된 라운드. 빈 날을 탭하면 임시(○) → 확정(깃발) → 삭제 순으로 바뀝니다. 라운드 있는 날을 탭하면 요약으로 이동합니다.
             </p>
           </div>
         </div>
