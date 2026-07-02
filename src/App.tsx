@@ -13,11 +13,12 @@ import AllRounds from './screens/AllRounds';
 import HoleSelect from './screens/HoleSelect';
 import HoleDetail from './screens/HoleDetail';
 import Profile from './screens/Profile';
+import Calendar from './screens/Calendar';
 
 function screenToTab(screen: Screen): NavTab {
   if (screen === 'all-rounds') return 'all-rounds';
   if (screen === 'profile') return 'profile';
-  if (screen === 'settings') return 'settings';
+  if (screen === 'calendar') return 'calendar';
   return 'round-list';
 }
 
@@ -80,7 +81,7 @@ export default function App() {
   function handleTabChange(tab: NavTab) {
     if (tab === 'all-rounds') setScreen('all-rounds');
     else if (tab === 'round-list') setScreen('round-list');
-    else if (tab === 'settings') setScreen('settings');
+    else if (tab === 'calendar') setScreen('calendar');
     else if (tab === 'profile') setScreen('profile');
   }
 
@@ -239,8 +240,8 @@ export default function App() {
             <AllRounds onRoundSelect={handleRoundSelect} />
           )}
 
-{screen === 'settings' && (
-  <Profile />
+{screen === 'calendar' && (
+  <Calendar onRoundSelect={handleRoundSelect} />
 )}
 
 {screen === 'profile' && (

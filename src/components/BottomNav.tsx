@@ -1,6 +1,6 @@
-import { Flag, BarChart3, Settings, User } from 'lucide-react';
+import { Flag, BarChart3, CalendarDays, User } from 'lucide-react';
 
-export type NavTab = 'round-list' | 'all-rounds' | 'settings' | 'profile';
+export type NavTab = 'round-list' | 'all-rounds' | 'calendar' | 'profile';
 
 interface Props {
   activeTab: NavTab;
@@ -10,7 +10,7 @@ interface Props {
 const TABS: { id: NavTab; label: string; icon: typeof Flag }[] = [
   { id: 'round-list', label: '라운드', icon: Flag },
   { id: 'all-rounds', label: '통계', icon: BarChart3 },
-  { id: 'settings', label: '세팅', icon: Settings },
+  { id: 'calendar', label: '일정', icon: CalendarDays },
   { id: 'profile', label: '개인', icon: User },
 ];
 

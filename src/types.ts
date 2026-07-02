@@ -85,7 +85,7 @@ export interface Hole {
   putt2_memo: string;
 }
 
-export type Screen = 'new-round' | 'hole-recording' | 'round-summary' | 'miss-breakdown' | 'all-rounds' | 'round-list' | 'hole-select' | 'hole-detail' | 'profile' | 'settings';
+export type Screen = 'new-round' | 'hole-recording' | 'round-summary' | 'miss-breakdown' | 'all-rounds' | 'round-list' | 'hole-select' | 'hole-detail' | 'profile' | 'calendar';
 export interface AppState {
   screen: Screen;
   currentRound: Round | null;
