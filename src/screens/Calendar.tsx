@@ -72,6 +72,7 @@ export default function Calendar({ onRoundSelect }: Props) {
   // 롱프레스(꾹 누르기) 감지용
   const longPressTimer = useRef<number | null>(null);
   const longPressFired = useRef(false);
+  const pressStart = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -125,10 +126,12 @@ export default function Calendar({ onRoundSelect }: Props) {
   }
 
   // 꾹 누르기 시작 → 500ms 뒤 메모 편집 열기
-  function startPress(d: Date) {
+  function startPress(d: Date, e: React.TouchEvent | React.MouseEvent) {
     longPressFired.current = false;
+    const pt = 'touches' in e ? e.touches[0] : e;
+    pressStart.current = { x: pt.clientX, y: pt.clientY };
     if (longPressTimer.current !== null) clearTimeout(longPressTimer.current);
-    longPressTimer.current = window.setTimeout(() => {
+        longPressTimer.current = window.setTimeout(() => {
       longPressFired.current = true;
       const k = toKey(d);
       setMemoEdit({ key: k, value: memos[k] ?? '' });
@@ -139,6 +142,16 @@ export default function Calendar({ onRoundSelect }: Props) {
     if (longPressTimer.current !== null) {
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
+  
+    }
+  }
+
+  function movePress(e: React.TouchEvent | React.MouseEvent) {
+    if (!pressStart.current || longPressTimer.current === null) return;
+    const pt = 'touches' in e ? e.touches[0] : e;
+    if (Math.abs(pt.clientX - pressStart.current.x) > 12 ||
+        Math.abs(pt.clientY - pressStart.current.y) > 12) {
+      cancelPress();
     }
   }
 
@@ -235,11 +248,11 @@ export default function Calendar({ onRoundSelect }: Props) {
                 <button
                   key={k}
                   onClick={() => handleTap(d)}
-                  onTouchStart={() => startPress(d)}
+                  onTouchStart={e => startPress(d, e)}
                   onTouchEnd={cancelPress}
-                  onTouchMove={cancelPress}
-                  onMouseDown={() => startPress(d)}
-                  onMouseUp={cancelPress}
+                  onTouchMove={movePress}
+                  onMouseDown={e => startPress(d, e)}
+                                    onMouseUp={cancelPress}
                   onMouseLeave={cancelPress}
                   onContextMenu={e => e.preventDefault()}
                   className={`min-h-[64px] rounded-lg flex flex-col items-center pt-1 px-0.5 overflow-hidden active:scale-95 transition-transform select-none ${isToday ? 'ring-2 ring-[#1B4332]' : ''}`}
