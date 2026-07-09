@@ -267,12 +267,12 @@ export default function Calendar({ onRoundSelect }: Props) {
                   {planState === 'confirmed' && (
                     <Flag size={13} className="mt-2" strokeWidth={2.5} style={{ color: level >= 4 ? '#FFFFFF' : '#1B4332' }} />
                   )}
-                  {memo && (
-                    <span className="text-[8px] leading-[1.2] text-center mt-auto pt-1 w-full line-clamp-1 px-0.5 opacity-90" style={{ color: textColor }}>
+{memo && (
+                    <span className="text-[9px] font-semibold leading-tight text-center mt-auto mb-1 max-w-[92%] truncate px-1 py-0.5 rounded" style={{ backgroundColor: 'rgba(255,255,255,0.9)', color: '#1B4332' }}>
                       {memo}
                     </span>
                   )}
-                </button>
+                                  </button>
               );
             })}
           </div>
