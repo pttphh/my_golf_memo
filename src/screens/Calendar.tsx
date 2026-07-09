@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Flag } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Round } from '../types';
 
 const PLANNED_KEY = 'golf_planned_dates';
+const MEMO_KEY = 'golf_memos';
 
 // 15일 창 안 활성 날짜 수 → 색 (0~5+). 밝은 배경은 같은 계열 어두운 글자, 빨강/차콜은 흰 글자.
 const DENSITY: { bg: string; text: string }[] = [
@@ -43,6 +44,16 @@ function loadPlanned(): Record<string, PlanState> {
   }
 }
 
+function loadMemos(): Record<string, string> {
+  try {
+    const raw = localStorage.getItem(MEMO_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw) as Record<string, string>;
+  } catch {
+    return {};
+  }
+}
+
 interface Props {
   onRoundSelect: (round: Round) => void;
 }
@@ -50,11 +61,17 @@ interface Props {
 export default function Calendar({ onRoundSelect }: Props) {
   const [rounds, setRounds] = useState<Round[]>([]);
   const [planned, setPlanned] = useState<Record<string, PlanState>>(() => loadPlanned());
+  const [memos, setMemos] = useState<Record<string, string>>(() => loadMemos());
+  const [memoEdit, setMemoEdit] = useState<{ key: string; value: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [cursor, setCursor] = useState(() => {
     const n = new Date();
     return new Date(n.getFullYear(), n.getMonth(), 1);
   });
+
+  // 롱프레스(꾹 누르기) 감지용
+  const longPressTimer = useRef<number | null>(null);
+  const longPressFired = useRef(false);
 
   useEffect(() => {
     (async () => {
@@ -69,6 +86,10 @@ export default function Calendar({ onRoundSelect }: Props) {
   useEffect(() => {
     try { localStorage.setItem(PLANNED_KEY, JSON.stringify(planned)); } catch { /* noop */ }
   }, [planned]);
+
+  useEffect(() => {
+    try { localStorage.setItem(MEMO_KEY, JSON.stringify(memos)); } catch { /* noop */ }
+  }, [memos]);
 
   // 날짜별 기록된 라운드
   const byDate = new Map<string, Round[]>();
@@ -103,7 +124,30 @@ export default function Calendar({ onRoundSelect }: Props) {
     setCursor(new Date(year, month + delta, 1));
   }
 
+  // 꾹 누르기 시작 → 500ms 뒤 메모 편집 열기
+  function startPress(d: Date) {
+    longPressFired.current = false;
+    if (longPressTimer.current !== null) clearTimeout(longPressTimer.current);
+    longPressTimer.current = window.setTimeout(() => {
+      longPressFired.current = true;
+      const k = toKey(d);
+      setMemoEdit({ key: k, value: memos[k] ?? '' });
+    }, 500);
+  }
+
+  function cancelPress() {
+    if (longPressTimer.current !== null) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  }
+
   function handleTap(d: Date) {
+    // 방금 꾹 누르기로 메모를 열었다면 일반 탭 동작은 건너뜀
+    if (longPressFired.current) {
+      longPressFired.current = false;
+      return;
+    }
     const k = toKey(d);
     const list = byDate.get(k);
     if (list && list.length > 0) {
@@ -119,6 +163,28 @@ export default function Calendar({ onRoundSelect }: Props) {
       else delete next[k];
       return next;
     });
+  }
+
+  function saveMemo() {
+    if (!memoEdit) return;
+    const v = memoEdit.value.trim();
+    setMemos(prev => {
+      const next = { ...prev };
+      if (v) next[memoEdit.key] = v;
+      else delete next[memoEdit.key];
+      return next;
+    });
+    setMemoEdit(null);
+  }
+
+  function deleteMemo() {
+    if (!memoEdit) return;
+    setMemos(prev => {
+      const next = { ...prev };
+      delete next[memoEdit.key];
+      return next;
+    });
+    setMemoEdit(null);
   }
 
   return (
@@ -164,11 +230,19 @@ export default function Calendar({ onRoundSelect }: Props) {
               const isToday = k === todayKey;
               const textColor = level === 0 ? '#6B7280' : color.text;
               const courseName = hasRound ? (dayRounds[0].course_name || '') : '';
+              const memo = memos[k];
               return (
                 <button
                   key={k}
                   onClick={() => handleTap(d)}
-                  className={`min-h-[64px] rounded-lg flex flex-col items-center pt-1 px-0.5 overflow-hidden active:scale-95 transition-transform ${isToday ? 'ring-2 ring-[#1B4332]' : ''}`}
+                  onTouchStart={() => startPress(d)}
+                  onTouchEnd={cancelPress}
+                  onTouchMove={cancelPress}
+                  onMouseDown={() => startPress(d)}
+                  onMouseUp={cancelPress}
+                  onMouseLeave={cancelPress}
+                  onContextMenu={e => e.preventDefault()}
+                  className={`min-h-[64px] rounded-lg flex flex-col items-center pt-1 px-0.5 overflow-hidden active:scale-95 transition-transform select-none ${isToday ? 'ring-2 ring-[#1B4332]' : ''}`}
                   style={{ backgroundColor: color.bg, color: textColor }}
                 >
                   <span className="text-[11px] font-semibold leading-none">{d.getDate()}</span>
@@ -192,6 +266,11 @@ export default function Calendar({ onRoundSelect }: Props) {
                   {planState === 'confirmed' && (
                     <Flag size={13} className="mt-2" strokeWidth={2.5} style={{ color: level >= 4 ? '#FFFFFF' : '#1B4332' }} />
                   )}
+                  {memo && (
+                    <span className="text-[8px] leading-[1.2] text-center mt-auto pt-1 w-full line-clamp-1 px-0.5 opacity-90" style={{ color: textColor }}>
+                      {memo}
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -214,8 +293,40 @@ export default function Calendar({ onRoundSelect }: Props) {
               ))}
             </div>
             <p className="text-[10px] text-gray-400 mt-3 leading-relaxed">
-              골프장 이름 = 기록된 라운드. 빈 날을 탭하면 임시(○) → 확정(깃발) → 삭제 순으로 바뀝니다. 라운드 있는 날을 탭하면 요약으로 이동합니다.
+              골프장 이름 = 기록된 라운드. 빈 날을 탭하면 임시(○) → 확정(깃발) → 삭제 순으로 바뀝니다. 라운드 있는 날을 탭하면 요약으로 이동합니다. 날짜를 길게 누르면(꾹) 메모를 남길 수 있어요.
             </p>
+          </div>
+        </div>
+      )}
+
+      {memoEdit && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setMemoEdit(null)} />
+          <div className="relative bg-white rounded-t-2xl w-full max-w-[390px] p-5 pb-10">
+            <h3 className="text-base font-bold text-gray-800 mb-1">📝 메모</h3>
+            <p className="text-xs text-gray-400 mb-3">{memoEdit.key}</p>
+            <textarea
+              autoFocus
+              value={memoEdit.value}
+              onChange={e => setMemoEdit(prev => (prev ? { ...prev, value: e.target.value } : prev))}
+              placeholder="이 날짜에 대한 메모를 입력하세요"
+              maxLength={60}
+              className="w-full h-24 rounded-xl border border-gray-200 p-3 text-sm text-gray-700 resize-none focus:outline-none focus:ring-2 focus:ring-[#1B4332]"
+            />
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={deleteMemo}
+                className="flex-1 py-3 rounded-xl bg-gray-100 text-gray-500 font-bold text-sm active:scale-95 transition-transform"
+              >
+                삭제
+              </button>
+              <button
+                onClick={saveMemo}
+                className="flex-[2] py-3 rounded-xl bg-[#1B4332] text-white font-bold text-sm active:scale-95 transition-transform"
+              >
+                저장
+              </button>
+            </div>
           </div>
         </div>
       )}
