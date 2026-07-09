@@ -300,9 +300,9 @@ export default function Calendar({ onRoundSelect }: Props) {
         </div>
       )}
 
-      {memoEdit && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center">
-<div className="absolute inset-0 bg-black/40" onPointerDown={() => setMemoEdit(null)} />
+{memoEdit && (
+        <div className="fixed inset-0 z-[60] flex items-end justify-center">
+        <div className="absolute inset-0 bg-black/40" onPointerDown={() => setMemoEdit(null)} />
           <div className="relative bg-white rounded-t-2xl w-full max-w-[390px] p-5 pb-10">
             <h3 className="text-base font-bold text-gray-800 mb-1">📝 메모</h3>
             <p className="text-xs text-gray-400 mb-3">{memoEdit.key}</p>
