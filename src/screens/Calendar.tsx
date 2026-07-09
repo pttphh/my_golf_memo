@@ -69,7 +69,6 @@ export default function Calendar({ onRoundSelect }: Props) {
     return new Date(n.getFullYear(), n.getMonth(), 1);
   });
 
-  // 롱프레스(꾹 누르기) 감지용
   const longPressTimer = useRef<number | null>(null);
   const longPressFired = useRef(false);
   const pressStart = useRef<{ x: number; y: number } | null>(null);
@@ -125,27 +124,17 @@ export default function Calendar({ onRoundSelect }: Props) {
     setCursor(new Date(year, month + delta, 1));
   }
 
-  // 꾹 누르기 시작 → 500ms 뒤 메모 편집 열기
   function startPress(d: Date, e: React.TouchEvent | React.MouseEvent) {
     longPressFired.current = false;
     const pt = 'touches' in e ? e.touches[0] : e;
     pressStart.current = { x: pt.clientX, y: pt.clientY };
     if (longPressTimer.current !== null) clearTimeout(longPressTimer.current);
-        longPressTimer.current = window.setTimeout(() => {
+    longPressTimer.current = window.setTimeout(() => {
       longPressFired.current = true;
       const k = toKey(d);
       setMemoEdit({ key: k, value: memos[k] ?? '' });
     }, 500);
   }
-
-  function cancelPress() {
-    if (longPressTimer.current !== null) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-  
-    }
-  }
-
   function movePress(e: React.TouchEvent | React.MouseEvent) {
     if (!pressStart.current || longPressTimer.current === null) return;
     const pt = 'touches' in e ? e.touches[0] : e;
@@ -154,13 +143,34 @@ export default function Calendar({ onRoundSelect }: Props) {
       cancelPress();
     }
   }
+  function cancelPress() {
+    if (longPressTimer.current !== null) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  }
+  function saveMemo() {
+    if (!memoEdit) return;
+    const v = memoEdit.value.trim();
+    setMemos(prev => {
+      const next = { ...prev };
+      if (v) next[memoEdit.key] = v; else delete next[memoEdit.key];
+      return next;
+    });
+    setMemoEdit(null);
+  }
+  function deleteMemo() {
+    if (!memoEdit) return;
+    setMemos(prev => {
+      const next = { ...prev };
+      delete next[memoEdit.key];
+      return next;
+    });
+    setMemoEdit(null);
+  }
 
   function handleTap(d: Date) {
-    // 방금 꾹 누르기로 메모를 열었다면 일반 탭 동작은 건너뜀
-    if (longPressFired.current) {
-      longPressFired.current = false;
-      return;
-    }
+    if (longPressFired.current) { longPressFired.current = false; return; }
     const k = toKey(d);
     const list = byDate.get(k);
     if (list && list.length > 0) {
@@ -176,28 +186,6 @@ export default function Calendar({ onRoundSelect }: Props) {
       else delete next[k];
       return next;
     });
-  }
-
-  function saveMemo() {
-    if (!memoEdit) return;
-    const v = memoEdit.value.trim();
-    setMemos(prev => {
-      const next = { ...prev };
-      if (v) next[memoEdit.key] = v;
-      else delete next[memoEdit.key];
-      return next;
-    });
-    setMemoEdit(null);
-  }
-
-  function deleteMemo() {
-    if (!memoEdit) return;
-    setMemos(prev => {
-      const next = { ...prev };
-      delete next[memoEdit.key];
-      return next;
-    });
-    setMemoEdit(null);
   }
 
   return (
@@ -252,7 +240,7 @@ export default function Calendar({ onRoundSelect }: Props) {
                   onTouchEnd={cancelPress}
                   onTouchMove={movePress}
                   onMouseDown={e => startPress(d, e)}
-                                    onMouseUp={cancelPress}
+                  onMouseUp={cancelPress}
                   onMouseLeave={cancelPress}
                   onContextMenu={e => e.preventDefault()}
                   className={`min-h-[64px] rounded-lg flex flex-col items-center pt-1 px-0.5 overflow-hidden active:scale-95 transition-transform select-none ${isToday ? 'ring-2 ring-[#1B4332]' : ''}`}
@@ -327,18 +315,8 @@ export default function Calendar({ onRoundSelect }: Props) {
               className="w-full h-24 rounded-xl border border-gray-200 p-3 text-sm text-gray-700 resize-none focus:outline-none focus:ring-2 focus:ring-[#1B4332]"
             />
             <div className="flex gap-2 mt-4">
-              <button
-                onClick={deleteMemo}
-                className="flex-1 py-3 rounded-xl bg-gray-100 text-gray-500 font-bold text-sm active:scale-95 transition-transform"
-              >
-                삭제
-              </button>
-              <button
-                onClick={saveMemo}
-                className="flex-[2] py-3 rounded-xl bg-[#1B4332] text-white font-bold text-sm active:scale-95 transition-transform"
-              >
-                저장
-              </button>
+              <button onClick={deleteMemo} className="flex-1 py-3 rounded-xl bg-gray-100 text-gray-500 font-bold text-sm active:scale-95 transition-transform">삭제</button>
+              <button onClick={saveMemo} className="flex-[2] py-3 rounded-xl bg-[#1B4332] text-white font-bold text-sm active:scale-95 transition-transform">저장</button>
             </div>
           </div>
         </div>
