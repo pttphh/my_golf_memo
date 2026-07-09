@@ -268,7 +268,7 @@ export default function Calendar({ onRoundSelect }: Props) {
                     <Flag size={13} className="mt-2" strokeWidth={2.5} style={{ color: level >= 4 ? '#FFFFFF' : '#1B4332' }} />
                   )}
 {memo && (
-                    <span className="text-[9px] font-semibold leading-tight text-center mt-auto mb-1 max-w-[92%] truncate px-1 py-0.5 rounded" style={{ backgroundColor: 'rgba(255,255,255,0.9)', color: '#1B4332' }}>
+                    <span className="text-[9px] font-semibold leading-tight text-center mt-auto mb-1 w-[90%] truncate px-1 py-0.5 rounded" style={{ backgroundColor: 'rgba(255,255,255,0.9)', color: '#1B4332' }}>
                       {memo}
                     </span>
                   )}
