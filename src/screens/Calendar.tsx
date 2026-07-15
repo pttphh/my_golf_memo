@@ -44,11 +44,20 @@ function loadPlanned(): Record<string, PlanState> {
   }
 }
 
-function loadMemos(): Record<string, string> {
+type MemoEntry = { am?: string; pm?: string };
+
+function loadMemos(): Record<string, MemoEntry> {
   try {
     const raw = localStorage.getItem(MEMO_KEY);
     if (!raw) return {};
-    return JSON.parse(raw) as Record<string, string>;
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const out: Record<string, MemoEntry> = {};
+    for (const k in parsed) {
+      const v = parsed[k];
+      if (typeof v === 'string') out[k] = { pm: v };
+      else if (v && typeof v === 'object') out[k] = v as MemoEntry;
+    }
+    return out;
   } catch {
     return {};
   }
@@ -61,8 +70,8 @@ interface Props {
 export default function Calendar({ onRoundSelect }: Props) {
   const [rounds, setRounds] = useState<Round[]>([]);
   const [planned, setPlanned] = useState<Record<string, PlanState>>(() => loadPlanned());
-  const [memos, setMemos] = useState<Record<string, string>>(() => loadMemos());
-  const [memoEdit, setMemoEdit] = useState<{ key: string; value: string } | null>(null);
+  const [memos, setMemos] = useState<Record<string, MemoEntry>>(() => loadMemos());
+  const [memoEdit, setMemoEdit] = useState<{ key: string; period: 'am' | 'pm'; am: string; pm: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [cursor, setCursor] = useState(() => {
     const n = new Date();
@@ -130,9 +139,12 @@ export default function Calendar({ onRoundSelect }: Props) {
     pressStart.current = { x: pt.clientX, y: pt.clientY };
     if (longPressTimer.current !== null) clearTimeout(longPressTimer.current);
     longPressTimer.current = window.setTimeout(() => {
-      longPressFired.current = true;
       const k = toKey(d);
-      setMemoEdit({ key: k, value: memos[k] ?? '' });
+      const hasRound = (byDate.get(k)?.length ?? 0) > 0;
+      if (hasRound || planned[k]) return;
+      longPressFired.current = true;
+      const cur = memos[k] ?? {};
+      setMemoEdit({ key: k, period: 'am', am: cur.am ?? '', pm: cur.pm ?? '' });
     }, 500);
   }
   function movePress(e: React.TouchEvent | React.MouseEvent) {
@@ -151,10 +163,18 @@ export default function Calendar({ onRoundSelect }: Props) {
   }
   function saveMemo() {
     if (!memoEdit) return;
-    const v = memoEdit.value.trim();
+    const am = memoEdit.am.trim();
+    const pm = memoEdit.pm.trim();
     setMemos(prev => {
       const next = { ...prev };
-      if (v) next[memoEdit.key] = v; else delete next[memoEdit.key];
+      if (am || pm) {
+        const entry: MemoEntry = {};
+        if (am) entry.am = am;
+        if (pm) entry.pm = pm;
+        next[memoEdit.key] = entry;
+      } else {
+        delete next[memoEdit.key];
+      }
       return next;
     });
     setMemoEdit(null);
@@ -267,12 +287,17 @@ export default function Calendar({ onRoundSelect }: Props) {
                   {planState === 'confirmed' && (
                     <Flag size={13} className="mt-2" strokeWidth={2.5} style={{ color: level >= 4 ? '#FFFFFF' : '#1B4332' }} />
                   )}
-{memo && (
-                    <span className="text-[9px] font-semibold leading-tight text-center mt-auto mb-1 w-[90%] truncate px-1 py-0.5 rounded" style={{ backgroundColor: 'rgba(255,255,255,0.9)', color: '#1B4332' }}>
-                      {memo}
-                    </span>
+                  {!hasRound && !planState && memo && (memo.am || memo.pm) && (
+                    <div className="mt-auto mb-1 w-full flex flex-col items-center gap-0.5">
+                      <span className="text-[9px] font-semibold leading-tight text-center w-[90%] truncate px-1 py-0.5 rounded" style={{ backgroundColor: memo.am ? 'rgba(255,255,255,0.9)' : 'transparent', color: '#1B4332' }}>
+                        {memo.am || '\u00A0'}
+                      </span>
+                      <span className="text-[9px] font-semibold leading-tight text-center w-[90%] truncate px-1 py-0.5 rounded" style={{ backgroundColor: memo.pm ? 'rgba(255,255,255,0.9)' : 'transparent', color: '#1B4332' }}>
+                        {memo.pm || '\u00A0'}
+                      </span>
+                    </div>
                   )}
-                                  </button>
+                </button>
               );
             })}
           </div>
@@ -306,14 +331,30 @@ export default function Calendar({ onRoundSelect }: Props) {
           <div className="relative bg-white rounded-t-2xl w-full max-w-[390px] p-5 pb-10">
             <h3 className="text-base font-bold text-gray-800 mb-1">📝 메모</h3>
             <p className="text-xs text-gray-400 mb-3">{memoEdit.key}</p>
-            <textarea
-              autoFocus
-              value={memoEdit.value}
-              onChange={e => setMemoEdit(prev => (prev ? { ...prev, value: e.target.value } : prev))}
-              placeholder="이 날짜에 대한 메모를 입력하세요"
-              maxLength={60}
-              className="w-full h-24 rounded-xl border border-gray-200 p-3 text-sm text-gray-700 resize-none focus:outline-none focus:ring-2 focus:ring-[#1B4332]"
-            />
+            <div className="flex gap-2">
+              <textarea
+                autoFocus
+                value={memoEdit.period === 'am' ? memoEdit.am : memoEdit.pm}
+                onChange={e => setMemoEdit(prev => {
+                  if (!prev) return prev;
+                  return prev.period === 'am' ? { ...prev, am: e.target.value } : { ...prev, pm: e.target.value };
+                })}
+                placeholder={memoEdit.period === 'am' ? '오전 메모를 입력하세요' : '오후 메모를 입력하세요'}
+                maxLength={60}
+                className="flex-1 h-24 rounded-xl border border-gray-200 p-3 text-sm text-gray-700 resize-none focus:outline-none focus:ring-2 focus:ring-[#1B4332]"
+              />
+              <div className="flex flex-col gap-2">
+                {(['am', 'pm'] as const).map(p => (
+                  <button
+                    key={p}
+                    onClick={() => setMemoEdit(prev => (prev ? { ...prev, period: p } : prev))}
+                    className={`px-3 py-2 rounded-xl text-sm font-bold transition-colors ${memoEdit.period === p ? 'bg-[#1B4332] text-white' : 'bg-gray-100 text-gray-500'}`}
+                  >
+                    {p === 'am' ? '오전' : '오후'}{(p === 'am' ? memoEdit.am.trim() : memoEdit.pm.trim()) ? ' ·' : ''}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="flex gap-2 mt-4">
               <button onClick={deleteMemo} className="flex-1 py-3 rounded-xl bg-gray-100 text-gray-500 font-bold text-sm active:scale-95 transition-transform">삭제</button>
               <button onClick={saveMemo} className="flex-[2] py-3 rounded-xl bg-[#1B4332] text-white font-bold text-sm active:scale-95 transition-transform">저장</button>
