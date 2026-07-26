@@ -38,6 +38,7 @@ export default function App() {
   const [shareRound, setShareRound] = useState<Round | null>(null);
   const [shareHoles, setShareHoles] = useState<Hole[]>([]);
   const [shareError, setShareError] = useState(false);
+  const [shareView, setShareView] = useState<'summary' | 'miss' | 'holes'>('summary');
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -143,14 +144,29 @@ export default function App() {
               <p className="text-gray-500 text-sm">비공개 라운드이거나 존재하지 않는 링크입니다.</p>
             </div>
           ) : shareRound ? (
-            <RoundSummary
-              round={shareRound}
-              holes={shareHoles}
-              viewMode="view"
-              shareMode={true}
-              onSave={() => {}}
-              onDelete={async () => {}}
-            />
+            shareView === 'miss' ? (
+              <MissBreakdown
+                roundId={shareRound.id}
+                onBack={() => setShareView('summary')}
+              />
+            ) : shareView === 'holes' ? (
+              <HoleDetail
+                roundId={shareRound.id}
+                selectedIndices={shareHoles.map((_, i) => i)}
+                onBack={() => setShareView('summary')}
+              />
+            ) : (
+              <RoundSummary
+                round={shareRound}
+                holes={shareHoles}
+                viewMode="view"
+                shareMode={true}
+                onSave={() => {}}
+                onDelete={async () => {}}
+                onMissBreakdown={() => setShareView('miss')}
+                onViewHoles={() => setShareView('holes')}
+              />
+            )
           ) : (
             <div className="flex items-center justify-center h-screen">
               <p className="text-gray-500 text-sm">불러오는 중...</p>
