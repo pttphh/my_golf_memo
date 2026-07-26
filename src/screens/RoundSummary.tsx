@@ -855,27 +855,50 @@ const wedgeTotal = holes.reduce((sum, h) => {
   }
 
   async function handleShare() {
-    await supabase.from('rounds').update({ is_public: true }).eq('id', roundData.id);
     const shareUrl = `${window.location.origin}?share=${roundData.id}`;
-    try {
-      await navigator.clipboard.writeText(shareUrl);
+
+    // 공개 설정은 복사와 병렬로 (await 하면 모바일에서 user gesture가 만료되어 clipboard/share가 실패함)
+    void supabase.from('rounds').update({ is_public: true }).eq('id', roundData.id);
+
+    const showToast = () => {
       setShareToast(true);
       setTimeout(() => setShareToast(false), 2500);
-    } catch {
-      if (navigator.share) {
-        await navigator.share({ title: roundData.course_name, url: shareUrl });
-        setShareToast(true);
-        setTimeout(() => setShareToast(false), 2500);
+    };
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareUrl);
+        showToast();
         return;
       }
+    } catch {
+      /* fall through */
+    }
+
+    try {
+      if (typeof navigator.share === 'function') {
+        await navigator.share({ title: roundData.course_name, url: shareUrl });
+        showToast();
+        return;
+      }
+    } catch {
+      /* user cancelled or share failed — fall through */
+    }
+
+    try {
       const input = document.createElement('input');
       input.value = shareUrl;
+      input.setAttribute('readonly', '');
+      input.style.position = 'fixed';
+      input.style.left = '-9999px';
       document.body.appendChild(input);
       input.select();
+      input.setSelectionRange(0, shareUrl.length);
       document.execCommand('copy');
       document.body.removeChild(input);
-      setShareToast(true);
-      setTimeout(() => setShareToast(false), 2500);
+      showToast();
+    } catch {
+      window.prompt('아래 링크를 복사하세요', shareUrl);
     }
   }
 
@@ -922,7 +945,7 @@ const wedgeTotal = holes.reduce((sum, h) => {
       )}
 
       {shareToast && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-gray-800 text-white text-sm px-4 py-2.5 rounded-xl shadow-lg">
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[60] bg-gray-800 text-white text-sm px-4 py-2.5 rounded-xl shadow-lg">
           링크가 복사되었습니다
         </div>
       )}
@@ -936,13 +959,13 @@ const wedgeTotal = holes.reduce((sum, h) => {
       <div className="bg-[#1B4332] text-white px-4 pb-4" style={{ paddingTop: shareMode ? '1rem' : 'calc(env(safe-area-inset-top) + 1rem)' }}>
           <p className="text-green-200 text-xs mb-1">{roundData.date}  · {roundData.time}</p>
           <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold flex-1 flex items-center gap-2">
-              {roundData.course_name}
+            <h2 className="text-xl font-bold flex-1 min-w-0 flex items-center gap-2">
+              <span className="truncate">{roundData.course_name}</span>
               {!shareMode && (
                 <button
                   type="button"
                   onClick={openEditModal}
-                  className="p-1 active:opacity-70 transition-opacity"
+                  className="p-1 active:opacity-70 transition-opacity flex-shrink-0"
                   aria-label="라운드 정보 수정"
                 >
                   <Pencil size={14} className="text-green-300" />
@@ -953,7 +976,7 @@ const wedgeTotal = holes.reduce((sum, h) => {
               <button
                 type="button"
                 onClick={handleShare}
-                className="p-2 active:opacity-70 transition-opacity flex-shrink-0"
+                className="relative z-10 p-2 active:opacity-70 transition-opacity flex-shrink-0"
                 aria-label="라운드 공유"
               >
                 <Share2 size={18} className="text-green-300" />
