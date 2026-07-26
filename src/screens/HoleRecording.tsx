@@ -5,8 +5,10 @@ import type { Round, Hole } from '../types';
 import { emptyHole, cappedHoleStrokes, effectiveTotalStrokes, effectiveOverPar } from '../types';
 
 function getScoreName(par: number, total: number, overPar: number): string {
-  if (isYangpa(par, total)) return '양파';
-  if (par === 3 && total === 1) return '홀인원';
+  const p = Number(par) || 0;
+  if (p > 0 && overPar >= p) return '양파';
+  if (isYangpa(p, total)) return '양파';
+  if (p === 3 && total === 1) return '홀인원';
   if (overPar <= -3) return '알바트로스';
   if (overPar === -2) return '이글';
   if (overPar === -1) return '버디';
@@ -19,7 +21,8 @@ function getScoreName(par: number, total: number, overPar: number): string {
 }
 
 function isYangpa(par: number, total: number): boolean {
-  return total >= par * 2;
+  const p = Number(par) || 0;
+  return p > 0 && Number(total) >= p * 2;
 }
 
 function formatOverPar(over: number): string {
@@ -29,8 +32,9 @@ function formatOverPar(over: number): string {
 }
 
 function getScoreStyle(par: number, total: number, overPar: number): { text: string; bg: string; border: string } {
-  if (isYangpa(par, total)) return { text: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200' };
-  if (par === 3 && total === 1) return { text: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200' };
+  const p = Number(par) || 0;
+  if (p > 0 && (overPar >= p || isYangpa(p, total))) return { text: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200' };
+  if (p === 3 && total === 1) return { text: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200' };
   if (overPar <= -1) return { text: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200' };
   if (overPar === 0) return { text: 'text-[#1B4332]', bg: 'bg-green-50', border: 'border-green-200' };
   if (overPar <= 2) return { text: 'text-yellow-700', bg: 'bg-yellow-50', border: 'border-yellow-300' };
@@ -286,7 +290,17 @@ function TeeShotBlock({ par, topResult, subResult, miss, memo, onTopChange, onSu
 
 // Score = green shots + putts, capped at yangpa (par*2). Putts/green_shots themselves are uncapped.
 function buildAutoTotal(h: Hole): number {
-  return cappedHoleStrokes(h.par, h.green_shots + h.putts);
+  const par = Number(h.par) || 0;
+  const raw = Number(h.green_shots) + Number(h.putts);
+  if (par <= 0) return Math.max(0, raw);
+  return Math.min(raw, par * 2);
+}
+
+function displayScore(h: Hole, manual: boolean): { total: number; over: number } {
+  const par = Number(h.par) || 0;
+  const raw = manual ? Number(h.total_strokes) : Number(h.green_shots) + Number(h.putts);
+  const total = par > 0 ? Math.min(Math.max(raw, 0), par * 2) : Math.max(raw, 0);
+  return { total, over: total - par };
 }
 
 function parseMiss(raw: string): string[] {
@@ -635,7 +649,8 @@ export default function HoleRecording({
     setHole(prev => {
       const next = { ...prev, ...updates };
       const total = buildAutoTotal(next);
-      return { ...next, total_strokes: total, over_par: total - next.par };
+      const par = Number(next.par) || 0;
+      return { ...next, total_strokes: total, over_par: total - par };
     });
   }
 
@@ -644,17 +659,22 @@ export default function HoleRecording({
       const next = { ...prev, ...updates };
       if (!isManual) {
         const total = buildAutoTotal(next);
-        return { ...next, total_strokes: total, over_par: total - next.par };
+        const par = Number(next.par) || 0;
+        return { ...next, total_strokes: total, over_par: total - par };
       }
-      return { ...next, over_par: cappedHoleStrokes(next.par, next.total_strokes) - next.par, total_strokes: cappedHoleStrokes(next.par, next.total_strokes) };
+      const par = Number(next.par) || 0;
+      const total = par > 0 ? Math.min(Number(next.total_strokes), par * 2) : Number(next.total_strokes);
+      return { ...next, total_strokes: total, over_par: total - par };
     });
   }
 
   function adjustManualScore(delta: number) {
     setIsManual(true);
     setHole(prev => {
-      const total = cappedHoleStrokes(prev.par, Math.max(1, prev.total_strokes + delta));
-      return { ...prev, total_strokes: total, over_par: total - prev.par };
+      const par = Number(prev.par) || 0;
+      const max = par > 0 ? par * 2 : Number.POSITIVE_INFINITY;
+      const total = Math.min(max, Math.max(1, Number(prev.total_strokes) + delta));
+      return { ...prev, total_strokes: total, over_par: total - par };
     });
   }
 
@@ -684,8 +704,10 @@ export default function HoleRecording({
   }
 
  async function upsertHole(h: Hole): Promise<void> {
-  const total = cappedHoleStrokes(h.par, h.total_strokes);
-  const { id, ...fields } = { ...h, total_strokes: total, over_par: total - h.par, is_manual: isManual };
+  const par = Number(h.par) || 0;
+  const raw = Number(h.total_strokes) || 0;
+  const total = par > 0 ? Math.min(raw, par * 2) : raw;
+  const { id, ...fields } = { ...h, total_strokes: total, over_par: total - par, is_manual: isManual };
   console.log('[upsert round_id]', fields.round_id);
   const { error } = await supabase
     .from('holes')
@@ -713,7 +735,7 @@ export default function HoleRecording({
     setCurrentHoleIndex(goNext ? currentHoleIndex + 1 : currentHoleIndex - 1);
   }
 
-  const overPar = effectiveOverPar(hole);
+  const { total: scoreTotal, over: overPar } = displayScore(hole, isManual);
 
   const savedOnly = Object.values(savedHoles).filter(h => h.hole_number !== holeNumber);
   const totalScore = savedOnly.reduce((s, h) => s + effectiveTotalStrokes(h), 0);
@@ -728,9 +750,9 @@ export default function HoleRecording({
   const frontLabel = round.course_front ? `전반 (${round.course_front})` : '전반 (1-9홀)';
   const backLabel = round.course_back ? `후반 (${round.course_back})` : '후반 (10-18홀)';
 
-  const scoreName = getScoreName(hole.par, effectiveTotalStrokes(hole), overPar);
-  const isMaxScore = isYangpa(hole.par, effectiveTotalStrokes(hole));
-  const scoreStyle = getScoreStyle(hole.par, effectiveTotalStrokes(hole), overPar);
+  const scoreName = getScoreName(hole.par, scoreTotal, overPar);
+  const isMaxScore = isYangpa(hole.par, scoreTotal) || overPar >= Number(hole.par);
+  const scoreStyle = getScoreStyle(hole.par, scoreTotal, overPar);
 
   const secondKeys = ([1, 2, 3, 4] as const).slice(0, secondShotsCount);
 
@@ -867,8 +889,8 @@ export default function HoleRecording({
                 <p className={`text-2xl font-extrabold tracking-tight ${scoreStyle.text}`}>{scoreName}</p>
                 <p className={`text-xs mt-0.5 font-medium ${scoreStyle.text} opacity-70`}>
                   {overPar === 0
-                    ? `총 ${effectiveTotalStrokes(hole)}타`
-                    : `${overPar > 0 ? `+${overPar}` : overPar} · 총 ${effectiveTotalStrokes(hole)}타`}
+                    ? `총 ${scoreTotal}타`
+                    : `${overPar > 0 ? `+${overPar}` : overPar} · 총 ${scoreTotal}타`}
                 </p>
               </div>
               <button

@@ -160,11 +160,15 @@ export function getScoreLabel(overPar: number): string {
 
 /** 양파 한도: 파N → +N까지 (파3=+3, 파4=+4, 파5=+5). 스코어 타수 상한 = par * 2 */
 export function maxStrokesForPar(par: number): number {
-  return par * 2;
+  const p = Number(par) || 0;
+  return p * 2;
 }
 
 export function cappedHoleStrokes(par: number, rawTotal: number): number {
-  return Math.min(Math.max(rawTotal, 0), maxStrokesForPar(par));
+  const p = Number(par) || 0;
+  const raw = Number(rawTotal) || 0;
+  if (p <= 0) return Math.max(raw, 0);
+  return Math.min(Math.max(raw, 0), p * 2);
 }
 
 /** 집계/표시용 유효 타수 (양파 캡 적용). green_shots·putts 원본은 그대로 둠. */
