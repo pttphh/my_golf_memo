@@ -158,6 +158,24 @@ export function getScoreLabel(overPar: number): string {
   return `+${overPar}`;
 }
 
+/** 양파 한도: 파N → +N까지 (파3=+3, 파4=+4, 파5=+5). 스코어 타수 상한 = par * 2 */
+export function maxStrokesForPar(par: number): number {
+  return par * 2;
+}
+
+export function cappedHoleStrokes(par: number, rawTotal: number): number {
+  return Math.min(Math.max(rawTotal, 0), maxStrokesForPar(par));
+}
+
+/** 집계/표시용 유효 타수 (양파 캡 적용). green_shots·putts 원본은 그대로 둠. */
+export function effectiveTotalStrokes(h: { par: number; total_strokes: number }): number {
+  return cappedHoleStrokes(h.par, h.total_strokes);
+}
+
+export function effectiveOverPar(h: { par: number; total_strokes: number }): number {
+  return effectiveTotalStrokes(h) - h.par;
+}
+
 export function getScorePrefix(overPar: number): string {
   if (overPar > 0) return `+${overPar}`;
   if (overPar < 0) return `${overPar}`;

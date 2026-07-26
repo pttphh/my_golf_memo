@@ -52,10 +52,9 @@ export default async function handler(req: Request) {
 <meta name="twitter:title" content="${esc(title)}"/>
 <meta name="twitter:description" content="${esc(desc)}"/>
 <meta name="twitter:image" content="${img}"/>
-<meta http-equiv="refresh" content="0; url=${appUrl}"/>
 </head><body>
 <script>location.replace(${JSON.stringify(appUrl)});</script>
-<p style="font-family:sans-serif;padding:24px;color:#555">라운드 기록으로 이동 중…</p>
+<p style="font-family:sans-serif;padding:24px;color:#555">라운드 기록으로 이동 중… <a href="${appUrl}">여기</a>를 눌러 이동</p>
 </body></html>`;
 
   return new Response(html, {

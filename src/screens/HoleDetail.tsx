@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { ChevronLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Hole } from '../types';
-import { getScoreLabel } from '../types';
+import { getScoreLabel, effectiveTotalStrokes, effectiveOverPar } from '../types';
 
 interface Props {
   roundId: string;
@@ -42,11 +42,12 @@ function ShotSection({ title, club, result, penaltyType, miss, memo }: {
 }
 
 function HoleCard({ hole }: { hole: Hole }) {
-  const overPar = hole.over_par;
-  const overStr = overPar > 0 ? `+${overPar}` : overPar === 0 ? 'E' : `${overPar}`;
+  const overPar = effectiveOverPar(hole);
+  const overStr = overPar >= hole.par ? '양파' : overPar > 0 ? `+${overPar}` : overPar === 0 ? 'E' : `${overPar}`;
 
   let scoreBg = 'bg-green-50 border-green-200 text-[#1B4332]';
-  if (overPar > 1) scoreBg = 'bg-red-50 border-red-200 text-red-500';
+  if (overPar >= hole.par) scoreBg = 'bg-red-50 border-red-200 text-red-500';
+  else if (overPar > 1) scoreBg = 'bg-red-50 border-red-200 text-red-500';
   else if (overPar === 1) scoreBg = 'bg-yellow-50 border-yellow-200 text-yellow-700';
   else if (overPar < 0) scoreBg = 'bg-blue-50 border-blue-200 text-blue-600';
 
@@ -66,11 +67,11 @@ function HoleCard({ hole }: { hole: Hole }) {
       <div className="px-4 py-3 flex items-center justify-between bg-gray-50 border-b border-gray-100">
         <div>
           <p className="font-bold text-gray-800 text-base">{hole.hole_number}번 홀</p>
-          <p className="text-xs text-gray-500">파{hole.par} · {hole.total_strokes}타</p>
+          <p className="text-xs text-gray-500">파{hole.par} · {effectiveTotalStrokes(hole)}타</p>
         </div>
         <div className={`rounded-xl border-2 px-3 py-1.5 text-center ${scoreBg}`}>
           <p className="font-extrabold text-xl leading-none">{overStr}</p>
-          <p className="text-[10px] mt-0.5 opacity-80">{getScoreLabel(overPar)}</p>
+          <p className="text-[10px] mt-0.5 opacity-80">{overPar >= hole.par ? '양파' : getScoreLabel(overPar)}</p>
         </div>
       </div>
 

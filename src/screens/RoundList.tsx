@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Plus, Search, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Round } from '../types';
+import { effectiveTotalStrokes, effectiveOverPar } from '../types';
 
 interface Props {
   onRoundSelect: (round: Round) => void;
@@ -69,10 +70,10 @@ export default function RoundList({ onRoundSelect, onIncompleteRoundSelect, onAd
 
       setRounds(roundRows.map(r => {
         const hs = holesMap[r.id] ?? [];
-        const totalStrokes = hs.reduce((s, h) => s + h.total_strokes, 0);
+        const totalStrokes = hs.reduce((s, h) => s + effectiveTotalStrokes(h), 0);
         const totalPar = hs.reduce((s, h) => s + h.par, 0);
         const threePuttPlus = hs.filter(h => h.putts >= 3).length;
-        const doubleOrWorse = hs.filter(h => h.over_par >= 2).length;
+        const doubleOrWorse = hs.filter(h => effectiveOverPar(h) >= 2).length;
         const penalties = hs.reduce((s, h) => {
           let pen = 0;
           for (const p of [h.tee_penalty_type, h.tee2_penalty_type, h.second1_penalty_type, h.second2_penalty_type, h.second3_penalty_type]) {

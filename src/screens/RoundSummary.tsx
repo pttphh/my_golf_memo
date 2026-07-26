@@ -21,6 +21,7 @@ import {
   computeShortPuttSuccessRate,
   chartPointsAvg,
 } from '../components/SegmentChart';
+import { effectiveTotalStrokes, effectiveOverPar } from '../types';
 
 interface Props {
   round: Round;
@@ -596,7 +597,7 @@ export default function RoundSummary({ round, viewMode, shareMode = false, holes
     fetchHoles();
   }, [roundData.id, externalHoles]);
 
-  const totalStrokes = holes.reduce((s, h) => s + h.total_strokes, 0);
+  const totalStrokes = holes.reduce((s, h) => s + effectiveTotalStrokes(h), 0);
   const goalTier = totalStrokes >= 97 ? 0 : totalStrokes >= 92 ? 1 : 2;
   const goalPenalty = [5, 3, 2][goalTier];
   const goalFairway = [40, 50, 55][goalTier];
@@ -612,17 +613,17 @@ export default function RoundSummary({ round, viewMode, shareMode = false, holes
 
   const front9 = holes.filter(h => h.hole_number <= 9);
   const back9 = holes.filter(h => h.hole_number >= 10);
-  const front9Score = front9.reduce((s, h) => s + h.total_strokes, 0);
-  const back9Score = back9.reduce((s, h) => s + h.total_strokes, 0);
+  const front9Score = front9.reduce((s, h) => s + effectiveTotalStrokes(h), 0);
+  const back9Score = back9.reduce((s, h) => s + effectiveTotalStrokes(h), 0);
   const front9Par = front9.reduce((s, h) => s + h.par, 0);
   const back9Par = back9.reduce((s, h) => s + h.par, 0);
 
   const scoreDist = {
-    birdie: holes.filter(h => h.over_par <= -1).length,
-    par: holes.filter(h => h.over_par === 0).length,
-    bogey: holes.filter(h => h.over_par === 1).length,
-    double: holes.filter(h => h.over_par === 2).length,
-    triple: holes.filter(h => h.over_par >= 3).length,
+    birdie: holes.filter(h => effectiveOverPar(h) <= -1).length,
+    par: holes.filter(h => effectiveOverPar(h) === 0).length,
+    bogey: holes.filter(h => effectiveOverPar(h) === 1).length,
+    double: holes.filter(h => effectiveOverPar(h) === 2).length,
+    triple: holes.filter(h => effectiveOverPar(h) >= 3).length,
   };
 
   const totalPutts = holes.reduce((s, h) => s + h.putts, 0);

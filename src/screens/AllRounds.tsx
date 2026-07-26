@@ -3,6 +3,7 @@ import { Trophy } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { missPatternKey } from '../lib/missPattern';
 import type { Round, Hole } from '../types';
+import { effectiveTotalStrokes, effectiveOverPar } from '../types';
 import {
   SegmentLineChart,
   SegmentCardFootnote,
@@ -51,12 +52,12 @@ const SEGMENTS: { id: SegmentType; label: string }[] = [
 const MISS_BAR_COLORS = ['#E24B4A', '#E24B4A', '#EF9F27', '#EF9F27', '#B4B2A9'];
 
 function computeHoleStats(holes: Hole[]): Omit<RoundWithHoles, 'round' | 'holes'> {
-  const totalStrokes = holes.reduce((s, h) => s + h.total_strokes, 0);
+  const totalStrokes = holes.reduce((s, h) => s + effectiveTotalStrokes(h), 0);
   const totalPar = holes.reduce((s, h) => s + h.par, 0);
   const overPar = totalStrokes - totalPar;
   const totalPutts = holes.reduce((s, h) => s + h.putts, 0);
   const threePuttPlus = holes.filter(h => h.putts >= 3).length;
-  const doubleOrWorse = holes.filter(h => h.over_par >= 2).length;
+  const doubleOrWorse = holes.filter(h => effectiveOverPar(h) >= 2).length;
   const penalties = holes.reduce((s, h) => {
     let pen = 0;
     for (const p of [h.tee_penalty_type, h.tee2_penalty_type, h.second1_penalty_type, h.second2_penalty_type, h.second3_penalty_type]) {
@@ -73,11 +74,11 @@ function computeHoleStats(holes: Hole[]): Omit<RoundWithHoles, 'round' | 'holes'
   }).length;
   const fairwayDenom = 14;
   const fairwayHits = holes.filter(h => h.par !== 3 && h.tee_result === '페어웨이').length;
-  const birdie = holes.filter(h => h.over_par <= -1).length;
-  const parHoles = holes.filter(h => h.over_par === 0).length;
-  const bogey = holes.filter(h => h.over_par === 1).length;
-  const double = holes.filter(h => h.over_par === 2).length;
-  const triple = holes.filter(h => h.over_par >= 3).length;
+  const birdie = holes.filter(h => effectiveOverPar(h) <= -1).length;
+  const parHoles = holes.filter(h => effectiveOverPar(h) === 0).length;
+  const bogey = holes.filter(h => effectiveOverPar(h) === 1).length;
+  const double = holes.filter(h => effectiveOverPar(h) === 2).length;
+  const triple = holes.filter(h => effectiveOverPar(h) >= 3).length;
   return { totalStrokes, totalPar, overPar, totalPutts, threePuttPlus, penalties, gir, fairwayHits, fairwayDenom, doubleOrWorse, birdie, parHoles, bogey, double, triple };
 }
 

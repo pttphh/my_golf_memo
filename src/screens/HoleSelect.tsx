@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Hole, Round } from '../types';
+import { effectiveTotalStrokes, effectiveOverPar } from '../types';
 
 interface Props {
   roundId: string;
@@ -89,11 +90,11 @@ export default function HoleSelect({ roundId, onBack, onConfirm: _onConfirm, onE
     Array.from({ length: 18 }, (_, i) => i + 1).find(n => !savedNumbers.has(n)) ?? null
   );
 
-  const totalScore = holes.reduce((s, h) => s + h.total_strokes, 0);
+  const totalScore = holes.reduce((s, h) => s + effectiveTotalStrokes(h), 0);
   const front9 = holes.filter(h => h.hole_number <= 9);
   const back9 = holes.filter(h => h.hole_number >= 10);
-  const front9Over = front9.reduce((s, h) => s + (h.total_strokes - h.par), 0);
-  const back9Over = back9.reduce((s, h) => s + (h.total_strokes - h.par), 0);
+  const front9Over = front9.reduce((s, h) => s + effectiveOverPar(h), 0);
+  const back9Over = back9.reduce((s, h) => s + effectiveOverPar(h), 0);
   const back9Started = back9.length > 0;
   const progressPct = (holes.length / 18) * 100;
 
@@ -131,7 +132,7 @@ export default function HoleSelect({ roundId, onBack, onConfirm: _onConfirm, onE
             );
           }
 
-          const overPar = hole.over_par;
+          const overPar = effectiveOverPar(hole);
           const par = hole.par;
           const overStr = getOverStr(overPar, par);
           const { obCount, hazardCount } = getPenalties(hole);

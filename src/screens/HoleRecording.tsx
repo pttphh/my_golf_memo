@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Plus, ChevronLeft, ChevronRight, X, Lock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Round, Hole } from '../types';
-import { emptyHole } from '../types';
+import { emptyHole, cappedHoleStrokes, effectiveTotalStrokes, effectiveOverPar } from '../types';
 
 function getScoreName(par: number, total: number, overPar: number): string {
   if (isYangpa(par, total)) return '양파';
@@ -284,9 +284,9 @@ function TeeShotBlock({ par, topResult, subResult, miss, memo, onTopChange, onSu
   );
 }
 
-// Score = green shots + putts only. Penalties are info-only.
+// Score = green shots + putts, capped at yangpa (par*2). Putts/green_shots themselves are uncapped.
 function buildAutoTotal(h: Hole): number {
-  return h.green_shots + h.putts;
+  return cappedHoleStrokes(h.par, h.green_shots + h.putts);
 }
 
 function parseMiss(raw: string): string[] {
@@ -646,14 +646,14 @@ export default function HoleRecording({
         const total = buildAutoTotal(next);
         return { ...next, total_strokes: total, over_par: total - next.par };
       }
-      return { ...next, over_par: next.total_strokes - next.par };
+      return { ...next, over_par: cappedHoleStrokes(next.par, next.total_strokes) - next.par, total_strokes: cappedHoleStrokes(next.par, next.total_strokes) };
     });
   }
 
   function adjustManualScore(delta: number) {
     setIsManual(true);
     setHole(prev => {
-      const total = Math.max(1, prev.total_strokes + delta);
+      const total = cappedHoleStrokes(prev.par, Math.max(1, prev.total_strokes + delta));
       return { ...prev, total_strokes: total, over_par: total - prev.par };
     });
   }
@@ -684,7 +684,8 @@ export default function HoleRecording({
   }
 
  async function upsertHole(h: Hole): Promise<void> {
-  const { id, ...fields } = { ...h, is_manual: isManual };
+  const total = cappedHoleStrokes(h.par, h.total_strokes);
+  const { id, ...fields } = { ...h, total_strokes: total, over_par: total - h.par, is_manual: isManual };
   console.log('[upsert round_id]', fields.round_id);
   const { error } = await supabase
     .from('holes')
@@ -712,24 +713,24 @@ export default function HoleRecording({
     setCurrentHoleIndex(goNext ? currentHoleIndex + 1 : currentHoleIndex - 1);
   }
 
-  const overPar = hole.over_par;
+  const overPar = effectiveOverPar(hole);
 
   const savedOnly = Object.values(savedHoles).filter(h => h.hole_number !== holeNumber);
-  const totalScore = savedOnly.reduce((s, h) => s + h.total_strokes, 0);
-const front9Strokes = savedOnly.filter(h => h.hole_number <= 9).reduce((s, h) => s + h.total_strokes, 0);
-const back9Strokes = savedOnly.filter(h => h.hole_number >= 10).reduce((s, h) => s + h.total_strokes, 0);
-const back9Started = savedOnly.some(h => h.hole_number >= 10);
-const front9Over = savedOnly.filter(h => h.hole_number <= 9).reduce((s, h) => s + h.over_par, 0);
-const back9Over = savedOnly.filter(h => h.hole_number >= 10).reduce((s, h) => s + h.over_par, 0);
+  const totalScore = savedOnly.reduce((s, h) => s + effectiveTotalStrokes(h), 0);
+  const front9Strokes = savedOnly.filter(h => h.hole_number <= 9).reduce((s, h) => s + effectiveTotalStrokes(h), 0);
+  const back9Strokes = savedOnly.filter(h => h.hole_number >= 10).reduce((s, h) => s + effectiveTotalStrokes(h), 0);
+  const back9Started = savedOnly.some(h => h.hole_number >= 10);
+  const front9Over = savedOnly.filter(h => h.hole_number <= 9).reduce((s, h) => s + effectiveOverPar(h), 0);
+  const back9Over = savedOnly.filter(h => h.hole_number >= 10).reduce((s, h) => s + effectiveOverPar(h), 0);
   const progressPct = (savedOnly.length / 18) * 100;
   const headerBg = holeNumber % 2 !== 0 ? '#1B4332' : '#2d5a3d';
   const companions = [round.companion1, round.companion2, round.companion3].filter(Boolean).join(' · ');
   const frontLabel = round.course_front ? `전반 (${round.course_front})` : '전반 (1-9홀)';
   const backLabel = round.course_back ? `후반 (${round.course_back})` : '후반 (10-18홀)';
 
-  const scoreName = getScoreName(hole.par, hole.total_strokes, overPar);
-  const isMaxScore = isYangpa(hole.par, hole.total_strokes);
-  const scoreStyle = getScoreStyle(hole.par, hole.total_strokes, overPar);
+  const scoreName = getScoreName(hole.par, effectiveTotalStrokes(hole), overPar);
+  const isMaxScore = isYangpa(hole.par, effectiveTotalStrokes(hole));
+  const scoreStyle = getScoreStyle(hole.par, effectiveTotalStrokes(hole), overPar);
 
   const secondKeys = ([1, 2, 3, 4] as const).slice(0, secondShotsCount);
 
@@ -866,8 +867,8 @@ const back9Over = savedOnly.filter(h => h.hole_number >= 10).reduce((s, h) => s 
                 <p className={`text-2xl font-extrabold tracking-tight ${scoreStyle.text}`}>{scoreName}</p>
                 <p className={`text-xs mt-0.5 font-medium ${scoreStyle.text} opacity-70`}>
                   {overPar === 0
-                    ? `총 ${hole.total_strokes}타`
-                    : `${overPar > 0 ? `+${overPar}` : overPar} · 총 ${hole.total_strokes}타`}
+                    ? `총 ${effectiveTotalStrokes(hole)}타`
+                    : `${overPar > 0 ? `+${overPar}` : overPar} · 총 ${effectiveTotalStrokes(hole)}타`}
                 </p>
               </div>
               <button
