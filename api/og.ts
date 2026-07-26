@@ -38,20 +38,22 @@ export default async function handler(req: Request) {
     const overTotal = holeList.reduce((s, hh) => s + (hh.over_par || 0), 0);
     const overStr = overTotal === 0 ? 'E' : overTotal > 0 ? `+${overTotal}` : `${overTotal}`;
 
-    let birdieDown = 0, parCnt = 0, bogey = 0, dblUp = 0;
+    let birdieDown = 0, parCnt = 0, bogey = 0, dbl = 0, tripleUp = 0;
     for (const hh of holeList) {
       const o = hh.over_par ?? 0;
       if (o <= -1) birdieDown++;
       else if (o === 0) parCnt++;
       else if (o === 1) bogey++;
-      else dblUp++;
+      else if (o === 2) dbl++;
+      else tripleUp++;
     }
 
     const stats: Array<[string, number, string]> = [
       ['버디 ↓', birdieDown, '#93C5FD'],
       ['파', parCnt, '#C0DD97'],
       ['보기', bogey, '#FCD34D'],
-      ['더블 +', dblUp, '#FCA5A5'],
+      ['더블', dbl, '#FCA5A5'],
+      ['트리플 +', tripleUp, '#F87171'],
     ];
 
     const dateLine = [date, time].filter(Boolean).join('   ·   ') || '골프 라운드 기록';
@@ -65,13 +67,13 @@ export default async function handler(req: Request) {
           flexGrow: 1,
           flexBasis: 0,
           background: 'rgba(255,255,255,0.08)',
-          borderRadius: 20,
-          padding: '18px 22px',
-          marginRight: i === stats.length - 1 ? 0 : 18,
+          borderRadius: 18,
+          padding: '16px 16px',
+          marginRight: i === stats.length - 1 ? 0 : 14,
         },
       },
-        h('div', { style: { display: 'flex', fontSize: 28, color } }, label),
-        h('div', { style: { display: 'flex', fontSize: 60, fontWeight: 700, marginTop: 4 } }, String(value)),
+        h('div', { style: { display: 'flex', fontSize: 25, color } }, label),
+        h('div', { style: { display: 'flex', fontSize: 54, fontWeight: 700, marginTop: 4 } }, String(value)),
       ),
     );
 
@@ -83,7 +85,7 @@ export default async function handler(req: Request) {
         flexDirection: 'column',
         background: '#1B4332',
         color: '#ffffff',
-        padding: '64px 72px',
+        padding: '64px 64px',
         fontFamily: 'NotoKR',
       },
     },
