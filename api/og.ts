@@ -1,4 +1,5 @@
 import { ImageResponse } from '@vercel/og';
+import { createElement as h } from 'react';
 
 export const config = { runtime: 'edge' };
 
@@ -33,13 +34,13 @@ export default async function handler(req: Request) {
     const time: string = (round && round.time) || '';
 
     const holeList: Array<{ over_par?: number; total_strokes?: number }> = Array.isArray(holes) ? holes : [];
-    const total = holeList.reduce((s, h) => s + (h.total_strokes || 0), 0);
-    const overTotal = holeList.reduce((s, h) => s + (h.over_par || 0), 0);
+    const total = holeList.reduce((s, hh) => s + (hh.total_strokes || 0), 0);
+    const overTotal = holeList.reduce((s, hh) => s + (hh.over_par || 0), 0);
     const overStr = overTotal === 0 ? 'E' : overTotal > 0 ? `+${overTotal}` : `${overTotal}`;
 
     let birdieDown = 0, parCnt = 0, bogey = 0, dblUp = 0;
-    for (const h of holeList) {
-      const o = h.over_par ?? 0;
+    for (const hh of holeList) {
+      const o = hh.over_par ?? 0;
       if (o <= -1) birdieDown++;
       else if (o === 0) parCnt++;
       else if (o === 1) bogey++;
@@ -53,62 +54,56 @@ export default async function handler(req: Request) {
       ['더블 +', dblUp, '#FCA5A5'],
     ];
 
-    const dateLine = [date, time].filter(Boolean).join('   ·   ');
+    const dateLine = [date, time].filter(Boolean).join('   ·   ') || '골프 라운드 기록';
 
-    return new ImageResponse(
-      (
-        <div
-          style={{
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            background: '#1B4332',
-            color: '#ffffff',
-            padding: '64px 72px',
-            fontFamily: 'NotoKR',
-          }}
-        >
-          <div style={{ display: 'flex', fontSize: 30, color: '#C0DD97' }}>{dateLine || '골프 라운드 기록'}</div>
-
-          <div style={{ display: 'flex', fontSize: 84, fontWeight: 700, marginTop: 10 }}>{course}</div>
-
-          <div style={{ display: 'flex', alignItems: 'flex-end', marginTop: 24 }}>
-            <div style={{ display: 'flex', fontSize: 128, fontWeight: 700, lineHeight: 1 }}>{total}</div>
-            <div style={{ display: 'flex', fontSize: 46, marginLeft: 14, marginBottom: 16, color: '#C0DD97' }}>타  ({overStr})</div>
-          </div>
-
-          <div style={{ display: 'flex', marginTop: 'auto', width: '100%' }}>
-            {stats.map(([label, value, color]) => (
-              <div
-                key={label}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  flexGrow: 1,
-                  flexBasis: 0,
-                  background: 'rgba(255,255,255,0.08)',
-                  borderRadius: 20,
-                  padding: '18px 22px',
-                  marginRight: label === '더블 +' ? 0 : 18,
-                }}
-              >
-                <div style={{ display: 'flex', fontSize: 28, color }}>{label}</div>
-                <div style={{ display: 'flex', fontSize: 60, fontWeight: 700, marginTop: 4 }}>{value}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      ),
-      {
-        width: 1200,
-        height: 630,
-        fonts: [
-          { name: 'NotoKR', data: font400, weight: 400, style: 'normal' },
-          { name: 'NotoKR', data: font700, weight: 700, style: 'normal' },
-        ],
+    const statCards = stats.map(([label, value, color], i) =>
+      h('div', {
+        key: label,
+        style: {
+          display: 'flex',
+          flexDirection: 'column',
+          flexGrow: 1,
+          flexBasis: 0,
+          background: 'rgba(255,255,255,0.08)',
+          borderRadius: 20,
+          padding: '18px 22px',
+          marginRight: i === stats.length - 1 ? 0 : 18,
+        },
       },
+        h('div', { style: { display: 'flex', fontSize: 28, color } }, label),
+        h('div', { style: { display: 'flex', fontSize: 60, fontWeight: 700, marginTop: 4 } }, String(value)),
+      ),
     );
+
+    const tree = h('div', {
+      style: {
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        background: '#1B4332',
+        color: '#ffffff',
+        padding: '64px 72px',
+        fontFamily: 'NotoKR',
+      },
+    },
+      h('div', { style: { display: 'flex', fontSize: 30, color: '#C0DD97' } }, dateLine),
+      h('div', { style: { display: 'flex', fontSize: 84, fontWeight: 700, marginTop: 10 } }, course),
+      h('div', { style: { display: 'flex', alignItems: 'flex-end', marginTop: 24 } },
+        h('div', { style: { display: 'flex', fontSize: 128, fontWeight: 700, lineHeight: 1 } }, String(total)),
+        h('div', { style: { display: 'flex', fontSize: 46, marginLeft: 14, marginBottom: 16, color: '#C0DD97' } }, `타  (${overStr})`),
+      ),
+      h('div', { style: { display: 'flex', marginTop: 'auto', width: '100%' } }, statCards),
+    );
+
+    return new ImageResponse(tree, {
+      width: 1200,
+      height: 630,
+      fonts: [
+        { name: 'NotoKR', data: font400, weight: 400, style: 'normal' },
+        { name: 'NotoKR', data: font700, weight: 700, style: 'normal' },
+      ],
+    });
   } catch {
     return new Response('og error', { status: 500 });
   }
