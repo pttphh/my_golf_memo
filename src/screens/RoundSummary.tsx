@@ -855,8 +855,8 @@ const wedgeTotal = holes.reduce((sum, h) => {
   }
 
   async function handleShare() {
-    const shareUrl = `${window.location.origin}?share=${roundData.id}`;
-
+    const shareUrl = `${window.location.origin}/api/share?id=${roundData.id}`;
+    
     // 공개 설정은 복사와 병렬로 (await 하면 모바일에서 user gesture가 만료되어 clipboard/share가 실패함)
     void supabase.from('rounds').update({ is_public: true }).eq('id', roundData.id);
 
