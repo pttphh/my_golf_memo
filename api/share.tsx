@@ -15,16 +15,20 @@ function esc(s: string): string {
 export default async function handler(req: Request) {
   const url = new URL(req.url);
   const id = url.searchParams.get('id') || '';
-  const v = url.searchParams.get('v') || '';
+  const v = url.searchParams.get('v') || String(Date.now());
   const origin = url.origin;
   const appUrl = `${origin}/?share=${id}`;
-  const img = `${origin}/api/og?id=${encodeURIComponent(id)}${v ? `&v=${encodeURIComponent(v)}` : ''}`;
+  // og:url 은 SPA가 아니라 이 공유 페이지(캐시버스터 포함) — 카카오 canonical 캐시 분리
+  const pageUrl = `${origin}/api/share?id=${encodeURIComponent(id)}&v=${encodeURIComponent(v)}`;
+  // 쿼리(?v=)가 아니라 경로에 버전을 넣어 카카오 이미지 CDN 캐시를 우회
+  const img = `${origin}/api/og/${encodeURIComponent(id)}/${encodeURIComponent(v)}.png`;
 
   let title = '골프 메모';
   let desc = '라운드 기록 · 미스 분석';
   try {
     const r = await fetch(
-      `${SUPABASE_URL}/rest/v1/rounds?id=eq.${id}&is_public=eq.true&select=course_name,date,time`,
+      // is_public 필터 없음: 공유 직후 레이스로 기본 타이틀이 고정되는 것 방지
+      `${SUPABASE_URL}/rest/v1/rounds?id=eq.${id}&select=course_name,date,time`,
       { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } },
     );
     const arr = await r.json();
@@ -46,9 +50,10 @@ export default async function handler(req: Request) {
 <meta property="og:title" content="${esc(title)}"/>
 <meta property="og:description" content="${esc(desc)}"/>
 <meta property="og:image" content="${img}"/>
+<meta property="og:image:secure_url" content="${img}"/>
 <meta property="og:image:width" content="1200"/>
 <meta property="og:image:height" content="630"/>
-<meta property="og:url" content="${appUrl}"/>
+<meta property="og:url" content="${esc(pageUrl)}"/>
 <meta name="twitter:card" content="summary_large_image"/>
 <meta name="twitter:title" content="${esc(title)}"/>
 <meta name="twitter:description" content="${esc(desc)}"/>
