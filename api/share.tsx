@@ -15,9 +15,10 @@ function esc(s: string): string {
 export default async function handler(req: Request) {
   const url = new URL(req.url);
   const id = url.searchParams.get('id') || '';
+  const v = url.searchParams.get('v') || '';
   const origin = url.origin;
   const appUrl = `${origin}/?share=${id}`;
-  const img = `${origin}/api/og?id=${encodeURIComponent(id)}`;
+  const img = `${origin}/api/og?id=${encodeURIComponent(id)}${v ? `&v=${encodeURIComponent(v)}` : ''}`;
 
   let title = '골프 메모';
   let desc = '라운드 기록 · 미스 분석';
@@ -60,7 +61,7 @@ export default async function handler(req: Request) {
   return new Response(html, {
     headers: {
       'content-type': 'text/html; charset=utf-8',
-      'cache-control': 'public, max-age=300',
+      'cache-control': 'no-store',
     },
   });
 }
