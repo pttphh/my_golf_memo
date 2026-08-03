@@ -859,7 +859,14 @@ const wedgeTotal = holes.reduce((sum, h) => {
     const shareUrl = `${window.location.origin}/api/share?id=${roundData.id}`;
     
     // 공개 설정은 복사와 병렬로 (await 하면 모바일에서 user gesture가 만료되어 clipboard/share가 실패함)
-    void supabase.from('rounds').update({ is_public: true }).eq('id', roundData.id);
+    // 주의: supabase 쿼리는 then()이 호출될 때 요청이 전송된다. void만 붙이면 요청이 나가지 않음
+    void supabase
+      .from('rounds')
+      .update({ is_public: true })
+      .eq('id', roundData.id)
+      .then(({ error }) => {
+        if (error) console.error('공개 설정 실패:', error);
+      });
 
     const showToast = () => {
       setShareToast(true);
