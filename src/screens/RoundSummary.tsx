@@ -542,6 +542,16 @@ export default function RoundSummary({ round, viewMode, shareMode = false, holes
   }, [round]);
 
   useEffect(() => {
+    if (!shareMode) return;
+    // 공유 모드: 다른 사람 라운드를 조회하지 않고, 이 라운드 한 점만으로 그래프 표시
+    if (holes.length > 0) {
+      setChartRounds([{ round: roundData, holes }]);
+    } else {
+      setChartRounds([]);
+    }
+  }, [shareMode, holes, roundData]);
+
+  useEffect(() => {
     if (shareMode) return;
     async function fetchChartRounds() {
       const { data: rounds } = await supabase
@@ -579,7 +589,7 @@ export default function RoundSummary({ round, viewMode, shareMode = false, holes
 
   useEffect(() => {
     if (externalHoles) {
-      setHoles(externalHoles);
+      setHoles([...externalHoles].sort((a, b) => a.hole_number - b.hole_number));
       setLoading(false);
       return;
     }
@@ -741,12 +751,19 @@ const wedgeTotal = holes.reduce((sum, h) => {
   const putt3 = holes.filter(h => h.putts === 3).length;
   const putt4plus = holes.filter(h => h.putts >= 4).length;
 
-  const teeMissBars = topMissBars(holes.map(h => h.tee_miss).filter(Boolean));
+  // MissBreakdown과 동일하게 tee2 / second4 / approach3 포함
+  const teeMissBars = topMissBars(
+    holes.flatMap(h => [h.tee_miss, h.tee2_miss].filter(Boolean)),
+  );
   const secondMissBars = topMissBars(
-    holes.flatMap(h => [h.second1_miss, h.second2_miss, h.second3_miss].filter(Boolean)),
+    holes.flatMap(h =>
+      [h.second1_miss, h.second2_miss, h.second3_miss, h.second4_miss ?? ''].filter(Boolean),
+    ),
   );
   const approachMissBars = topMissBars(
-    holes.flatMap(h => [h.approach1_miss, h.approach2_miss].filter(Boolean)),
+    holes.flatMap(h =>
+      [h.approach1_miss, h.approach2_miss, h.approach3_miss ?? ''].filter(Boolean),
+    ),
   );
 
   const chart6Penalty = chartRounds.map(d => ({
@@ -776,6 +793,7 @@ const wedgeTotal = holes.reduce((sum, h) => {
   const chart6TotalPutts = chartRounds.map(d => ({ value: computeTotalPutts(d.holes), date: d.round.date }));
   const chart6ThreePutt = chartRounds.map(d => ({ value: computeThreePuttCount(d.holes), date: d.round.date }));
   const chart6ShortPuttSuccess = chartRounds.map(d => ({ value: computeShortPuttSuccessRate(d.holes), date: d.round.date }));
+  const chartScope = shareMode ? '이 라운드' : '최근 6라운드';
   const avgChartPenalty = chartPointsAvg(chart6Penalty);
   const avgChartCriticalMiss = chartPointsAvg(chart6CriticalMiss);
   const avgChartApproachSuccess = chartPointsAvg(chart6ApproachSuccess);
@@ -1189,7 +1207,7 @@ const wedgeTotal = holes.reduce((sum, h) => {
                       points={chart6TeePenalty}
                       lineColor="#E24B4A"
                       avgValue={avgChart6TeePenalty}
-                      caption="티샷 손실타수 추이 · 최근 6라운드 (낮을수록 좋음)"
+                      caption={`티샷 손실타수 추이 · ${chartScope} (낮을수록 좋음)`}
                       formatValue={v => `${v}타`}
                       yMin={0}
                     />
@@ -1199,7 +1217,7 @@ const wedgeTotal = holes.reduce((sum, h) => {
                         points={chart6Fairway}
                         lineColor="#1D9E75"
                         avgValue={avgChart6Fairway}
-                        caption="페어웨이 안착률 추이 · 최근 6라운드 (높을수록 좋음)"
+                        caption={`페어웨이 안착률 추이 · ${chartScope} (높을수록 좋음)`}
                         formatValue={v => `${v}%`}
                         yMin={0}
                         yMax={100}
@@ -1221,7 +1239,7 @@ const wedgeTotal = holes.reduce((sum, h) => {
                       points={chart6Gir}
                       lineColor="#1D9E75"
                       avgValue={avgChart6Gir}
-                      caption="GIR 추이 · 최근 6라운드 (높을수록 좋음)"
+                      caption={`GIR 추이 · ${chartScope} (높을수록 좋음)`}
                       formatValue={v => `${v}홀`}
                       yMin={0}
                     />
@@ -1231,7 +1249,7 @@ const wedgeTotal = holes.reduce((sum, h) => {
                         points={chart6CriticalMiss}
                         lineColor="#E24B4A"
                         avgValue={avgChartCriticalMiss}
-                        caption="스코어링 구간 진입 실패 추이 · 최근 6라운드 (낮을수록 좋음)"
+                        caption={`스코어링 구간 진입 실패 추이 · ${chartScope} (낮을수록 좋음)`}
                         formatValue={v => `${v}회`}
                         yMin={0}
                       />
@@ -1242,7 +1260,7 @@ const wedgeTotal = holes.reduce((sum, h) => {
                         points={chart6WedgeSuccess}
                         lineColor="#F59E0B"
                         avgValue={avgChart6WedgeSuccess}
-                        caption="웨지온 성공률 추이 · 최근 6라운드 (높을수록 좋음)"
+                        caption={`웨지온 성공률 추이 · ${chartScope} (높을수록 좋음)`}
                         formatValue={v => `${v}%`}
                         yMin={0}
                         yMax={100}
@@ -1264,7 +1282,7 @@ const wedgeTotal = holes.reduce((sum, h) => {
                       points={chart6ApproachSuccess}
                       lineColor="#1D9E75"
                       avgValue={avgChartApproachSuccess}
-                      caption="어프로치 근접률 추이 · 최근 6라운드 (높을수록 좋음)"
+                      caption={`어프로치 근접률 추이 · ${chartScope} (높을수록 좋음)`}
                       formatValue={v => `${v}%`}
                       yMin={0}
                       yMax={100}
@@ -1274,7 +1292,7 @@ const wedgeTotal = holes.reduce((sum, h) => {
                       points={chart6ApproachFail}
                       lineColor="#E24B4A"
                       avgValue={avgChart6ApproachFail}
-                      caption="어프로치 실패 횟수 추이 · 최근 6라운드 (낮을수록 좋음)"
+                      caption={`어프로치 실패 횟수 추이 · ${chartScope} (낮을수록 좋음)`}
                       formatValue={v => `${v}회`}
                       yMin={0}
                     />
@@ -1301,7 +1319,7 @@ const wedgeTotal = holes.reduce((sum, h) => {
                         points={chart6TotalPutts}
                         lineColor="#3B82F6"
                         avgValue={avgChart6TotalPutts}
-                        caption="총 퍼팅 수 추이 · 최근 6라운드 (낮을수록 좋음)"
+                        caption={`총 퍼팅 수 추이 · ${chartScope} (낮을수록 좋음)`}
                         formatValue={v => `${v}개`}
                         yMin={0}
                       />
@@ -1312,7 +1330,7 @@ const wedgeTotal = holes.reduce((sum, h) => {
                         points={chart6ThreePutt}
                         lineColor="#E24B4A"
                         avgValue={avgChart6ThreePutt}
-                        caption="3퍼팅 이상 홀 수 추이 · 최근 6라운드 (낮을수록 좋음)"
+                        caption={`3퍼팅 이상 홀 수 추이 · ${chartScope} (낮을수록 좋음)`}
                         formatValue={v => `${v}홀`}
                         yMin={0}
                       />
@@ -1323,7 +1341,7 @@ const wedgeTotal = holes.reduce((sum, h) => {
                         points={chart6ShortPuttSuccess}
                         lineColor="#1D9E75"
                         avgValue={avgChart6ShortPuttSuccess}
-                        caption="숏퍼팅 성공률 추이 · 최근 6라운드 (높을수록 좋음)"
+                        caption={`숏퍼팅 성공률 추이 · ${chartScope} (높을수록 좋음)`}
                         formatValue={v => `${v}%`}
                         yMin={0}
                         yMax={100}

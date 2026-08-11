@@ -48,7 +48,11 @@ export default function App() {
       (async () => {
         const { data: round } = await supabase.from('rounds').select('*').eq('id', shareId).single();
         if (!round || !round.is_public) { setShareError(true); setAuthReady(true); return; }
-        const { data: holes } = await supabase.from('holes').select('*').eq('round_id', shareId);
+        const { data: holes } = await supabase
+          .from('holes')
+          .select('*')
+          .eq('round_id', shareId)
+          .order('hole_number');
         setShareRound(round as Round);
         setShareHoles((holes ?? []) as Hole[]);
         setAuthReady(true);
@@ -150,10 +154,13 @@ export default function App() {
                 onBack={() => setShareView('summary')}
               />
             ) : shareView === 'holes' ? (
-              <HoleDetail
+              <HoleSelect
                 roundId={shareRound.id}
-                selectedIndices={shareHoles.map((_, i) => i)}
+                readOnly
                 onBack={() => setShareView('summary')}
+                onConfirm={() => {}}
+                onEditHole={() => {}}
+                onContinue={() => {}}
               />
             ) : (
               <RoundSummary

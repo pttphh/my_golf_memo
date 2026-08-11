@@ -6,6 +6,7 @@ import { effectiveTotalStrokes, effectiveOverPar } from '../types';
 
 interface Props {
   roundId: string;
+  readOnly?: boolean;
   onBack: () => void;
   onConfirm: (selectedIndices: number[]) => void;
   onEditHole: (holeNumber: number, existingHole?: Hole) => void;
@@ -65,7 +66,7 @@ function scoreColor(overPar: number, par: number) {
   if (overPar === 2) return 'text-orange-600';
   return 'text-red-500';
 }
-export default function HoleSelect({ roundId, onBack, onConfirm: _onConfirm, onEditHole, onContinue, onDelete }: Props) {
+export default function HoleSelect({ roundId, readOnly = false, onBack, onConfirm: _onConfirm, onEditHole, onContinue, onDelete }: Props) {
   const [holes, setHoles] = useState<Hole[]>([]);
   const [round, setRound] = useState<Round | null>(null);
   const [loading, setLoading] = useState(true);
@@ -119,6 +120,18 @@ export default function HoleSelect({ roundId, onBack, onConfirm: _onConfirm, onE
           const hole = holes.find(h => h.hole_number === num);
 
           if (!hole) {
+            if (readOnly) {
+              return (
+                <div
+                  key={num}
+                  className="rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 p-3 text-center"
+                  style={{ height: '88px' }}
+                >
+                  <p className="text-xs font-semibold text-gray-400 mb-1">{num}홀</p>
+                  <p className="text-sm text-gray-400 mb-1">-</p>
+                </div>
+              );
+            }
             return (
               <button
                 key={num}
@@ -137,12 +150,8 @@ export default function HoleSelect({ roundId, onBack, onConfirm: _onConfirm, onE
           const overStr = getOverStr(overPar, par);
           const { obCount, hazardCount } = getPenalties(hole);
 
-          return (
-            <button
-              key={num}
-              onClick={() => onEditHole(num, hole)}
-className={`w-full rounded-2xl border-2 transition-all active:scale-95 ${scoreBg(overPar, par)}`}              style={{ height: '88px', padding: '10px 12px' }}
-            >
+          const cardInner = (
+            <>
               {/* 1줄: 홀번호 · 파 중앙 */}
               <div className="flex justify-center">
                 <span className="text-[10px] font-medium text-gray-400">
@@ -180,7 +189,28 @@ className={`w-full rounded-2xl border-2 transition-all active:scale-95 ${scoreBg
     </p>
   )}
 </div>
+            </>
+          );
 
+          if (readOnly) {
+            return (
+              <div
+                key={num}
+                className={`w-full rounded-2xl border-2 ${scoreBg(overPar, par)}`}
+                style={{ height: '88px', padding: '10px 12px' }}
+              >
+                {cardInner}
+              </div>
+            );
+          }
+
+          return (
+            <button
+              key={num}
+              onClick={() => onEditHole(num, hole)}
+className={`w-full rounded-2xl border-2 transition-all active:scale-95 ${scoreBg(overPar, par)}`}              style={{ height: '88px', padding: '10px 12px' }}
+            >
+              {cardInner}
             </button>
           );
         })}
@@ -243,12 +273,12 @@ className={`w-full rounded-2xl border-2 transition-all active:scale-95 ${scoreBg
 
         <p className="text-green-200 text-xs text-center">
           {isComplete ? '18홀 완료' : `${holes.length}홀 저장됨`}
-          {!isComplete && nextHole !== null && ` · ${nextHole}홀부터 이어서 입력 가능`}
+          {!readOnly && !isComplete && nextHole !== null && ` · ${nextHole}홀부터 이어서 입력 가능`}
         </p>
       </div>
 
       <div className="flex-1 px-4 py-5 space-y-4 pb-28">
-        {!isComplete && nextHole !== null && (
+        {!readOnly && !isComplete && nextHole !== null && (
           <button
             onClick={() => onContinue(nextHole)}
             className="w-full flex items-center justify-between bg-[#1B4332] text-white px-4 py-3.5 rounded-2xl font-semibold text-sm active:scale-[0.98] transition-transform shadow-lg shadow-green-900/20"
@@ -258,7 +288,9 @@ className={`w-full rounded-2xl border-2 transition-all active:scale-95 ${scoreBg
           </button>
         )}
 
-        <p className="text-sm text-gray-500">각 홀을 탭하여 수정할 수 있어요</p>
+        {!readOnly && (
+          <p className="text-sm text-gray-500">각 홀을 탭하여 수정할 수 있어요</p>
+        )}
 
         <div>
           <div className="flex items-center gap-2 mb-2">
@@ -276,7 +308,7 @@ className={`w-full rounded-2xl border-2 transition-all active:scale-95 ${scoreBg
           {renderGrid(10, 18)}
         </div>
 
-        {onDelete && (
+        {!readOnly && onDelete && (
           <button
             onClick={() => setShowDeleteModal(true)}
             className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl border-2 border-red-300 text-red-500 font-semibold text-sm active:scale-95 transition-transform mt-4"
