@@ -20,8 +20,8 @@ export default async function handler(req: Request) {
   const appUrl = `${origin}/?share=${id}`;
   // og:url 은 SPA가 아니라 이 공유 페이지(캐시버스터 포함) — 카카오 canonical 캐시 분리
   const pageUrl = `${origin}/api/share?id=${encodeURIComponent(id)}&v=${encodeURIComponent(v)}`;
-  // 쿼리(?v=)가 아니라 경로에 버전을 넣어 카카오 이미지 CDN 캐시를 우회
-  const img = `${origin}/api/og/${encodeURIComponent(id)}/${encodeURIComponent(v)}.png`;
+  // 카카오 미리보기: 경로형(/api/og/id/v.png)은 스크래퍼가 이미지를 못 받는 경우가 있어 쿼리 방식 유지
+  const img = `${origin}/api/og?id=${encodeURIComponent(id)}&v=${encodeURIComponent(v)}`;
 
   let title = '골프 메모';
   let desc = '라운드 기록 · 미스 분석';

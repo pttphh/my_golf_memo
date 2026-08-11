@@ -152,8 +152,8 @@ export async function renderOgImage(id: string): Promise<Response> {
       { name: 'NotoKR', data: font700, weight: 700, style: 'normal' },
     ],
     headers: {
-      // 카카오/CDN이 빈 이미지를 1년 고정하지 않도록 (경로 버스터와 함께 사용)
-      'cache-control': 'public, max-age=60, s-maxage=60',
+      // 생성 비용이 커서 짧게 두면 카카오 스크랩 타임아웃/실패가 잦음
+      'cache-control': 'public, max-age=86400, s-maxage=86400',
     },
   });
 }
