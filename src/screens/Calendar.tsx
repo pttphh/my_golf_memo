@@ -125,9 +125,13 @@ export default function Calendar({ onRoundSelect }: Props) {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const todayKey = toKey(new Date());
 
-  const cells: (Date | null)[] = [];
-  for (let i = 0; i < firstWeekday; i++) cells.push(null);
+  const cells: Date[] = [];
+  for (let i = firstWeekday; i > 0; i--) cells.push(new Date(year, month, 1 - i));
   for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(year, month, d));
+  while (cells.length % 7 !== 0) {
+    const last = cells[cells.length - 1];
+    cells.push(new Date(last.getFullYear(), last.getMonth(), last.getDate() + 1));
+  }
 
   function goMonth(delta: number) {
     setCursor(new Date(year, month + delta, 1));
@@ -212,7 +216,7 @@ export default function Calendar({ onRoundSelect }: Props) {
     <div className="min-h-dvh pb-28" style={{ paddingTop: 'max(16px, env(safe-area-inset-top))' }}>
       <div className="px-4 pt-2 pb-3">
         <h1 className="text-lg font-bold text-gray-800">일정</h1>
-        <p className="text-xs text-gray-400 mt-0.5">라운드 밀도를 색으로 보여줍니다 (±7일 기준)</p>
+        <p className="text-xs text-gray-400 mt-0.5">라운드 밀도를 색으로 보여줍니다 (±6일 기준)</p>
       </div>
 
       <div className="flex items-center justify-between px-4 mb-3">
@@ -240,16 +244,16 @@ export default function Calendar({ onRoundSelect }: Props) {
           </div>
 
           <div className="grid grid-cols-7 gap-1">
-            {cells.map((d, idx) => {
-              if (!d) return <div key={`b${idx}`} className="min-h-[64px]" />;
+            {cells.map(d => {
               const k = toKey(d);
+              const inMonth = d.getMonth() === month;
               const level = Math.min(windowCount(d), 5);
               const color = DENSITY[level];
               const dayRounds = byDate.get(k) ?? [];
               const hasRound = dayRounds.length > 0;
               const planState = !hasRound ? planned[k] : undefined;
               const isToday = k === todayKey;
-              const textColor = level === 0 ? '#6B7280' : color.text;
+              const textColor = level === 0 ? (inMonth ? '#6B7280' : '#9CA3AF') : color.text;
               const courseName = hasRound ? (dayRounds[0].course_name || '') : '';
               const memo = memos[k];
               return (
@@ -263,7 +267,7 @@ export default function Calendar({ onRoundSelect }: Props) {
                   onMouseUp={cancelPress}
                   onMouseLeave={cancelPress}
                   onContextMenu={e => e.preventDefault()}
-                  className={`min-h-[64px] rounded-lg flex flex-col items-center pt-1 px-0.5 overflow-hidden active:scale-95 transition-transform select-none ${isToday ? 'ring-2 ring-[#1B4332]' : ''}`}
+                  className={`min-h-[64px] rounded-lg flex flex-col items-center pt-1 px-0.5 overflow-hidden active:scale-95 transition-transform select-none ${isToday ? 'ring-2 ring-[#1B4332]' : ''} ${inMonth ? '' : 'opacity-45'}`}
                   style={{ backgroundColor: color.bg, color: textColor }}
                 >
                   <span className="text-[11px] font-semibold leading-none">{d.getDate()}</span>
