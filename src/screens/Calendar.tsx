@@ -6,7 +6,7 @@ import type { Round } from '../types';
 const PLANNED_KEY = 'golf_planned_dates';
 const MEMO_KEY = 'golf_memos';
 
-// 15일 창 안 활성 날짜 수 → 색 (0~5+). 밝은 배경은 같은 계열 어두운 글자, 빨강/차콜은 흰 글자.
+// 13일 창 안 활성 날짜 수 → 색 (0~5+). 밝은 배경은 같은 계열 어두운 글자, 빨강/차콜은 흰 글자.
 const DENSITY: { bg: string; text: string }[] = [
   { bg: 'transparent', text: '' },      // 0
   { bg: '#D3D1C7', text: '#2C2C2A' },   // 1 회색
@@ -111,7 +111,7 @@ export default function Calendar({ onRoundSelect }: Props) {
   // 활성 날짜 = 기록 라운드 OR 예정(임시·확정). 창 안 '고유 날짜' 수(같은 날 둘 다 있어도 1로 카운트).
   function windowCount(d: Date): number {
     let c = 0;
-    for (let off = -7; off <= 7; off++) {
+    for (let off = -6; off <= 6; off++) {
       const dd = new Date(d.getFullYear(), d.getMonth(), d.getDate() + off);
       const k = toKey(dd);
       if (byDate.has(k) || planned[k]) c++;
@@ -303,7 +303,7 @@ export default function Calendar({ onRoundSelect }: Props) {
           </div>
 
           <div className="mt-5 bg-white rounded-2xl border border-gray-100 p-3">
-            <p className="text-[11px] font-medium text-gray-500 mb-2">15일 창 안 라운드 수</p>
+            <p className="text-[11px] font-medium text-gray-500 mb-2">13일 창 안 라운드 수</p>
             <div className="flex items-center justify-between gap-1">
               {[
                 { n: '1', c: '#D3D1C7' },
