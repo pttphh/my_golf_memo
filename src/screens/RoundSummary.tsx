@@ -8,7 +8,8 @@ import {
   SegmentLineChart,
   SegmentCardFootnote,
   computeRoundPenaltyStrokes,
-  computeRoundFatalMissCount,
+  computeRoundApproachZoneFails,
+  computeRoundApproachZoneFailBreakdown,
   computeRoundApproachTrendPct,
   computeRoundApproachFailCount,
   computeRoundShortPuttMissCount,
@@ -62,7 +63,7 @@ const METRIC_INFO: Record<string, MetricInfo> = {
   페어웨이안착률: {
     title: '페어웨이 안착률',
     description: '티샷이 페어웨이에 안착한 비율입니다. 파3를 제외한 홀에서 계산합니다.',
-    criteria: ['페어웨이에 있으면 성공', '러프, 벙커, OB, 해저드 등은 실패', '단, 페어웨이를 놓쳤더라도 다음 샷이 가능하면 스코어상 치명적인 미스는 아닐 수 있습니다.'],
+    criteria: ['페어웨이에 있으면 성공', '러프, 벙커, OB, 해저드 등은 실패', '단, 페어웨이를 놓쳤더라도 다음 샷이 가능하면 스코어 영향은 크지 않을 수 있습니다.'],
     goalsLabel: '권장 안착률',
     goals: [{ level: '97타 (+25 오버)', target: '40% 이상' }, { level: '92타 (+20 오버)', target: '50% 이상' }, { level: '87타 (+15 오버)', target: '55% 이상' }],
   },
@@ -73,10 +74,10 @@ const METRIC_INFO: Record<string, MetricInfo> = {
     goalsLabel: '권장 달성 홀 수',
     goals: [{ level: '97타 (+25 오버)', target: '3홀 이상' }, { level: '92타 (+20 오버)', target: '4홀 이상' }, { level: '87타 (+15 오버)', target: '5홀 이상' }],
   },
-  세컨치명미스: {
-    title: '40m 이내 스코어링 구간 진입 실패',
-    description: '파4에서는 세컨샷, 파5에서는 서드샷이 기준입니다. 이 샷이 홀 주변 40m 이내, 즉 다음 샷으로 정상적인 어프로치가 가능한 위치까지 갔는지를 봅니다.',
-    criteria: ['홀 주변 40m 이내에 도달하면 성공', '40m 밖에 남으면 스코어링 구간 진입 실패', 'OB, 해저드, 나무 뒤, 벙커 턱, 깊은 러프 등 다음 샷이 어려운 위치도 스코어링 구간 진입 실패', '파3는 이 지표에서 제외합니다.'],
+  어프로치권실패: {
+    title: '어프로치권(40m 이내) 진입 실패',
+    description: '파4는 세컨샷, 파5는 서드샷이 홀 40m 이내(어프로치 가능 위치)까지 갔는지를 봅니다. 별도 입력 없이 온그린 타수·어프로치 기록·벌타로 자동 계산하며, 세컨샷에 기록된 어프로치 불가·OB·해저드는 항상 실패로 집계합니다.',
+    criteria: ['홀 40m 이내에 도달하면 성공', '40m 밖에 남거나 온그린까지 샷이 추가되면 실패', '어프로치 불가·OB·해저드(벙커는 어프로치 불가로 기록)는 실패', '파3와 간편 기록 홀은 제외'],
     goalsLabel: '허용 실패 상한',
     goals: [{ level: '97타 (+25 오버)', target: '6회 이하' }, { level: '92타 (+20 오버)', target: '4회 이하' }, { level: '87타 (+15 오버)', target: '3회 이하' }],
   },
@@ -676,31 +677,16 @@ export default function RoundSummary({ round, viewMode, shareMode = false, holes
     : 0;
 
 
-  const fatalMissCount = holes.reduce((sum, h) => {
-    let count = 0;
-    for (const p of [h.second1_penalty_type, h.second2_penalty_type, h.second3_penalty_type]) {
-      if (p === '어프로치 불가' || p === 'OB' || p === '해저드') count++;
-    }
-    return sum + count;
-  }, 0);
-
-  const fatalOB = holes.reduce((sum, h) => {
-    let count = 0;
-    for (const p of [h.second1_penalty_type, h.second2_penalty_type, h.second3_penalty_type]) {
-      if (p === 'OB') count++;
-    }
-    return sum + count;
-  }, 0);
-
-  const fatalHazard = holes.reduce((sum, h) => {
-    let count = 0;
-    for (const p of [h.second1_penalty_type, h.second2_penalty_type, h.second3_penalty_type]) {
-      if (p === '해저드') count++;
-    }
-    return sum + count;
-  }, 0);
-
-  const fatalApproachNG = fatalMissCount - fatalOB - fatalHazard;
+  const azf = computeRoundApproachZoneFailBreakdown(holes);
+  const fatalMissCount = azf.total;
+  const fatalOB = azf.ob;
+  const fatalHazard = azf.hazard;
+  const fatalApproachNG = azf.approachNG;
+  const fatalCauseParts = [
+    fatalApproachNG > 0 ? `어프로치불가 ${fatalApproachNG}` : '',
+    fatalOB > 0 ? `OB ${fatalOB}` : '',
+    fatalHazard > 0 ? `해저드 ${fatalHazard}` : '',
+  ].filter(Boolean);
 
 const wedgeTotal = holes.reduce((sum, h) => {
     const clubs = [h.second1_club, h.second2_club, h.second3_club, h.second4_club];
@@ -730,9 +716,7 @@ const wedgeTotal = holes.reduce((sum, h) => {
 
   const fairwayRecorded = holes.filter(h => h.par !== 3 && h.tee_result).length;
   const girRecorded = holes.filter(hasGirRecorded).length;
-  const fatalRecorded = holes.filter(h =>
-    !!(h.second1_result || h.second2_result || h.second3_result),
-  ).length;
+  const fatalRecorded = azf.recordedHoles;
   const wedgeRecorded = holes.filter(h =>
     [h.second1_club, h.second2_club, h.second3_club].some(c => c?.includes('웨지')),
   ).length;
@@ -771,7 +755,7 @@ const wedgeTotal = holes.reduce((sum, h) => {
     date: d.round.date,
   }));
   const chart6CriticalMiss = chartRounds.map(d => ({
-    value: computeRoundFatalMissCount(d.holes),
+    value: computeRoundApproachZoneFails(d.holes),
     date: d.round.date,
   }));
   const chart6ApproachSuccess = chartRounds.map(d => ({
@@ -1141,10 +1125,10 @@ const wedgeTotal = holes.reduce((sum, h) => {
                   label="어프로치권 실패"
                   unrecorded={fatalRecorded === 0}
                   value={fatalRecorded === 0 ? '–' : `${fatalMissCount}회`}
-                  sub={fatalRecorded === 0 ? '미기록' : `어프로치불가 ${fatalApproachNG}회`}
-                  sub2={fatalRecorded === 0 ? undefined : [fatalOB > 0 ? `OB ${fatalOB}회` : '', fatalHazard > 0 ? `해저드 ${fatalHazard}회` : ''].filter(Boolean).join(' · ') || undefined}
+                  sub={fatalRecorded === 0 ? '미기록' : fatalCauseParts.length === 0 ? '벌타·불가 없음' : fatalCauseParts.slice(0, 2).join(' · ')}
+                  sub2={fatalRecorded === 0 || fatalCauseParts.length < 3 ? undefined : fatalCauseParts[2]}
                   failed={!!fatalRecorded && fatalMissCount > goalFatalMiss}
-                  onClick={metricClick('세컨치명미스')}
+                  onClick={metricClick('어프로치권실패')}
                 />
                 <StatCard
                   icon={<Zap size={16} />}

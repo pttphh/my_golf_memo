@@ -10,6 +10,7 @@ import {
   formatMMDD,
   computeRoundApproachTrendPct,
   computeRoundShortPuttMissCount,
+  computeRoundApproachZoneFails,
   chartPointsAvg,
 } from '../components/SegmentChart';
 
@@ -108,16 +109,6 @@ function roundFairwayPct(holes: Hole[]): number | null {
 
 function roundApproachFailCount(holes: Hole[]): number {
   return holes.filter(h => h.approach1_result === '실패').length;
-}
-
-function roundFatalMissCount(holes: Hole[]): number {
-  return holes.reduce((sum, h) => {
-    let count = 0;
-    for (const p of [h.second1_penalty_type, h.second2_penalty_type, h.second3_penalty_type]) {
-      if (p === '어프로치 불가' || p === 'OB' || p === '해저드') count++;
-    }
-    return sum + count;
-  }, 0);
 }
 
 function roundWedgeSuccessCount(holes: Hole[]): number {
@@ -321,7 +312,7 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
     : null;
   const avg3PuttPlus = avg(filteredData.map(d => d.threePuttPlus));
 
-  const avgCriticalMiss = avgPerRoundNullable(validFatalRounds, roundFatalMissCount);
+  const avgCriticalMiss = avgPerRoundNullable(validFatalRounds, computeRoundApproachZoneFails);
   const avgWedgeSuccess = avgPerRoundNullable(validWedgeRounds, roundWedgeSuccessCount);
   const avgApproachSuccess = pctFromTotals(
     periodHoles.reduce((sum, h) => sum + (h.approach1_result === '성공' ? 1 : 0) + (h.approach2_result === '성공' ? 1 : 0), 0),
@@ -350,7 +341,7 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
   );
 
   const chart6Fairway = chart6.map(d => ({ value: roundFairwayPct(d.holes) ?? 0, date: d.round.date }));
-  const chart6CriticalMiss = chart6.map(d => ({ value: roundFatalMissCount(d.holes), date: d.round.date }));
+  const chart6CriticalMiss = chart6.map(d => ({ value: computeRoundApproachZoneFails(d.holes), date: d.round.date }));
   const chart6ApproachSuccess = chart6.map(d => ({
     value: computeRoundApproachTrendPct(d.holes),
     date: d.round.date,
@@ -540,26 +531,26 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
                   })()}
                   {(() => {
                     const d = metricDisplay(avgCriticalMiss, v => `${v}`, 'text-red-500');
-                    return <MetricCell label="평균 치명미스" value={d.value} sub={d.sub} valueClass={d.valueClass} />;
+                    return <MetricCell label="평균 어프로치권 실패" value={d.value} sub={d.sub} valueClass={d.valueClass} />;
                   })()}
                   {(() => {
                     const d = metricDisplay(avgWedgeSuccess, v => `${v}`, 'text-amber-600');
                     return <MetricCell label="평균 웨지 온 성공" value={d.value} sub={d.sub} valueClass={d.valueClass} />;
                   })()}
                 </div>
-                <p className="text-xs font-semibold text-gray-500 mb-2">치명미스 추이</p>
+                <p className="text-xs font-semibold text-gray-500 mb-2">어프로치권 실패 추이</p>
                 <SegmentLineChart
                   points={chart6CriticalMiss}
                   lineColor="#E24B4A"
                   avgValue={avgCriticalMiss ?? 0}
-                  caption="치명미스 추이 · 최근 6라운드 (낮을수록 좋음)"
+                  caption="어프로치권 실패 추이 · 최근 6라운드 (낮을수록 좋음)"
                   formatValue={v => `${v}`}
                   yMin={0}
                 />
                 <p className="text-xs font-semibold text-gray-500 mb-2 mt-4">미스 TOP5</p>
                 <RankedMissBarChart items={secondMissBars} />
                 <SegmentCardFootnote>
-                  * 치명미스: 세컨샷 후 40m 이내의 어프로치 불가 또는 OB, 해저드로 이어진 경우
+                  * 어프로치권 실패: 파4 세컨샷·파5 서드샷이 홀 40m 이내에 못 간 횟수 (온그린 타수 기준 자동 계산, 파3 제외)
                 </SegmentCardFootnote>
               </div>
             )}

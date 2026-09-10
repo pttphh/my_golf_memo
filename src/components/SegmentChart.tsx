@@ -9,6 +9,7 @@ function allPenaltyFields(h: Hole): string[] {
     h.second1_penalty_type,
     h.second2_penalty_type,
     h.second3_penalty_type,
+    h.second4_penalty_type ?? '',
   ];
 }
 
@@ -28,14 +29,54 @@ export function computeRoundPenaltyStrokes(holes: Hole[]): number {
   }, 0);
 }
 
-export function computeRoundFatalMissCount(holes: Hole[]): number {
-  return holes.reduce((sum, h) => {
-    let count = 0;
-    for (const p of [h.second1_penalty_type, h.second2_penalty_type, h.second3_penalty_type]) {
-      if (p === '어프로치 불가' || p === 'OB' || p === '해저드') count++;
+/** 어프로치권 실패 판정 대상: 파4·파5 상세 기록 홀 */
+export function isApproachZoneHole(h: Hole): boolean {
+  return h.par !== 3 && !h.is_manual && Number(h.green_shots) > 0;
+}
+
+const APPROACH_ZONE_FAIL_TYPES = ['어프로치 불가', 'OB', '해저드'];
+
+function secondPenaltyFields(h: Hole): string[] {
+  return [h.second1_penalty_type, h.second2_penalty_type, h.second3_penalty_type, h.second4_penalty_type ?? ''];
+}
+
+/** 홀 하나의 어프로치권 실패 횟수 (온그린 타수 기반 추론 + 슬롯 명시값 중 큰 값) */
+export function holeApproachZoneFails(h: Hole): number {
+  if (!isApproachZoneHole(h)) return 0;
+  const approachCount = [h.approach1_club, h.approach2_club, h.approach3_club].filter(Boolean).length;
+  let penalty = 0;
+  for (const p of allPenaltyFields(h)) penalty += PENALTY_MAP[p] ?? 0;
+  const secondShots = Number(h.green_shots) - 1 - approachCount - penalty;
+  const inferred = Math.max(0, secondShots - (h.par - 3));
+  const explicit = secondPenaltyFields(h).filter(p => APPROACH_ZONE_FAIL_TYPES.includes(p)).length;
+  return Math.max(inferred, explicit);
+}
+
+export function computeRoundApproachZoneFails(holes: Hole[]): number {
+  return holes.reduce((s, h) => s + holeApproachZoneFails(h), 0);
+}
+
+export interface ApproachZoneFailBreakdown {
+  total: number;
+  approachNG: number;
+  ob: number;
+  hazard: number;
+  recordedHoles: number;
+}
+
+export function computeRoundApproachZoneFailBreakdown(holes: Hole[]): ApproachZoneFailBreakdown {
+  const out: ApproachZoneFailBreakdown = { total: 0, approachNG: 0, ob: 0, hazard: 0, recordedHoles: 0 };
+  for (const h of holes) {
+    if (!isApproachZoneHole(h)) continue;
+    out.recordedHoles += 1;
+    out.total += holeApproachZoneFails(h);
+    for (const p of secondPenaltyFields(h)) {
+      if (p === '어프로치 불가') out.approachNG += 1;
+      else if (p === 'OB') out.ob += 1;
+      else if (p === '해저드') out.hazard += 1;
     }
-    return sum + count;
-  }, 0);
+  }
+  return out;
 }
 
 /** approach1~3 결과 기준 근접률 (추이 그래프용) */
