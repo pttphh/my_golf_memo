@@ -74,12 +74,12 @@ const METRIC_INFO: Record<string, MetricInfo> = {
     goalsLabel: '권장 달성 홀 수',
     goals: [{ level: '97타 (+25 오버)', target: '3홀 이상' }, { level: '92타 (+20 오버)', target: '4홀 이상' }, { level: '87타 (+15 오버)', target: '5홀 이상' }],
   },
-  어프로치권실패: {
-    title: '어프로치권(40m 이내) 진입 실패',
-    description: '파4는 세컨샷, 파5는 서드샷이 홀 40m 이내(어프로치 가능 위치)까지 갔는지를 봅니다. 별도 입력 없이 온그린 타수·어프로치 기록·벌타로 자동 계산하며, 세컨샷에 기록된 어프로치 불가·OB·해저드는 항상 실패로 집계합니다.',
-    criteria: ['홀 40m 이내에 도달하면 성공', '40m 밖에 남거나 온그린까지 샷이 추가되면 실패', '어프로치 불가·OB·해저드(벙커는 어프로치 불가로 기록)는 실패', '파3와 간편 기록 홀은 제외'],
-    goalsLabel: '허용 실패 상한',
-    goals: [{ level: '97타 (+25 오버)', target: '6회 이하' }, { level: '92타 (+20 오버)', target: '4회 이하' }, { level: '87타 (+15 오버)', target: '3회 이하' }],
+  어프로치권미도달: {
+    title: '어프로치권(40m 이내) 미도달',
+    description: '파4는 세컨샷부터, 파5는 서드샷부터 홀 40m 이내(어프로치 위치)에 도달할 때까지 친 샷 수를 셉니다. 별도 입력 없이 온그린 타수·어프로치 기록·벌타로 자동 계산하며, 한 홀에서 여러 번 못 갔으면 그만큼 누적됩니다.',
+    criteria: ['홀 40m 이내에 도달하면 성공', '40m 밖에 남거나 온그린까지 샷이 추가될 때마다 1회', 'OB·해저드는 벌타를 빼고 계산하며, 세컨샷에 기록되면 항상 1회 이상', '파3와 간편 기록 홀은 제외'],
+    goalsLabel: '허용 미도달 상한',
+    goals: [{ level: '97타 (+25 오버)', target: '8회 이하' }, { level: '92타 (+20 오버)', target: '5회 이하' }, { level: '87타 (+15 오버)', target: '3회 이하' }],
   },
   웨지온실패: {
     title: '50~100m 웨지 온 성공',
@@ -613,7 +613,7 @@ export default function RoundSummary({ round, viewMode, shareMode = false, holes
   const goalPenalty = [5, 3, 2][goalTier];
   const goalFairway = [40, 50, 55][goalTier];
   const goalGir = [3, 4, 5][goalTier];
-  const goalFatalMiss = [6, 4, 3][goalTier];
+  const goalFatalMiss = [8, 5, 3][goalTier];
   const goalWedge = [35, 45, 55][goalTier];
   const goalApproach = [25, 35, 45][goalTier];
   const goalTotalPutts = [40, 38, 36][goalTier];
@@ -681,9 +681,7 @@ export default function RoundSummary({ round, viewMode, shareMode = false, holes
   const fatalMissCount = azf.total;
   const fatalOB = azf.ob;
   const fatalHazard = azf.hazard;
-  const fatalApproachNG = azf.approachNG;
   const fatalCauseParts = [
-    fatalApproachNG > 0 ? `어프로치불가 ${fatalApproachNG}` : '',
     fatalOB > 0 ? `OB ${fatalOB}` : '',
     fatalHazard > 0 ? `해저드 ${fatalHazard}` : '',
   ].filter(Boolean);
@@ -1122,13 +1120,12 @@ const wedgeTotal = holes.reduce((sum, h) => {
                 />
                 <StatCard
                   icon={<PlayOff size={16} />}
-                  label="어프로치권 실패"
+                  label="어프로치권 미도달"
                   unrecorded={fatalRecorded === 0}
                   value={fatalRecorded === 0 ? '–' : `${fatalMissCount}회`}
-                  sub={fatalRecorded === 0 ? '미기록' : fatalCauseParts.length === 0 ? '벌타·불가 없음' : fatalCauseParts.slice(0, 2).join(' · ')}
-                  sub2={fatalRecorded === 0 || fatalCauseParts.length < 3 ? undefined : fatalCauseParts[2]}
+                  sub={fatalRecorded === 0 ? '미기록' : fatalCauseParts.length === 0 ? '벌타 없음' : `이 중 ${fatalCauseParts.join(' · ')}`}
                   failed={!!fatalRecorded && fatalMissCount > goalFatalMiss}
-                  onClick={metricClick('어프로치권실패')}
+                  onClick={metricClick('어프로치권미도달')}
                 />
                 <StatCard
                   icon={<Zap size={16} />}
@@ -1253,7 +1250,7 @@ const wedgeTotal = holes.reduce((sum, h) => {
                     <p className="text-xs font-semibold text-gray-500 mb-2 mt-4">미스 TOP5</p>
                     <RankedMissBarChart items={secondMissBars} />
                     <SegmentCardFootnote>
-                      * 스코어링 구간 진입 실패: 세컨샷 후 40m 이내의 어프로치 불가 또는 OB, 해저드로 이어진 경우
+                      * 어프로치권 미도달: 파4 세컨샷·파5 서드샷부터 홀 40m 이내에 도달할 때까지 친 샷 수 (자동 계산, 파3 제외)
                     </SegmentCardFootnote>
                   </div>
                 )}

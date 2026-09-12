@@ -343,7 +343,7 @@ function MissChips({ value, options, onChange, hint = true }: {
   );
 }
 
-const SECOND1_GREEN_MISS_SUB = ['어프로치 가능', '어프로치 불가', 'OB', '해저드'] as const;
+const SECOND1_GREEN_MISS_SUB = ['OB', '해저드'] as const;
 type SecondGreenMissSub = typeof SECOND1_GREEN_MISS_SUB[number];
 
 // SecondShotBlock: par-aware second shot UI (par5 1st shot = fairway layup, then green approach)
@@ -382,25 +382,14 @@ function SecondShotBlock({ par, shotIndex, result, penaltyType, missDetail, miss
   const showSub = result === '그린 미스';
 
   function getApproachSubSelection(): string {
-    if (['어프로치 불가', 'OB', '해저드'].includes(penaltyType)) return penaltyType;
-    if (missDetail === '어프로치 가능') return '어프로치 가능';
+    if (penaltyType === 'OB' || penaltyType === '해저드') return penaltyType;
     return '';
   }
 
   function handleApproachSub(v: SecondGreenMissSub) {
     const next = getApproachSubSelection() === v ? '' : v;
-    if (!next) {
-      onPenaltyChange('');
-      onMissDetailChange('');
-      return;
-    }
-    if (next === '어프로치 가능') {
-      onPenaltyChange('');
-      onMissDetailChange('어프로치 가능');
-    } else {
-      onPenaltyChange(next);
-      onMissDetailChange('');
-    }
+    onPenaltyChange(next);
+    onMissDetailChange('');
   }
 
   function handleTopClick(v: string) {
@@ -424,7 +413,7 @@ function SecondShotBlock({ par, shotIndex, result, penaltyType, missDetail, miss
 
       {showSub && (
         <div className="pl-3 border-l-2 border-gray-200 space-y-2">
-          <p className="text-xs text-gray-500">세부 위치</p>
+          <p className="text-xs text-gray-500">벌타 (해당 시)</p>
           <div className="flex flex-wrap gap-2">
             {SECOND1_GREEN_MISS_SUB.map(s => {
               const isPenalty = s === 'OB' || s === '해저드';
@@ -444,7 +433,6 @@ function SecondShotBlock({ par, shotIndex, result, penaltyType, missDetail, miss
               );
             })}
           </div>
-          <p className="text-xs text-gray-400 mt-1">나무 뒤, 벙커 턱, 깊은 러프 등은 어프로치 불가 선택</p>
         </div>
       )}
 

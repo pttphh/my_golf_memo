@@ -531,26 +531,26 @@ export default function AllRounds({ onRoundSelect: _onRoundSelect }: Props) {
                   })()}
                   {(() => {
                     const d = metricDisplay(avgCriticalMiss, v => `${v}`, 'text-red-500');
-                    return <MetricCell label="평균 어프로치권 실패" value={d.value} sub={d.sub} valueClass={d.valueClass} />;
+                    return <MetricCell label="평균 어프로치권 미도달" value={d.value} sub={d.sub} valueClass={d.valueClass} />;
                   })()}
                   {(() => {
                     const d = metricDisplay(avgWedgeSuccess, v => `${v}`, 'text-amber-600');
                     return <MetricCell label="평균 웨지 온 성공" value={d.value} sub={d.sub} valueClass={d.valueClass} />;
                   })()}
                 </div>
-                <p className="text-xs font-semibold text-gray-500 mb-2">어프로치권 실패 추이</p>
+                <p className="text-xs font-semibold text-gray-500 mb-2">어프로치권 미도달 추이</p>
                 <SegmentLineChart
                   points={chart6CriticalMiss}
                   lineColor="#E24B4A"
                   avgValue={avgCriticalMiss ?? 0}
-                  caption="어프로치권 실패 추이 · 최근 6라운드 (낮을수록 좋음)"
+                  caption="어프로치권 미도달 추이 · 최근 6라운드 (낮을수록 좋음)"
                   formatValue={v => `${v}`}
                   yMin={0}
                 />
                 <p className="text-xs font-semibold text-gray-500 mb-2 mt-4">미스 TOP5</p>
                 <RankedMissBarChart items={secondMissBars} />
                 <SegmentCardFootnote>
-                  * 어프로치권 실패: 파4 세컨샷·파5 서드샷이 홀 40m 이내에 못 간 횟수 (온그린 타수 기준 자동 계산, 파3 제외)
+                  * 어프로치권 미도달: 파4 세컨샷·파5 서드샷부터 홀 40m 이내에 도달할 때까지 친 샷 수 (자동 계산, 파3 제외)
                 </SegmentCardFootnote>
               </div>
             )}
