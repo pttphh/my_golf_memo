@@ -393,8 +393,9 @@ function SecondShotBlock({ par, shotIndex, result, penaltyType, missDetail, miss
   }
 
   function handleTopClick(v: string) {
-    onResultChange(result === v ? '' : v);
-    if (v !== '그린 미스') {
+    const next = result === v ? '' : v;
+    onResultChange(next);
+    if (next !== '그린 미스') {
       onMissDetailChange('');
       onPenaltyChange('');
     }
@@ -555,9 +556,9 @@ export default function HoleRecording({
   const [saving, setSaving] = useState(false);
   const [secondShotsCount, setSecondShotsCount] = useState(() => {
     if (!initialHole) return 1;
-    if (initialHole.second4_club || initialHole.second4_result || initialHole.second4_miss) return 4;
-    if (initialHole.second3_club || initialHole.second3_result || initialHole.second3_miss) return 3;
-    if (initialHole.second2_club || initialHole.second2_result || initialHole.second2_miss) return 2;
+    if (initialHole.second4_club || initialHole.second4_result || initialHole.second4_miss || initialHole.second4_penalty_type) return 4;
+    if (initialHole.second3_club || initialHole.second3_result || initialHole.second3_miss || initialHole.second3_penalty_type) return 3;
+    if (initialHole.second2_club || initialHole.second2_result || initialHole.second2_miss || initialHole.second2_penalty_type) return 2;
     return 1;
   });
   const [approachCount, setApproachCount] = useState(() =>
@@ -566,7 +567,7 @@ export default function HoleRecording({
   );
   const [teeShotsCount, setTeeShotsCount] = useState(() => {
     if (!initialHole) return 1;
-    return initialHole.tee2_club || initialHole.tee2_result || initialHole.tee2_miss ? 2 : 1;
+    return initialHole.tee2_club || initialHole.tee2_result || initialHole.tee2_miss || initialHole.tee2_penalty_type ? 2 : 1;
   });
   const [puttCount, setPuttCount] = useState(() => {
     if (!initialHole) return 1;
@@ -580,15 +581,15 @@ export default function HoleRecording({
     setHole(h);
     setIsManual(Boolean(h.is_manual));
     let sc = 1;
-    if (h.second4_club || h.second4_result || h.second4_miss) sc = 4;
-    else if (h.second3_club || h.second3_result || h.second3_miss) sc = 3;
-    else if (h.second2_club || h.second2_result || h.second2_miss) sc = 2;
+    if (h.second4_club || h.second4_result || h.second4_miss || h.second4_penalty_type) sc = 4;
+    else if (h.second3_club || h.second3_result || h.second3_miss || h.second3_penalty_type) sc = 3;
+    else if (h.second2_club || h.second2_result || h.second2_miss || h.second2_penalty_type) sc = 2;
     setSecondShotsCount(sc);
     setApproachCount(
       h.approach3_club || h.approach3_miss ? 3 :
       h.approach2_club || h.approach2_miss ? 2 : 1,
     );
-    setTeeShotsCount(h.tee2_club || h.tee2_result || h.tee2_miss ? 2 : 1);
+    setTeeShotsCount(h.tee2_club || h.tee2_result || h.tee2_miss || h.tee2_penalty_type ? 2 : 1);
     setPuttCount(h.putt2_miss || h.putt2_memo ? 2 : 1);
   }
 

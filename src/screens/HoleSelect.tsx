@@ -25,9 +25,11 @@ function getPenalties(hole: Hole): { obCount: number; hazardCount: number } {
   let hazardCount = 0;
   for (const p of [
     hole.tee_penalty_type,
+    hole.tee2_penalty_type,
     hole.second1_penalty_type,
     hole.second2_penalty_type,
     hole.second3_penalty_type,
+    hole.second4_penalty_type ?? '',
   ]) {
     if (p === 'OB') obCount++;
     if (p === '해저드') hazardCount++;

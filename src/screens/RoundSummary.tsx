@@ -115,7 +115,7 @@ const MISS_BAR_COLORS = ['#E24B4A', '#E24B4A', '#EF9F27', '#EF9F27', '#B4B2A9'];
 const PENALTY_MAP: Record<string, number> = { OB: 2, '해저드': 1 };
 
 function secondPenaltyFields(h: Hole): string[] {
-  return [h.second1_penalty_type, h.second2_penalty_type, h.second3_penalty_type];
+  return [h.second1_penalty_type, h.second2_penalty_type, h.second3_penalty_type, h.second4_penalty_type ?? ''];
 }
 
 function allPenaltyFields(h: Hole): string[] {
@@ -707,10 +707,10 @@ const wedgeTotal = holes.reduce((sum, h) => {
 
   const obHoles = countHolesWithPenalty(holes, 'OB');
   const hazardHoles = countHolesWithPenalty(holes, '해저드');
-  const teeOB = holes.filter(h => [h.tee_penalty_type, h.tee2_penalty_type].includes('OB')).length;
-  const teeHZ = holes.filter(h => [h.tee_penalty_type, h.tee2_penalty_type].includes('해저드')).length;
-  const secondOB = holes.filter(h => [h.second1_penalty_type, h.second2_penalty_type, h.second3_penalty_type].includes('OB')).length;
-  const secondHZ = holes.filter(h => [h.second1_penalty_type, h.second2_penalty_type, h.second3_penalty_type].includes('해저드')).length;
+  const teeOB = holes.reduce((s, h) => s + [h.tee_penalty_type, h.tee2_penalty_type].filter(p => p === 'OB').length, 0);
+  const teeHZ = holes.reduce((s, h) => s + [h.tee_penalty_type, h.tee2_penalty_type].filter(p => p === '해저드').length, 0);
+  const secondOB = holes.reduce((s, h) => s + [h.second1_penalty_type, h.second2_penalty_type, h.second3_penalty_type, h.second4_penalty_type ?? ''].filter(p => p === 'OB').length, 0);
+  const secondHZ = holes.reduce((s, h) => s + [h.second1_penalty_type, h.second2_penalty_type, h.second3_penalty_type, h.second4_penalty_type ?? ''].filter(p => p === '해저드').length, 0);
 
   const fairwayRecorded = holes.filter(h => h.par !== 3 && h.tee_result).length;
   const girRecorded = holes.filter(hasGirRecorded).length;
