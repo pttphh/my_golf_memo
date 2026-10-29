@@ -46,6 +46,7 @@
 | 캘린더 | `Calendar.tsx` | 월별 그리드, 라운드 밀도 히트맵, 예정일 토글(localStorage, 3상태) | 하단 탭 (구 세팅 탭 자리) |
 | 프로필 | `Profile.tsx` | 로그인(익명/이메일/Google)·로그아웃 | 하단 탭 |
 | 공유 페이지 | `api/share.tsx` (Vercel Edge) | 공개 링크용 OG 이미지·미리보기. `is_public=true`인 라운드만 | 요약 → 공유 버튼으로 만든 링크 |
+| 라운드 사진 | `RoundPhotos.tsx` | 라운드별 사진 두 열 타일. 첫 칸 "사진 추가"(여러 장 선택, 긴 변 1600px로 줄여 올림). 타일 탭 → 크게 보기(좌우 스와이프·삭제). 공유 모드는 읽기 전용 | 요약 → "사진 보기 · n장" 버튼 (2026-10-29 추가) |
 
 화면 전환은 `App.tsx`의 `screen` 상태 하나로 (`src/types.ts`의 `Screen` 유니온). 라우터 없음.
 
@@ -85,6 +86,9 @@ Supabase 프로젝트 `hguhjojlzcufdkwrjzuz` (Seoul). 타입은 `src/types.ts`�
 |---|---|---|
 | `rounds` | 라운드 1건 | `id`, `date`, `time`, `course_name`, `course_front`, `course_back`, `companion1~3`, `memo`, `user_id`, `is_public`, `is_detailed` |
 | `holes` | 라운드의 홀 1개 (round_id + hole_number 유니크) | `par`, `green_shots`, `putts`, `total_strokes`, `over_par`, `is_manual`, 샷 슬롯 컬럼 묶음 |
+| `round_photos` | 라운드 사진 1장의 목록 행 (파일 자체는 Storage) | `id`, `round_id`(삭제 연쇄), `user_id`, `path`, `created_at`. 2026-10-29 추가 |
+
+Storage 버킷 `round-photos` (공개 읽기 · 5MB 제한 · jpeg/png/webp). 파일 경로 `{user_id}/{round_id}/{uuid}.jpg`. 정책: 읽기는 누구나(공유 페이지 때문), 올리기·지우기는 로그인 사용자가 자기 `user_id` 폴더만. 라운드를 지우면 `App.tsx`의 `handleDeleteRound`가 파일을 먼저 지우고 행은 연쇄 삭제. 무료 용량 1GB ≈ 3,000장(한 장 200~400KB)
 
 샷 슬롯 컬럼 규칙 — 슬롯 접두어 + `_club` / `_result` / `_penalty_type` / `_miss` / `_miss_detail` / `_memo`:
 - `tee`, `tee2` · `second1`~`second3` (+`second4`는 club/result/miss/penalty_type만) · `approach1`, `approach2` (+`approach3`는 club/result/miss만) · `putt`, `putt2` (miss/memo만)
@@ -103,11 +107,13 @@ Supabase 프로젝트 `hguhjojlzcufdkwrjzuz` (Seoul). 타입은 `src/types.ts`�
 
 - **RLS 정책이 사실상 전부 열려 있다** — 레포의 마이그레이션 기준 `rounds`·`holes` 모두 `USING (true)` select/insert/update/delete (anon·authenticated). `user_id` 분리는 앱 코드가 하고 있을 뿐 DB가 막지 않는다. 지인이 쓰는 앱이라 조이는 일은 데이터 유실 없이 단계적으로
   - **2026-10-29 사용자 결정: 당장 조이지 않는다.** 사용자: "기존 작업 환경을 클로드 코드로 바꾼거 뿐인데, 왜 이런 작업을 하는거지? DB를 왜 건들어?" — 도구 이관과 무관한 옛 빚이고 개인 도구라 위험이 낮다. **다음 할 일에 올리지 않는다.** 사용자가 먼저 꺼낼 때만 다룬다. 대시보드 캡처는 생략(쓰기 정책 3종 미확인인 채로 둔다)
-  - **2026-10-29 실측 (읽기만, 로그인 없이 anon 키로 REST 호출)**: `rounds` 19건 · `holes` 342건이 **전부 읽힌다** → select 정책은 마이그레이션 그대로 열려 있음이 확정. insert/update/delete 정책은 써 보지 않아 미확인 — 대시보드 캡처로 확인
+  - **2026-10-29 실측 (읽기만, 로그인 없이 anon 키로 REST 호출)**: `rounds` 19건 · `holes` 342건이 **전부 읽힌다** → select 정책은 마이그레이션 그대로 열려 있음이 확정
+  - **2026-10-29 실측 (쓰기)**: 로그인 없이 anon 키만으로 `rounds` insert → `42501 new row violates row-level security policy` **거부됨**. 로그인(익명) 세션으로는 insert 성공. 즉 insert는 마이그레이션(`WITH CHECK (true)` to anon)과 다르게 **대시보드에서 조여져 있다** (정확한 조건은 미확인 — authenticated 한정 또는 `user_id = auth.uid()`). update/delete는 미확인
   - 같은 실측에서 **라운드 19건이 전부 한 `user_id`(ebe0713…)** 소유, 19건 모두 `is_public=true`. 즉 2026-10-29 현재 DB에 데이터가 있는 사용자는 한 명. "지인이 쓰고 있다"는 전제는 데이터로는 확인되지 않음 — 조일 때 영향 범위가 작다는 뜻
   - 조일 때 지켜야 할 것: 공유 페이지(`api/share.tsx` · `api/og-render.ts`)와 `App.tsx` 49줄의 공유 링크 로드는 **로그인 없이** `rounds`·`holes`를 읽는다. select는 `is_public = true` 또는 `user_id = auth.uid()`로, 쓰기는 `user_id = auth.uid()`로 가는 것이 자연스러운 형태. 익명 로그인 사용자도 `auth.uid()`가 있다
 - ~~`.gitignore`의 `migrations` 줄~~ — **없다** (2026-10-29 확인: `.gitignore`에 그런 줄이 없고 마이그레이션 18개 모두 git 추적 중). 이전 기록이 틀렸던 것. 다시 확인하지 않는다
-- `npm run typecheck`가 **실패한다** — `RoundSummary.tsx` 708~783줄에 선언만 하고 쓰지 않는 변수 8개(`obHoles` `hazardHoles` `segFairwayPct` `segSecondGir` `avgPuttsPerHole` `shortPuttMissCount` `avgChartPenalty` `avgChartShortPuttMiss`). 빌드(`vite build`)는 타입체크를 안 하므로 통과. 이관 이전부터 있던 상태(2026-10-29 확인). 삭제 제안했으나 사용자가 **보류** — 다음에 `RoundSummary.tsx`를 손댈 때 같이 묻는다
+- `npm run typecheck`가 **실패한다** — (a) `HoleRecording.tsx` 982줄 `Type '3 | 2 | 1 | 4' is not assignable to type '3 | 2 | 1'` (2026-10-29 확인, 이관 전부터) (b) `RoundSummary.tsx` 708~783줄에 선언만 하고 쓰지 않는 변수 8개(`obHoles` `hazardHoles` `segFairwayPct` `segSecondGir` `avgPuttsPerHole` `shortPuttMissCount` `avgChartPenalty` `avgChartShortPuttMiss`). 빌드(`vite build`)는 타입체크를 안 하므로 통과. 이관 이전부터 있던 상태(2026-10-29 확인). 삭제 제안했으나 사용자가 **보류** — 다음에 `RoundSummary.tsx`를 손댈 때 같이 묻는다
+- **요약 화면 "최근 6라운드" 추세 차트가 `user_id`로 거르지 않는다** — `RoundSummary.tsx` `fetchChartRounds`가 `rounds` 전체에서 최근 6건을 가져온다. 2026-10-29 검증 중 발견: 라운드 1건뿐인 익명 계정 요약에 다른 계정 라운드 날짜(09/18, 09/27…)가 차트에 찍힘. 사용자가 한 명일 땐 티 안 났음. **고치려면 `.eq('user_id', user.id)` 한 줄** — 요청 없이 고치지 않고 보고만 함
 - GitHub에 `v0/pttphh-55df01d5` 브랜치가 남아 있다 — v0 시절 흔적. `main`에 **전부 합쳐져 있음**(2026-10-29 확인, main보다 앞선 커밋 0개). 지워도 잃는 것 없음. 2026-10-29 삭제 제안했으나 사용자가 **보류**
 - 공개 키(anon)가 `src/lib/supabaseClient.ts`와 `api/share.tsx` **두 곳**에 하드코딩. 단일 소스 위반이지만 동작엔 문제 없음. 손댈 때 `src/lib/config.ts`로 모은다 (런북 2장 주석 포함)
 - `scripts/fix-korean.mjs` 등 6개 스크립트 — Cursor 시절 한글 깨짐 복구용 1회성. 쓰지 않는다. 2026-10-29 삭제 제안했으나 사용자가 **보류** (남겨 둔다)
@@ -123,6 +129,7 @@ Supabase 프로젝트 `hguhjojlzcufdkwrjzuz` (Seoul). 타입은 `src/types.ts`�
 | 파일 | 적용 날짜 | 확인 (표별 줄 수) |
 |---|---|---|
 | (2026-05 Bolt·Cursor 시절 18개 — 모두 적용됨) | 2026-05-18 ~ 05-20 | — |
+| `20261029150000_add_round_photos.sql` — `round_photos` 표 + Storage 버킷 `round-photos` + 정책 | **미적용** (사용자 Run 대기) | — |
 
 ---
 
@@ -212,6 +219,7 @@ npm run lint
 - 폐기 (2026-09): 「세컨샷 그린미스 하위 선택지 '어프로치 가능/불가'」 → 산식으로 계산 가능해져 삭제. OB·해저드만 유지
 - 폐기 (2026-09): 「"치명 미스" 용어」 → "어프로치권 미도달"
 - 폐기 (2026-09): 「웨지온 분모를 거리·상황 규칙으로 좁히기」 → 코드 규칙으로 통제 어려움. 사용자가 기록 시 컨트롤
+- 폐기 (2026-10-29): 「이관 시점 백로그 3~6번 — KPI 목표치 조정(퍼팅 40/38/36개 · 3퍼팅 6/4/3회 · 근접률 25/35/45%가 느슨하다는 검토) · 스크램블링 지표 · 벙커 세이브율(둘 다 AllRounds 누적 쪽 후보) · 이미지 공유(html2canvas)」 → 사용자가 "모두 마무리됐다고 전제"하고 과제를 새로 도출하기로. 되살릴 땐 이 줄에서 출발
 - 폐기 (2026-10-29): 「Bolt → Cursor Agent → v0 도구 체계」 → 다중 파일 수정 마찰. Claude Code 단일 체계로. 이 채팅 프로젝트의 구 지침(Cursor Agent 프롬프트 형식 등)은 더 이상 쓰지 않는다
 
 ## 9. 반복 결함 [채움 — 두 번째부터 적고 규칙으로 승격]
@@ -236,17 +244,12 @@ npm run lint
 
 ### 다음 할 일 (순서대로)
 
-1. ~~첫 세션 정리~~ — 2026-10-29 완료
-2. ~~RLS 실제 정책 확인~~ — 2026-10-29 읽기 정책 열림만 실측 후 **사용자 결정으로 보류** (4장). 목록에서 뺀다
-3. **KPI 목표치 조정** — 퍼팅 2개(총 퍼트 수 · 3퍼트 횟수)가 너무 느슨하다는 검토 결과는 나왔고 **방향은 동의**됐으나 **숫자는 미확정**. 어프로치 근접 목표치 소폭 조정 포함. 사용자에게 수치 확인 후 `RoundSummary.tsx` 한 파일
-4. **스크램블링 지표 추가** — 원천 데이터는 이미 있음. RoundSummary의 기존 카드를 대체할지 AllRounds(누적)로 보낼지 **와이어프레임부터**
-5. 벙커 세이브율 — 라운드당 표본이 작아 AllRounds(누적) 쪽이 맞다는 판단. 4번과 함께 와이어프레임
-6. 이미지 공유 (html2canvas, 카드 여러 장) — 초기 기획에만 있고 착수 안 함. 우선순위 사용자 확인
+**2026-10-29 사용자: "해야할 일은 모두 마무리됐다고 전제하자. 지금부터는 과제를 새롭게 도출해나갈 생각이다"** — 이관 시점 목록(1 첫 세션 정리 · 2 RLS 확인 · 3 KPI 목표치 조정 · 4 스크램블링 · 5 벙커 세이브율 · 6 이미지 공유)은 **닫는다.** 3~6은 하지 않은 채로 닫은 것이며, 다시 하려면 사용자가 새 과제로 꺼낸다. 옛 검토 내용은 8장 폐기 기록에 한 줄로 남김.
+
+1. **라운드 사진 첨부** (2026-10-29 도출·승인). 사용자: "각 라운드를 기록할 때 사진도 첨부할 수 있도록 했으면 좋겠어. 개별 홀에다가는 할 수 없으니 라운드 전반적인 기록 하단에 사진 보기를 넣어서 추가하거나 볼 수 있으면 좋겠다. 사진 배치는 두열로". 와이어프레임 `https://claude.ai/artifact/4WYNh75CiiL1BZRSVVKe76` 승인("이대로 진행"). 결정(추천대로): 공유 링크에서도 사진 보임 · 긴 변 1600px로 줄여 올림 · 크게 보기에서 좌우 스와이프. **상태: 코드 완료·빌드 통과·요약→사진 화면 경로 375px 확인(표 없어서 "불러오지 못했어요" 표시까지 예상대로). SQL 미적용이라 올리기·지우기·공유 모드는 미확인. push 보류(배포본에 반쪽 기능이 나가지 않게).** 검증용 `[검증] 사진 테스트` 라운드(id `23144be3-40e5-4e3b-9987-3f0bc57f0a32`, 익명 계정 `b9bab27d…`)가 실 DB에 있음 — 사진 테스트 끝나면 **삭제(원복)**
 
 ### 아직 정하지 않은 것 — 추측하지 말고 묻는다
 
-- KPI 목표치의 새 숫자 (퍼팅 2개 · 어프로치 근접)
-- 스크램블링·벙커 세이브율을 어느 화면에 둘지
 - RLS를 `user_id` 기준으로 조일지 — 2026-10-29 "당장 안 함". 사용자가 꺼내기 전엔 묻지 않는다
 - 레포 Private 전환 여부
 - (2026-10-29 보류, 당장 다시 묻지 않는다) `scripts/` 삭제 · `RoundSummary.tsx` 미사용 변수 8개 삭제 · 원격 `v0/pttphh-55df01d5` 브랜치 삭제

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Trophy, Target, AlertTriangle, BarChart2, ChevronRight, List, Trash2, Flag, Pencil, Crosshair, Disc, CheckCircle, Share2, TicketX, PlayOff, MapPinCheck, Ban, Zap, Route, MapPinOff, Locate } from 'lucide-react';
+import { Trophy, Target, AlertTriangle, BarChart2, ChevronRight, List, Trash2, Flag, Pencil, Crosshair, Disc, CheckCircle, Share2, TicketX, PlayOff, MapPinCheck, Ban, Zap, Route, MapPinOff, Locate, Image } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { isAnonymousUser, signUpWithEmail, signUpNewUser } from '../lib/auth';
 import type { Round, Hole } from '../types';
@@ -33,6 +33,7 @@ interface Props {
   onDelete?: () => void;
   onMissBreakdown?: () => void;
   onViewHoles?: () => void;
+  onViewPhotos?: () => void;
 }
 
 type SegmentType = 'tee' | 'second' | 'approach' | 'putt';
@@ -511,8 +512,21 @@ function DeleteModal({ onConfirm, onCancel, deleting }: { onConfirm: () => void;
   );
 }
 
-export default function RoundSummary({ round, viewMode, shareMode = false, holes: externalHoles, onSave, onDelete, onMissBreakdown, onViewHoles }: Props) {
+export default function RoundSummary({ round, viewMode, shareMode = false, holes: externalHoles, onSave, onDelete, onMissBreakdown, onViewHoles, onViewPhotos }: Props) {
   const [roundData, setRoundData] = useState<Round>(round);
+  const [photoCount, setPhotoCount] = useState<number | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    supabase
+      .from('round_photos')
+      .select('id', { count: 'exact', head: true })
+      .eq('round_id', round.id)
+      .then(({ count, error }) => {
+        if (cancelled) return;
+        setPhotoCount(error ? null : (count ?? 0));
+      });
+    return () => { cancelled = true; };
+  }, [round.id]);
   const [memo, setMemo] = useState<string>(round.memo ?? '');
   const [memoEditing, setMemoEditing] = useState(false);
   const [memoInput, setMemoInput] = useState('');
@@ -1347,6 +1361,13 @@ const wedgeTotal = holes.reduce((sum, h) => {
                 className="w-full bg-white border-2 border-[#1B4332]/30 text-[#1B4332] py-3.5 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
                 <List size={16} />
                 각 홀 기록 보기
+                <ChevronRight size={14} />
+              </button>
+
+              <button onClick={() => onViewPhotos?.()}
+                className="w-full bg-white border-2 border-[#1B4332]/30 text-[#1B4332] py-3.5 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                <Image size={16} />
+                사진 보기{photoCount ? ` · ${photoCount}장` : ''}
                 <ChevronRight size={14} />
               </button>
             </>

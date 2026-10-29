@@ -14,6 +14,7 @@ import HoleSelect from './screens/HoleSelect';
 import HoleDetail from './screens/HoleDetail';
 import Profile from './screens/Profile';
 import Calendar from './screens/Calendar';
+import RoundPhotos from './screens/RoundPhotos';
 
 function screenToTab(screen: Screen): NavTab {
   if (screen === 'all-rounds') return 'all-rounds';
@@ -38,7 +39,7 @@ export default function App() {
   const [shareRound, setShareRound] = useState<Round | null>(null);
   const [shareHoles, setShareHoles] = useState<Hole[]>([]);
   const [shareError, setShareError] = useState(false);
-  const [shareView, setShareView] = useState<'summary' | 'miss' | 'holes'>('summary');
+  const [shareView, setShareView] = useState<'summary' | 'miss' | 'holes' | 'photos'>('summary');
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -121,6 +122,14 @@ export default function App() {
 
   async function handleDeleteRound() {
     if (!currentRound) return;
+    // 사진 파일은 연쇄 삭제가 안 되므로 먼저 지운다 (표가 아직 없으면 그냥 넘어간다)
+    try {
+      const { data: photos } = await supabase.from('round_photos').select('path').eq('round_id', currentRound.id);
+      const paths = (photos ?? []).map(p => p.path as string);
+      if (paths.length > 0) await supabase.storage.from('round-photos').remove(paths);
+    } catch {
+      // 사진 정리 실패는 라운드 삭제를 막지 않는다
+    }
     await supabase.from('holes').delete().eq('round_id', currentRound.id);
     await supabase.from('rounds').delete().eq('id', currentRound.id);
     setCurrentRound(null);
@@ -162,6 +171,12 @@ export default function App() {
                 onEditHole={() => {}}
                 onContinue={() => {}}
               />
+            ) : shareView === 'photos' ? (
+              <RoundPhotos
+                round={shareRound}
+                readOnly
+                onBack={() => setShareView('summary')}
+              />
             ) : (
               <RoundSummary
                 round={shareRound}
@@ -172,6 +187,7 @@ export default function App() {
                 onDelete={async () => {}}
                 onMissBreakdown={() => setShareView('miss')}
                 onViewHoles={() => setShareView('holes')}
+                onViewPhotos={() => setShareView('photos')}
               />
             )
           ) : (
@@ -220,6 +236,14 @@ export default function App() {
               onDelete={handleDeleteRound}
               onMissBreakdown={() => setScreen('miss-breakdown')}
               onViewHoles={() => setScreen('hole-select')}
+              onViewPhotos={() => setScreen('round-photos')}
+            />
+          )}
+
+          {screen === 'round-photos' && currentRound && (
+            <RoundPhotos
+              round={currentRound}
+              onBack={() => setScreen('round-summary')}
             />
           )}
 
