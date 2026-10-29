@@ -114,7 +114,7 @@ Storage 버킷 `round-photos` (공개 읽기 · 5MB 제한 · jpeg/png/webp). �
   - 조일 때 지켜야 할 것: 공유 페이지(`api/share.tsx` · `api/og-render.ts`)와 `App.tsx` 49줄의 공유 링크 로드는 **로그인 없이** `rounds`·`holes`를 읽는다. select는 `is_public = true` 또는 `user_id = auth.uid()`로, 쓰기는 `user_id = auth.uid()`로 가는 것이 자연스러운 형태. 익명 로그인 사용자도 `auth.uid()`가 있다
 - ~~`.gitignore`의 `migrations` 줄~~ — **없다** (2026-10-29 확인: `.gitignore`에 그런 줄이 없고 마이그레이션 18개 모두 git 추적 중). 이전 기록이 틀렸던 것. 다시 확인하지 않는다
 - `npm run typecheck`가 **실패한다** — (a) `HoleRecording.tsx` 982줄 `Type '3 | 2 | 1 | 4' is not assignable to type '3 | 2 | 1'` (2026-10-29 확인, 이관 전부터) (b) `RoundSummary.tsx` 708~783줄에 선언만 하고 쓰지 않는 변수 8개(`obHoles` `hazardHoles` `segFairwayPct` `segSecondGir` `avgPuttsPerHole` `shortPuttMissCount` `avgChartPenalty` `avgChartShortPuttMiss`). 빌드(`vite build`)는 타입체크를 안 하므로 통과. 이관 이전부터 있던 상태(2026-10-29 확인). 삭제 제안했으나 사용자가 **보류** — 다음에 `RoundSummary.tsx`를 손댈 때 같이 묻는다
-- **요약 화면 "최근 6라운드" 추세 차트가 `user_id`로 거르지 않는다** — `RoundSummary.tsx` `fetchChartRounds`가 `rounds` 전체에서 최근 6건을 가져온다. 2026-10-29 검증 중 발견: 라운드 1건뿐인 익명 계정 요약에 다른 계정 라운드 날짜(09/18, 09/27…)가 차트에 찍힘. 사용자가 한 명일 땐 티 안 났음. **고치려면 `.eq('user_id', user.id)` 한 줄** — 요청 없이 고치지 않고 보고만 함
+- ~~요약 화면 "최근 6라운드" 추세 차트가 `user_id`로 거르지 않는다~~ — 2026-10-29 검증 중 발견(익명 계정 요약에 다른 계정 라운드 날짜가 차트에 찍힘), 같은 날 사용자 요청("지금 고쳐줘")으로 `fetchChartRounds`에 `.eq('user_id', user.id)` 추가해 고침
 - GitHub에 `v0/pttphh-55df01d5` 브랜치가 남아 있다 — v0 시절 흔적. `main`에 **전부 합쳐져 있음**(2026-10-29 확인, main보다 앞선 커밋 0개). 지워도 잃는 것 없음. 2026-10-29 삭제 제안했으나 사용자가 **보류**
 - 공개 키(anon)가 `src/lib/supabaseClient.ts`와 `api/share.tsx` **두 곳**에 하드코딩. 단일 소스 위반이지만 동작엔 문제 없음. 손댈 때 `src/lib/config.ts`로 모은다 (런북 2장 주석 포함)
 - `scripts/fix-korean.mjs` 등 6개 스크립트 — Cursor 시절 한글 깨짐 복구용 1회성. 쓰지 않는다. 2026-10-29 삭제 제안했으나 사용자가 **보류** (남겨 둔다)

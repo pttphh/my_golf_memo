@@ -569,9 +569,16 @@ export default function RoundSummary({ round, viewMode, shareMode = false, holes
   useEffect(() => {
     if (shareMode) return;
     async function fetchChartRounds() {
+      // 내 라운드만 — 계정을 거르지 않으면 다른 계정 라운드가 추세에 섞인다 (2026-10-29 발견)
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setChartRounds([]);
+        return;
+      }
       const { data: rounds } = await supabase
         .from('rounds')
         .select('*')
+        .eq('user_id', user.id)
         .order('date', { ascending: false })
         .limit(6);
 
