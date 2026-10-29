@@ -261,7 +261,8 @@ export default function RoundPhotos({ round, readOnly = false, onBack }: Props) 
       </div>
 
       {viewerPhoto && (
-        <div className="fixed inset-0 z-50 bg-black text-white flex flex-col" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+        // 하단 탭 바(z-50)보다 위에 떠야 아래쪽 버튼이 눌린다
+        <div className="fixed inset-0 z-[60] bg-black text-white flex flex-col" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
           <div className="flex items-center justify-between px-4 text-sm" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 0.75rem)', paddingBottom: '0.75rem' }}>
             <button onClick={() => setViewerIndex(null)} className="flex items-center gap-1 active:opacity-70">
               <X size={18} />
@@ -292,7 +293,7 @@ export default function RoundPhotos({ round, readOnly = false, onBack }: Props) 
           </div>
 
           {confirmDelete && (
-            <div className="fixed inset-0 z-[60] flex items-center justify-center px-6">
+            <div className="fixed inset-0 z-[70] flex items-center justify-center px-6">
               <div className="absolute inset-0 bg-black/40" onClick={() => !deleting && setConfirmDelete(false)} />
               <div className="relative bg-card rounded-2xl shadow-2xl p-6 w-full max-w-[340px] text-gray-800">
                 <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
