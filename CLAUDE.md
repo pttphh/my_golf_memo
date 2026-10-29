@@ -101,7 +101,11 @@ Supabase 프로젝트 `hguhjojlzcufdkwrjzuz` (Seoul). 타입은 `src/types.ts`�
 
 ### 알고 있는 빚
 
-- **RLS 정책이 사실상 전부 열려 있다** — 레포의 마이그레이션 기준 `rounds`·`holes` 모두 `USING (true)` select/insert/update/delete (anon·authenticated). `user_id` 분리는 앱 코드가 하고 있을 뿐 DB가 막지 않는다. 대시보드에서 직접 바꿨을 가능성이 있으니 **다음 세션에 Supabase 대시보드 → Authentication → Policies에서 실제 정책을 확인**하고 이 줄을 갱신한다. 지인이 쓰는 앱이라 조이는 일은 데이터 유실 없이 단계적으로
+- **RLS 정책이 사실상 전부 열려 있다** — 레포의 마이그레이션 기준 `rounds`·`holes` 모두 `USING (true)` select/insert/update/delete (anon·authenticated). `user_id` 분리는 앱 코드가 하고 있을 뿐 DB가 막지 않는다. 지인이 쓰는 앱이라 조이는 일은 데이터 유실 없이 단계적으로
+  - **2026-10-29 사용자 결정: 당장 조이지 않는다.** 사용자: "기존 작업 환경을 클로드 코드로 바꾼거 뿐인데, 왜 이런 작업을 하는거지? DB를 왜 건들어?" — 도구 이관과 무관한 옛 빚이고 개인 도구라 위험이 낮다. **다음 할 일에 올리지 않는다.** 사용자가 먼저 꺼낼 때만 다룬다. 대시보드 캡처는 생략(쓰기 정책 3종 미확인인 채로 둔다)
+  - **2026-10-29 실측 (읽기만, 로그인 없이 anon 키로 REST 호출)**: `rounds` 19건 · `holes` 342건이 **전부 읽힌다** → select 정책은 마이그레이션 그대로 열려 있음이 확정. insert/update/delete 정책은 써 보지 않아 미확인 — 대시보드 캡처로 확인
+  - 같은 실측에서 **라운드 19건이 전부 한 `user_id`(ebe0713…)** 소유, 19건 모두 `is_public=true`. 즉 2026-10-29 현재 DB에 데이터가 있는 사용자는 한 명. "지인이 쓰고 있다"는 전제는 데이터로는 확인되지 않음 — 조일 때 영향 범위가 작다는 뜻
+  - 조일 때 지켜야 할 것: 공유 페이지(`api/share.tsx` · `api/og-render.ts`)와 `App.tsx` 49줄의 공유 링크 로드는 **로그인 없이** `rounds`·`holes`를 읽는다. select는 `is_public = true` 또는 `user_id = auth.uid()`로, 쓰기는 `user_id = auth.uid()`로 가는 것이 자연스러운 형태. 익명 로그인 사용자도 `auth.uid()`가 있다
 - ~~`.gitignore`의 `migrations` 줄~~ — **없다** (2026-10-29 확인: `.gitignore`에 그런 줄이 없고 마이그레이션 18개 모두 git 추적 중). 이전 기록이 틀렸던 것. 다시 확인하지 않는다
 - `npm run typecheck`가 **실패한다** — `RoundSummary.tsx` 708~783줄에 선언만 하고 쓰지 않는 변수 8개(`obHoles` `hazardHoles` `segFairwayPct` `segSecondGir` `avgPuttsPerHole` `shortPuttMissCount` `avgChartPenalty` `avgChartShortPuttMiss`). 빌드(`vite build`)는 타입체크를 안 하므로 통과. 이관 이전부터 있던 상태(2026-10-29 확인). 삭제 제안했으나 사용자가 **보류** — 다음에 `RoundSummary.tsx`를 손댈 때 같이 묻는다
 - GitHub에 `v0/pttphh-55df01d5` 브랜치가 남아 있다 — v0 시절 흔적. `main`에 **전부 합쳐져 있음**(2026-10-29 확인, main보다 앞선 커밋 0개). 지워도 잃는 것 없음. 2026-10-29 삭제 제안했으나 사용자가 **보류**
@@ -227,13 +231,13 @@ npm run lint
 ### 2026-10-29 현재 (Claude Code 이관 직후, 코드 변경 없음)
 
 - 되는 것: 화면 10개 전부 동작. 인증 3종. 공개 링크 공유 + 카톡 OG 미리보기. 캘린더(히트맵·예정일). 8-KPI 요약. 누적 통계·추세 차트. 배포 운영 중, 지인 사용 중
-- 안 되는 것 / 알고 있는 빚: 4장 "알고 있는 빚" (RLS 열림 · 키 2곳 · typecheck 실패[보류] · 1회성 스크립트[보류] · v0 브랜치[보류]). `.gitignore` migrations 건은 확인 결과 없던 문제
+- 안 되는 것 / 알고 있는 빚: 4장 "알고 있는 빚" (RLS 열림[보류] · 키 2곳 · typecheck 실패[보류] · 1회성 스크립트[보류] · v0 브랜치[보류]). `.gitignore` migrations 건은 확인 결과 없던 문제
 - 2026-10-29 첫 세션 완료: 코드 받음(`main` = `53ca82e`) → `npm install` → 빌드 통과(17초, JS 419KB) → Browser 패널 375px에서 라운드 목록 화면 뜸, 콘솔 오류 없음 → 도구 상태 5장 기록 → `.bolt/`·README 배지 삭제 → CLAUDE.md·`.claude/launch.json`과 함께 한 커밋
 
 ### 다음 할 일 (순서대로)
 
 1. ~~첫 세션 정리~~ — 2026-10-29 완료
-2. **RLS 실제 정책 확인** (Supabase 대시보드 캡처를 사용자에게 부탁) → 4장 갱신. 조일지 말지는 그다음
+2. ~~RLS 실제 정책 확인~~ — 2026-10-29 읽기 정책 열림만 실측 후 **사용자 결정으로 보류** (4장). 목록에서 뺀다
 3. **KPI 목표치 조정** — 퍼팅 2개(총 퍼트 수 · 3퍼트 횟수)가 너무 느슨하다는 검토 결과는 나왔고 **방향은 동의**됐으나 **숫자는 미확정**. 어프로치 근접 목표치 소폭 조정 포함. 사용자에게 수치 확인 후 `RoundSummary.tsx` 한 파일
 4. **스크램블링 지표 추가** — 원천 데이터는 이미 있음. RoundSummary의 기존 카드를 대체할지 AllRounds(누적)로 보낼지 **와이어프레임부터**
 5. 벙커 세이브율 — 라운드당 표본이 작아 AllRounds(누적) 쪽이 맞다는 판단. 4번과 함께 와이어프레임
@@ -243,6 +247,6 @@ npm run lint
 
 - KPI 목표치의 새 숫자 (퍼팅 2개 · 어프로치 근접)
 - 스크램블링·벙커 세이브율을 어느 화면에 둘지
-- RLS를 `user_id` 기준으로 조일지 (지인 데이터 영향)
+- RLS를 `user_id` 기준으로 조일지 — 2026-10-29 "당장 안 함". 사용자가 꺼내기 전엔 묻지 않는다
 - 레포 Private 전환 여부
 - (2026-10-29 보류, 당장 다시 묻지 않는다) `scripts/` 삭제 · `RoundSummary.tsx` 미사용 변수 8개 삭제 · 원격 `v0/pttphh-55df01d5` 브랜치 삭제
